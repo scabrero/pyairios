@@ -1,0 +1,50 @@
+[project]
+name = "pyairios"
+description = "Python library to interface with Airios RF bridges"
+readme = "README.md"
+
+authors = [
+  { name = "Samuel Cabrero", email = "samuel@orica.es" },
+]
+license = { file="LICENSE" }
+keywords = ["Airios", "Siber", "RAMSES II", "ventilation", "heat-recovery", "modbus", "modbus-tcp", "modbus-rtu"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: Apache Software License",
+    "Topic :: Home Automation",
+    "Topic :: Scientific/Engineering :: Interface Engine/Protocol Translator",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Operating System :: OS Independent",
+]
+
+dynamic = ["version"]
+
+requires-python = ">= 3.12"
+
+dependencies = [
+    "pymodbus>=3.6.9,<3.7",
+    "pyserial-asyncio>=0.6",
+    "aiocmd>=0.1.5"
+]
+
+[project.urls]
+Homepage = "https://github.com/scabrero/pyairios"
+Repository = "https://github.com/scabrero/pyairios.git"
+Issues = "https://github.com/scabrero/pyairios/issues"
+
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+  "/.github",
+  "/docs",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pyairios"]

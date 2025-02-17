@@ -1,0 +1,5 @@
+* Add support for Ethernet bridge
+* What VMD register bypass status does mean (41051)?
+* RF statistics does not seem to work in the BRDG-02R13
+* Implement faults history reading
+* Implement modbus events
