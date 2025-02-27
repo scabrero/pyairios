@@ -8,13 +8,11 @@ import typing as t
 from dataclasses import dataclass
 
 import pymodbus.client as modbusClient
-from pymodbus import Framer
-from pymodbus.constants import Endian
+from pymodbus.client.mixin import ModbusClientMixin
 from pymodbus.exceptions import ConnectionException as ModbusConnectionException
 from pymodbus.exceptions import ModbusException, ModbusIOException
-from pymodbus.payload import BinaryPayloadBuilder, BinaryPayloadDecoder
-from pymodbus.pdu import ExceptionResponse, ModbusExceptions, ModbusResponse
-from pymodbus.register_write_message import (
+from pymodbus.pdu import ExceptionResponse, ModbusPDU
+from pymodbus.pdu.register_message import (
     WriteMultipleRegistersResponse,
     WriteSingleRegisterResponse,
 )
@@ -90,16 +88,16 @@ class AsyncAiriosModbusClient:
             self.client.close()
             raise AiriosConnectionException from err
 
-    async def _read_registers(self, register: int, length: int, slave: int) -> ModbusResponse:
+    async def _read_registers(self, register: int, length: int, slave: int) -> ModbusPDU:
         """Async read registers from device."""
 
         LOGGER.debug("Reading register %s with length %s from slave %s", register, length, slave)
 
         await self._reconnect()
         try:
-            response = await self.client.read_holding_registers(register, length, slave=slave)
+            response = await self.client.read_holding_registers(register, count=length, slave=slave)
             if isinstance(response, ExceptionResponse):
-                if response.exception_code == ModbusExceptions.SlaveBusy:
+                if response.exception_code == ExceptionResponse.SLAVE_BUSY:
                     message = (
                         "Got a SlaveBusy Modbus Exception while reading "
                         f"register {register} (length {length}) from slave {slave}"
@@ -107,7 +105,7 @@ class AsyncAiriosModbusClient:
                     LOGGER.info(message)
                     raise AiriosSlaveBusyException(message)
 
-                if response.exception_code == ModbusExceptions.SlaveFailure:
+                if response.exception_code == ExceptionResponse.SLAVE_FAILURE:
                     message = (
                         "Got a SlaveFailure Modbus Exception while reading "
                         f"register {register} (length {length}) from slave {slave}"
@@ -115,7 +113,7 @@ class AsyncAiriosModbusClient:
                     LOGGER.warning(message)
                     raise AiriosSlaveFailureException(message)
 
-                if response.exception_code == ModbusExceptions.Acknowledge:
+                if response.exception_code == ExceptionResponse.ACKNOWLEDGE:
                     message = (
                         f"Got ACK while reading register {register} (length {length}) "
                         f"from slave {slave}."
@@ -177,7 +175,7 @@ class AsyncAiriosModbusClient:
             if isinstance(response, ExceptionResponse):
                 message = (
                     f"Failed to write value {value} to register {register}: "
-                    f"{ModbusExceptions.decode(response.exception_code)}"
+                    f"{response.exception_code:02X}"
                 )
                 LOGGER.error(message)
                 raise AiriosWriteException(message, modbus_exception_code=response.exception_code)
@@ -197,20 +195,11 @@ class AsyncAiriosModbusClient:
             raise AiriosException(message) from err
         if single_register:
             assert isinstance(response, WriteSingleRegisterResponse)
-            r1: bool = response.address == register and response.value == value[0]
+            r1: bool = response.address == register and response.registers == value[0]
             return r1
         assert isinstance(response, WriteMultipleRegistersResponse)
         r2: bool = response.address == register and response.count == len(value)
         return r2
-
-    async def _decode_response(
-        self, regdesc: RegisterBase[T], decoder: BinaryPayloadDecoder
-    ) -> Result[T]:
-        """Decode a modbus register and puts it into a Result object."""
-
-        result = regdesc.decode(decoder)
-
-        return Result(result, None)
 
     async def get_register(self, regdesc: RegisterBase[T], slave: int) -> Result[T]:
         """Get a register from device."""
@@ -223,19 +212,17 @@ class AsyncAiriosModbusClient:
             regdesc.description.address, regdesc.description.length, slave
         )
 
-        decoder = BinaryPayloadDecoder.fromRegisters(
-            response.registers, byteorder=Endian.BIG, wordorder=Endian.LITTLE
-        )
-
-        value = regdesc.decode(decoder)
+        value = regdesc.decode(response.registers)
         value_status = None
 
         if RegisterAccess.STATUS in regdesc.description.access:
             response = await self._read_registers(regdesc.description.address + 10000, 1, slave)
-            decoder = BinaryPayloadDecoder.fromRegisters(
-                response.registers, byteorder=Endian.BIG, wordorder=Endian.LITTLE
+            tmp: int = t.cast(
+                int,
+                ModbusClientMixin.convert_from_registers(
+                    response.registers, ModbusClientMixin.DATATYPE.UINT16, word_order="little"
+                ),
             )
-            tmp = t.cast(int, decoder.decode_16bit_uint())
             if tmp is not None:
                 age: int = tmp & 0x7F
                 age_is_hours = (tmp >> 7) & 0x01
@@ -256,10 +243,8 @@ class AsyncAiriosModbusClient:
             LOGGER.warning("Attempt to write not writable register %s", register)
             raise ValueError(f"Trying to write not writable register {register}")
 
-        builder = BinaryPayloadBuilder(byteorder=Endian.BIG, wordorder=Endian.LITTLE)
-        register.encode(value, builder)
-        value = builder.to_registers()
-        return await self._write_registers(register.description.address, value, slave)
+        registers = register.encode(value)
+        return await self._write_registers(register.description.address, registers, slave)
 
 
 class AsyncAiriosModbusTcpClient(AsyncAiriosModbusClient):
@@ -276,7 +261,6 @@ class AsyncAiriosModbusRtuClient(AsyncAiriosModbusClient):
     def __init__(self, transport: AiriosRtuTransport) -> None:
         client = modbusClient.AsyncModbusSerialClient(
             transport.device,
-            framer=Framer.RTU,
             baudrate=transport.baudrate,
             bytesize=transport.data_bits,
             parity=transport.parity,
