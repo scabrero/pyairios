@@ -110,7 +110,7 @@ class AsyncAiriosModbusClient:
                         "Got a SlaveFailure Modbus Exception while reading "
                         f"register {register} (length {length}) from slave {slave}"
                     )
-                    LOGGER.warning(message)
+                    LOGGER.info(message)
                     raise AiriosSlaveFailureException(message)
 
                 if response.exception_code == ExceptionResponse.ACKNOWLEDGE:
@@ -118,7 +118,7 @@ class AsyncAiriosModbusClient:
                         f"Got ACK while reading register {register} (length {length}) "
                         f"from slave {slave}."
                     )
-                    LOGGER.warning(message)
+                    LOGGER.info(message)
                     raise AiriosAcknowledgeException(message)
 
                 message = (
@@ -177,7 +177,7 @@ class AsyncAiriosModbusClient:
                     f"Failed to write value {value} to register {register}: "
                     f"{response.exception_code:02X}"
                 )
-                LOGGER.error(message)
+                LOGGER.info(message)
                 raise AiriosWriteException(message, modbus_exception_code=response.exception_code)
         except ModbusIOException as err:
             message = f"Could not write register, I/O exception: {err}"
