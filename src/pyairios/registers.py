@@ -1,16 +1,15 @@
 """Register definitions."""
 
-from dataclasses import dataclass
 import datetime
-import typing as t
 import struct
+import typing as t
+from dataclasses import dataclass
 from enum import Flag, IntEnum, auto
-from abc import abstractmethod
 
-from pymodbus.payload import BinaryPayloadBuilder, BinaryPayloadDecoder
+from pymodbus.client.mixin import ModbusClientMixin
 
 from .constants import ValueStatusFlags, ValueStatusSource
-from .exceptions import AiriosDecodeError, AiriosInvalidArgumentException, AiriosNotImplemented
+from .exceptions import AiriosDecodeError, AiriosInvalidArgumentException
 
 T = t.TypeVar("T")
 
@@ -34,158 +33,149 @@ class RegisterDescription:
     address: RegisterAddress
     length: int
     access: RegisterAccess
-    decode_function_name: t.Callable
-    encode_function_name: t.Callable
 
 
 class RegisterBase(t.Generic[T]):
     """Base class for register definitions."""
 
     description: RegisterDescription
+    datatype: ModbusClientMixin.DATATYPE
 
     def __init__(self, description: RegisterDescription) -> None:
         """Initialize the register instance."""
         self.description = description
 
-    @abstractmethod
-    def decode(self, decoder: BinaryPayloadDecoder) -> T:
+    def decode(self, registers: list[int]) -> T:
         """Decode register bytes to value."""
-        raise AiriosNotImplemented
+        return ModbusClientMixin.convert_from_registers(
+            registers, self.datatype, word_order="little"
+        )  # type: ignore
 
-    @abstractmethod
-    def encode(self, value: T, encoder: BinaryPayloadBuilder) -> None:
+    def encode(self, value: T) -> list[int]:
         """Encode value to register bytes."""
-        raise AiriosNotImplemented
+        return ModbusClientMixin.convert_to_registers(value, self.datatype, word_order="little")  # type: ignore
 
 
 class StringRegister(RegisterBase[str]):
     """String register."""
 
+    datatype = ModbusClientMixin.DATATYPE.STRING
+
     def __init__(self, address: RegisterAddress, length: int, access: RegisterAccess) -> None:
         """Initialize the StringRegister instance."""
-        description = RegisterDescription(
-            address,
-            length,
-            access,
-            decode_function_name=BinaryPayloadDecoder.decode_string,
-            encode_function_name=BinaryPayloadBuilder.add_string,
-        )
+        description = RegisterDescription(address, length, access)
         super().__init__(description)
 
-    def decode(self, decoder: BinaryPayloadDecoder) -> str:
+    def decode(self, registers: list[int]) -> str:
         """Decode register bytes to value."""
-        str_bytes = t.cast(
-            bytes, self.description.decode_function_name(decoder, self.description.length * 2)
-        )
+
+        def registers_to_bytearray(registers: list[int]) -> bytearray:
+            """Convert registers to bytes."""
+            b = bytearray()
+            for x in registers:
+                b.extend(x.to_bytes(2, "big"))
+            return b
+
+        b = registers_to_bytearray(registers)
+
+        # remove trailing null bytes
+        trailing_nulls_begin = len(b)
+        while trailing_nulls_begin > 0 and b[trailing_nulls_begin - 1] == 0:
+            trailing_nulls_begin -= 1
+
+        b = b[:trailing_nulls_begin]
+
         try:
-            result = str_bytes.decode("utf-8")
+            result = b.decode("utf-8")
         except UnicodeDecodeError as err:
             raise AiriosDecodeError from err
-        return result.rstrip("\0")
+        return result
 
-    def encode(self, value: str, encoder: BinaryPayloadBuilder) -> None:
-        """Encode value to register bytes."""
-        if not isinstance(value, str):
-            raise AiriosInvalidArgumentException(f"Unsupported type {type(value)}")
-        self.description.encode_function_name(encoder, value)
+    def encode(self, value: str) -> list[int]:
+        return ModbusClientMixin.convert_to_registers(value, self.datatype, word_order="little")
 
 
 class NumberRegister(RegisterBase[T]):
     """Base class for number registers."""
 
-    def decode(self, decoder: BinaryPayloadDecoder) -> T:
+    def decode(self, registers: list[int]) -> T:
         """Decode register bytes to value."""
-        result: T = t.cast(T, self.description.decode_function_name(decoder))
+        result: T = t.cast(
+            T,
+            ModbusClientMixin.convert_from_registers(registers, self.datatype, word_order="little"),
+        )
         return result
 
-    def encode(self, value: T, encoder: BinaryPayloadBuilder) -> None:
+    def encode(self, value: T) -> list[int]:
         """Encode value to register bytes."""
         if isinstance(value, int):
             int_value = value
         elif isinstance(value, float):
             int_value = int(value)
+        elif isinstance(value, bool):
+            int_value = int(value)
         else:
             raise AiriosInvalidArgumentException(f"Unsupported type {type(value)}")
-        self.description.encode_function_name(encoder, int_value)
+        return ModbusClientMixin.convert_to_registers(int_value, self.datatype, word_order="little")
 
 
 class U16Register(NumberRegister[int]):
     """Unsigned 16-bit register."""
 
+    datatype = ModbusClientMixin.DATATYPE.UINT16
+
     def __init__(self, address: RegisterAddress, access: RegisterAccess) -> None:
         """Initialize the U16Register instance."""
-        description = RegisterDescription(
-            address,
-            1,
-            access,
-            decode_function_name=BinaryPayloadDecoder.decode_16bit_uint,
-            encode_function_name=BinaryPayloadBuilder.add_16bit_uint,
-        )
+        description = RegisterDescription(address, 1, access)
         super().__init__(description)
 
 
 class I16Register(NumberRegister[int]):
     """Signed 16-bit register."""
 
+    datatype = ModbusClientMixin.DATATYPE.INT16
+
     def __init__(self, address: RegisterAddress, access: RegisterAccess) -> None:
         """Initialize the I16Register instance."""
-        description = RegisterDescription(
-            address,
-            1,
-            access,
-            decode_function_name=BinaryPayloadDecoder.decode_16bit_int,
-            encode_function_name=BinaryPayloadBuilder.add_16bit_int,
-        )
+        description = RegisterDescription(address, 1, access)
         super().__init__(description)
 
 
 class U32Register(NumberRegister[int]):
     """Unsigned 32-bit register."""
 
+    datatype = ModbusClientMixin.DATATYPE.UINT32
+
     def __init__(self, address: RegisterAddress, access: RegisterAccess) -> None:
         """Initialize the U32Register instance."""
-        description = RegisterDescription(
-            address,
-            2,
-            access,
-            decode_function_name=BinaryPayloadDecoder.decode_32bit_uint,
-            encode_function_name=BinaryPayloadBuilder.add_32bit_uint,
-        )
+        description = RegisterDescription(address, 2, access)
         super().__init__(description)
 
 
 class FloatRegister(NumberRegister[float]):
     """Float register."""
 
+    datatype = ModbusClientMixin.DATATYPE.FLOAT32
+
     def __init__(self, address: RegisterAddress, access: RegisterAccess) -> None:
         """Initialize the FloatRegister instance."""
-        description = RegisterDescription(
-            address,
-            2,
-            access,
-            decode_function_name=BinaryPayloadDecoder.decode_32bit_float,
-            encode_function_name=BinaryPayloadBuilder.add_32bit_float,
-        )
+        description = RegisterDescription(address, 2, access)
         super().__init__(description)
 
 
 class DateRegister(RegisterBase[datetime.date]):
     """Date register."""
 
+    datatype = ModbusClientMixin.DATATYPE.UINT32
+
     def __init__(self, address: RegisterAddress, access: RegisterAccess) -> None:
         """Initialize the DateRegister instance."""
-        description = RegisterDescription(
-            address,
-            2,
-            access,
-            decode_function_name=BinaryPayloadDecoder.decode_32bit_uint,
-            encode_function_name=BinaryPayloadBuilder.add_32bit_uint,
-        )
+        description = RegisterDescription(address, 2, access)
         super().__init__(description)
 
-    def decode(self, decoder: BinaryPayloadDecoder) -> datetime.date:
+    def decode(self, registers: list[int]) -> datetime.date:
         """Decode register bytes to value."""
-        value: int = t.cast(int, self.description.decode_function_name(decoder))
+        value: int = t.cast(int, super().decode(registers))
 
         if value == 0xFFFFFFFF:
             return datetime.date.min
@@ -194,43 +184,39 @@ class DateRegister(RegisterBase[datetime.date]):
         (day, month, year) = struct.unpack(">BBH", buf)
         return datetime.date(year, month, day)
 
-    def encode(self, value: datetime.date, encoder: BinaryPayloadBuilder) -> None:
+    def encode(self, value: datetime.date) -> list[int]:
         """Encode value to register bytes."""
 
         buf = struct.pack(">BBH", value.day, value.month, value.year)
         ival = int.from_bytes(buf, byteorder="big")
-        self.description.encode_function_name(encoder, ival)
+        return ModbusClientMixin.convert_to_registers(ival, self.datatype, word_order="little")
 
 
 class DateTimeRegister(RegisterBase[datetime.datetime]):
     """DateTime register."""
 
+    datatype = ModbusClientMixin.DATATYPE.UINT32
+
     def __init__(self, address: RegisterAddress, access: RegisterAccess) -> None:
         """Initialize the DateTimeRegister instance."""
-        description = RegisterDescription(
-            address,
-            2,
-            access,
-            decode_function_name=BinaryPayloadDecoder.decode_32bit_uint,
-            encode_function_name=BinaryPayloadBuilder.add_32bit_uint,
-        )
+        description = RegisterDescription(address, 2, access)
         super().__init__(description)
 
-    def decode(self, decoder: BinaryPayloadDecoder) -> datetime.datetime:
+    def decode(self, registers: list[int]) -> datetime.datetime:
         """Decode register bytes to value."""
-        value: int = t.cast(int, self.description.decode_function_name(decoder))
+        value: int = t.cast(int, super().decode(registers))
 
         if value == 0xFFFFFFFF:
             return datetime.datetime.min
 
         return datetime.datetime.fromtimestamp(value, tz=datetime.timezone.utc)
 
-    def encode(self, value: datetime.datetime, encoder: BinaryPayloadBuilder) -> None:
+    def encode(self, value: datetime.datetime) -> list[int]:
         """Encode value to register bytes."""
 
         ts: float = value.replace(tzinfo=datetime.timezone.utc).timestamp()
         ival: int = int(ts)
-        self.description.encode_function_name(encoder, ival)
+        return ModbusClientMixin.convert_to_registers(ival, self.datatype, word_order="little")
 
 
 @dataclass
