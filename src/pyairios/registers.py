@@ -53,7 +53,11 @@ class RegisterBase(t.Generic[T]):
 
     def encode(self, value: T) -> list[int]:
         """Encode value to register bytes."""
-        return ModbusClientMixin.convert_to_registers(value, self.datatype, word_order="little")  # type: ignore
+        return ModbusClientMixin.convert_to_registers(
+            value,  # type: ignore
+            self.datatype,
+            word_order="little",
+        )
 
 
 class StringRegister(RegisterBase[str]):
