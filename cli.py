@@ -390,6 +390,20 @@ class AiriosBridgeCLI(aiocmd.PromptToolkitCmd):
         time = await self.bridge.utc_time()
         print(time)
 
+    async def do_node_oem_number(self) -> None:
+        """Print the node OEM number."""
+        number = await self.bridge.node_oem_number()
+        print(number)
+
+    async def do_oem_code(self) -> None:
+        """Print the OEM code."""
+        number = await self.bridge.oem_code()
+        print(number)
+
+    async def do_set_oem_code(self, number: int) -> None:
+        """Set the OEM code."""
+        await self.bridge.set_oem_code(int(number))
+
     async def do_status(self) -> None:
         """Print the device status."""
         res = await self.bridge.fetch_bridge()
