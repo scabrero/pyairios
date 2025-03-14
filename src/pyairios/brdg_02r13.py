@@ -481,6 +481,17 @@ class BRDG02R13(AiriosNode):
         """Get the UTC time."""
         return await self.client.get_register(self.regmap[Reg.UTC_TIME], self.slave_id)
 
+    async def oem_code(self) -> Result[int]:
+        """Set the bridge OEM code."""
+        return await self.client.get_register(self.regmap[Reg.OEM_CODE], self.slave_id)
+
+    async def set_oem_code(self, code: int) -> bool:
+        """Set the OEM code.
+
+        It must be set to the matching code before binding a product.
+        """
+        return await self.client.set_register(self.regmap[Reg.OEM_CODE], code, self.slave_id)
+
     async def fetch_bridge(self) -> BRDG02R13Data:  # pylint: disable=duplicate-code
         """Fetch all bridge data at once."""
 
