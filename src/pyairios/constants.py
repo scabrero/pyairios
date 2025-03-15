@@ -257,6 +257,31 @@ class Baudrate(IntEnum):
     BAUD_57600 = 8
     BAUD_115200 = 9
 
+    @classmethod
+    def parse(cls, value: int | str):  # pylint: disable=too-many-return-statements
+        """Instantiate by string."""
+        if int(value) == 300:
+            return cls(cls.BAUD_300)
+        if int(value) == 600:
+            return cls(cls.BAUD_600)
+        if int(value) == 1200:
+            return cls(cls.BAUD_1200)
+        if int(value) == 2400:
+            return cls(cls.BAUD_2400)
+        if int(value) == 4800:
+            return cls(cls.BAUD_4800)
+        if int(value) == 9600:
+            return cls(cls.BAUD_9600)
+        if int(value) == 19200:
+            return cls(cls.BAUD_19200)
+        if int(value) == 38400:
+            return cls(cls.BAUD_38400)
+        if int(value) == 57600:
+            return cls(cls.BAUD_57600)
+        if int(value) == 115200:
+            return cls(cls.BAUD_115200)
+        raise ValueError(f"Unknown baudrate value {value}")
+
 
 class Parity(IntEnum):
     """Serial port parity."""
@@ -265,12 +290,32 @@ class Parity(IntEnum):
     PARITY_ODD = 1
     PARITY_EVEN = 2
 
+    @classmethod
+    def parse(cls, value: str):
+        """Instantiate by string."""
+        if value.casefold() == "none".casefold() or value.casefold() == "N".casefold():
+            return cls(cls.PARITY_NONE)
+        if value.casefold() == "odd".casefold() or value.casefold() == "O".casefold():
+            return cls(cls.PARITY_ODD)
+        if value.casefold() == "even".casefold() or value.casefold() == "E".casefold():
+            return cls(cls.PARITY_EVEN)
+        raise ValueError(f"Unknown parity value {value}")
+
 
 class StopBits(IntEnum):
     """Serial port stop bits."""
 
     STOP_1 = 0
     STOP_2 = 1
+
+    @classmethod
+    def parse(cls, value: int | str):
+        """Instantiate by string."""
+        if int(value) == 1:
+            return cls(cls.STOP_1)
+        if int(value) == 2:
+            return cls(cls.STOP_2)
+        raise ValueError(f"Unknown stop_bits value {value}")
 
 
 class VMDSensorStatus(IntEnum):
