@@ -16,10 +16,17 @@ except ModuleNotFoundError:
     sys.path.append(f"{os.path.dirname(__file__)}/src")
     from pyairios.client import AsyncAiriosModbusRtuClient
 
-from pyairios.brdg_02r13 import BRDG02R13, DEFAULT_SLAVE_ID as BRDG02R13_DEFAULT_SLAVE_ID
+from pyairios.brdg_02r13 import (
+    BRDG02R13,
+    DEFAULT_SLAVE_ID as BRDG02R13_DEFAULT_SLAVE_ID,
+    SerialConfig,
+)
 from pyairios.constants import (
+    Baudrate,
+    Parity,
     ProductId,
     ResetMode,
+    StopBits,
     VMDBypassMode,
     VMDRequestedVentilationSpeed,
     VMDVentilationSpeed,
@@ -339,6 +346,17 @@ class AiriosBridgeCLI(aiocmd.PromptToolkitCmd):
         """Print the serial configuration."""
         res = await self.bridge.serial_config()
         print(f"Serial Config: {res}")
+
+    async def do_set_serial_config(self, baudrate: int, parity: str, stop_bits: int) -> None:
+        """Set the serial configuration.
+
+        The bridge must be reset to make new settings effective."""
+        b = Baudrate.parse(baudrate)
+        p = Parity.parse(parity)
+        s = StopBits.parse(stop_bits)
+        config = SerialConfig(b, p, s)
+        if await self.bridge.set_serial_config(config):
+            print("Reset the bridge with `reset` command to make new settings effective.")
 
     async def do_uptime(self) -> None:
         """Print the device uptime."""
