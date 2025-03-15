@@ -68,8 +68,8 @@ class SerialConfig:
     """Serial config."""
 
     baudrate: Baudrate
-    stop_bits: StopBits
     parity: Parity
+    stop_bits: StopBits
 
 
 class Reg(RegisterAddress):
@@ -452,16 +452,23 @@ class BRDG02R13(AiriosNode):
 
     async def set_serial_config(self, config: SerialConfig) -> bool:
         """Set the serial configuration."""
-        assert await self.client.set_register(
-            self.regmap[Reg.SERIAL_BAUDRATE], config.baudrate, self.slave_id
+        return (
+            await self.client.set_register(
+                self.regmap[Reg.SERIAL_BAUDRATE],
+                config.baudrate,
+                self.slave_id,
+            )
+            and await self.client.set_register(
+                self.regmap[Reg.SERIAL_PARITY],
+                config.parity,
+                self.slave_id,
+            )
+            and await self.client.set_register(
+                self.regmap[Reg.SERIAL_STOP_BITS],
+                config.stop_bits,
+                self.slave_id,
+            )
         )
-        assert await self.client.set_register(
-            self.regmap[Reg.SERIAL_PARITY], config.parity, self.slave_id
-        )
-        assert await self.client.set_register(
-            self.regmap[Reg.SERIAL_STOP_BITS], config.stop_bits, self.slave_id
-        )
-        return True
 
     async def modbus_events(self) -> Result[ModbusEvents]:
         """Modbus event responses via special Modbus functions."""
