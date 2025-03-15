@@ -269,8 +269,8 @@ class Parity(IntEnum):
 class StopBits(IntEnum):
     """Serial port stop bits."""
 
-    STOP_0 = 0
-    STOP_1 = 1
+    STOP_1 = 0
+    STOP_2 = 1
 
 
 class VMDSensorStatus(IntEnum):
