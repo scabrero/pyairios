@@ -195,7 +195,7 @@ class AsyncAiriosModbusClient:
             raise AiriosException(message) from err
         if single_register:
             assert isinstance(response, WriteSingleRegisterResponse)
-            r1: bool = response.address == register and response.registers == value[0]
+            r1: bool = response.address == register and response.registers == [value[0]]
             return r1
         assert isinstance(response, WriteMultipleRegistersResponse)
         r2: bool = response.address == register and response.count == len(value)
