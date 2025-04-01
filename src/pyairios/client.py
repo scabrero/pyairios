@@ -71,10 +71,13 @@ class AsyncAiriosModbusClient:
 
     client: modbusClient.ModbusBaseClient
     ts: float
+    lock: asyncio.Lock
 
     def __init__(self, client: modbusClient.ModbusBaseClient) -> None:
         self.client = client
         self.ts = 0
+        self.lock = asyncio.Lock()
+
 
     def __del__(self):
         if hasattr(self, "client") and self.client.connected:
@@ -99,122 +102,132 @@ class AsyncAiriosModbusClient:
     async def _read_registers(self, register: int, length: int, slave: int) -> ModbusPDU:
         """Async read registers from device."""
 
-        LOGGER.debug("Reading register %s with length %s from slave %s", register, length, slave)
+        async with self.lock:
+            LOGGER.debug(
+                "Reading register %s with length %s from slave %s", register, length, slave
+            )
 
-        await self._reconnect()
-        try:
-            elapsed = time.time() - self.ts
-            if elapsed < MIN_TIME_BETWEEN_COMMANDS:
-                delay = MIN_TIME_BETWEEN_COMMANDS - elapsed
-                await asyncio.sleep(delay)
+            await self._reconnect()
+            try:
+                elapsed = time.time() - self.ts
+                if elapsed < MIN_TIME_BETWEEN_COMMANDS:
+                    delay = MIN_TIME_BETWEEN_COMMANDS - elapsed
+                    await asyncio.sleep(delay)
 
-            response = await self.client.read_holding_registers(register, count=length, slave=slave)
-            if isinstance(response, ExceptionResponse):
-                if response.exception_code == ExceptionResponse.SLAVE_BUSY:
+                response = await self.client.read_holding_registers(
+                    register, count=length, slave=slave
+                )
+                if isinstance(response, ExceptionResponse):
+                    if response.exception_code == ExceptionResponse.SLAVE_BUSY:
+                        message = (
+                            "Got a SlaveBusy Modbus Exception while reading "
+                            f"register {register} (length {length}) from slave {slave}"
+                        )
+                        LOGGER.info(message)
+                        raise AiriosSlaveBusyException(message)
+
+                    if response.exception_code == ExceptionResponse.SLAVE_FAILURE:
+                        message = (
+                            "Got a SlaveFailure Modbus Exception while reading "
+                            f"register {register} (length {length}) from slave {slave}"
+                        )
+                        LOGGER.info(message)
+                        raise AiriosSlaveFailureException(message)
+
+                    if response.exception_code == ExceptionResponse.ACKNOWLEDGE:
+                        message = (
+                            f"Got ACK while reading register {register} (length {length}) "
+                            f"from slave {slave}."
+                        )
+                        LOGGER.info(message)
+                        raise AiriosAcknowledgeException(message)
+
                     message = (
-                        "Got a SlaveBusy Modbus Exception while reading "
-                        f"register {register} (length {length}) from slave {slave}"
+                        f"Got an error while reading register {register} "
+                        f"(length {length}) from slave {slave}: {response}"
                     )
-                    LOGGER.info(message)
+                    LOGGER.warning(message)
+                    raise AiriosReadException(
+                        message, modbus_exception_code=response.exception_code
+                    )
+
+                if len(response.registers) != length:
+                    message = (
+                        f"Mismatch between number of requested registers ({length}) "
+                        f"and number of received registers ({len(response.registers)})"
+                    )
+                    LOGGER.error(message)
                     raise AiriosSlaveBusyException(message)
-
-                if response.exception_code == ExceptionResponse.SLAVE_FAILURE:
-                    message = (
-                        "Got a SlaveFailure Modbus Exception while reading "
-                        f"register {register} (length {length}) from slave {slave}"
-                    )
-                    LOGGER.info(message)
-                    raise AiriosSlaveFailureException(message)
-
-                if response.exception_code == ExceptionResponse.ACKNOWLEDGE:
-                    message = (
-                        f"Got ACK while reading register {register} (length {length}) "
-                        f"from slave {slave}."
-                    )
-                    LOGGER.info(message)
-                    raise AiriosAcknowledgeException(message)
-
-                message = (
-                    f"Got an error while reading register {register} "
-                    f"(length {length}) from slave {slave}: {response}"
-                )
-                LOGGER.warning(message)
-                raise AiriosReadException(message, modbus_exception_code=response.exception_code)
-
-            if len(response.registers) != length:
-                message = (
-                    f"Mismatch between number of requested registers ({length}) "
-                    f"and number of received registers ({len(response.registers)})"
-                )
+            except ModbusIOException as err:
+                message = f"Could not read register, I/O exception: {err}"
                 LOGGER.error(message)
-                raise AiriosSlaveBusyException(message)
-        except ModbusIOException as err:
-            message = f"Could not read register, I/O exception: {err}"
-            LOGGER.error(message)
-            self.client.close()
-            raise AiriosIOException(message) from err
-        except ModbusConnectionException as err:
-            message = f"Could not read register, bad connection: {err}"
-            LOGGER.error(message)
-            self.client.close()
-            raise AiriosConnectionInterruptedException(message) from err
-        except ModbusException as err:
-            message = f"Modbus exception reading register: {err}"
-            LOGGER.error(message)
-            raise AiriosException(message) from err
-        finally:
-            self.ts = time.time()
-        return response
+                self.client.close()
+                raise AiriosIOException(message) from err
+            except ModbusConnectionException as err:
+                message = f"Could not read register, bad connection: {err}"
+                LOGGER.error(message)
+                self.client.close()
+                raise AiriosConnectionInterruptedException(message) from err
+            except ModbusException as err:
+                message = f"Modbus exception reading register: {err}"
+                LOGGER.error(message)
+                raise AiriosException(message) from err
+            finally:
+                self.ts = time.time()
+            return response
 
     async def _write_registers(self, register: int, value: list[int], slave: int) -> bool:
         """Async write registers to device."""
 
-        LOGGER.debug("Writing register %s: %s to slave %s", register, value, slave)
+        async with self.lock:
+            LOGGER.debug("Writing register %s: %s to slave %s", register, value, slave)
 
-        await self._reconnect()
+            await self._reconnect()
 
-        single_register = len(value) == 1
-        try:
+            single_register = len(value) == 1
+            try:
+                if single_register:
+                    response = await self.client.write_register(
+                        register,
+                        value[0],
+                        slave=slave,
+                    )
+                else:
+                    response = await self.client.write_registers(
+                        register,
+                        value,
+                        slave=slave,
+                    )
+                if isinstance(response, ExceptionResponse):
+                    message = (
+                        f"Failed to write value {value} to register {register}: "
+                        f"{response.exception_code:02X}"
+                    )
+                    LOGGER.info(message)
+                    raise AiriosWriteException(
+                        message, modbus_exception_code=response.exception_code
+                    )
+            except ModbusIOException as err:
+                message = f"Could not write register, I/O exception: {err}"
+                LOGGER.error(message)
+                self.client.close()
+                raise AiriosIOException(message) from err
+            except ModbusConnectionException as err:
+                message = f"Could not write register, bad connection: {err}"
+                LOGGER.error(message)
+                self.client.close()
+                raise AiriosConnectionInterruptedException(message) from err
+            except ModbusException as err:
+                message = f"Could now write register: {err}"
+                LOGGER.error(message)
+                raise AiriosException(message) from err
             if single_register:
-                response = await self.client.write_register(
-                    register,
-                    value[0],
-                    slave=slave,
-                )
-            else:
-                response = await self.client.write_registers(
-                    register,
-                    value,
-                    slave=slave,
-                )
-            if isinstance(response, ExceptionResponse):
-                message = (
-                    f"Failed to write value {value} to register {register}: "
-                    f"{response.exception_code:02X}"
-                )
-                LOGGER.info(message)
-                raise AiriosWriteException(message, modbus_exception_code=response.exception_code)
-        except ModbusIOException as err:
-            message = f"Could not write register, I/O exception: {err}"
-            LOGGER.error(message)
-            self.client.close()
-            raise AiriosIOException(message) from err
-        except ModbusConnectionException as err:
-            message = f"Could not write register, bad connection: {err}"
-            LOGGER.error(message)
-            self.client.close()
-            raise AiriosConnectionInterruptedException(message) from err
-        except ModbusException as err:
-            message = f"Could now write register: {err}"
-            LOGGER.error(message)
-            raise AiriosException(message) from err
-        if single_register:
-            assert isinstance(response, WriteSingleRegisterResponse)
-            r1: bool = response.address == register and response.registers == [value[0]]
-            return r1
-        assert isinstance(response, WriteMultipleRegistersResponse)
-        r2: bool = response.address == register and response.count == len(value)
-        return r2
+                assert isinstance(response, WriteSingleRegisterResponse)
+                r1: bool = response.address == register and response.registers == [value[0]]
+                return r1
+            assert isinstance(response, WriteMultipleRegistersResponse)
+            r2: bool = response.address == register and response.count == len(value)
+            return r2
 
     async def get_register(self, regdesc: RegisterBase[T], slave: int) -> Result[T]:
         """Get a register from device."""
