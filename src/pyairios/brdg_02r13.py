@@ -475,6 +475,10 @@ class BRDG02R13(AiriosNode):
         result = await self.client.get_register(self.regmap[Reg.MODBUS_EVENTS], self.slave_id)
         return Result(ModbusEvents(result.value), result.status)
 
+    async def set_modbus_events(self, value: ModbusEvents) -> bool:
+        """Set Modbus event responses via special Modbus functions."""
+        return await self.client.set_register(self.regmap[Reg.MODBUS_EVENTS], value, self.slave_id)
+
     async def power_on_time(self) -> Result[timedelta]:
         """Time since last power on or reset."""
         res = await self.client.get_register(self.regmap[Reg.UPTIME], self.slave_id)
