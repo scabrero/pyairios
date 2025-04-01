@@ -24,6 +24,7 @@ from pyairios.brdg_02r13 import (
 )
 from pyairios.constants import (
     Baudrate,
+    ModbusEvents,
     Parity,
     ProductId,
     ResetMode,
@@ -347,6 +348,16 @@ class AiriosBridgeCLI(aiocmd.PromptToolkitCmd):
         """Print the modbus events mode."""
         res = await self.bridge.modbus_events()
         print(f"Modbus events: {res}")
+
+    async def do_set_modbus_events(self, mode: str) -> None:
+        """Set the Modbus events mode:
+        'none'   - No Modbus events are generated
+        'bridge' - Modbus function 'bridge event' is sent when a value is changed
+        'node'   - Modbus function 'node event' is sent when a value is changed
+        'data'   - Modbus function 'data event' is sent when a value is changed
+        """
+        value = ModbusEvents.parse(mode)
+        await self.bridge.set_modbus_events(value)
 
     async def do_serial_config(self) -> None:
         """Print the serial configuration."""
