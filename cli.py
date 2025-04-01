@@ -4,6 +4,7 @@
 
 import argparse
 import asyncio
+import logging
 
 from aiocmd import aiocmd
 
@@ -33,7 +34,12 @@ from pyairios.constants import (
 )
 from pyairios.vmd_02rps78 import VMD02RPS78
 from pyairios.vmn_05lm02 import VMN05LM02
-from pyairios.exceptions import AiriosConnectionException, AiriosIOException, AiriosNotImplemented
+from pyairios.exceptions import (
+    AiriosConnectionException,
+    AiriosIOException,
+    AiriosInvalidArgumentException,
+    AiriosNotImplemented,
+)
 from pyairios.client import (
     AiriosRtuTransport,
     AiriosTcpTransport,
@@ -512,6 +518,25 @@ class AiriosRootCLI(aiocmd.PromptToolkitCmd):
         """Disconnect from bridge."""
         if self.client:
             self.client = None
+
+    async def do_set_log_level(self, level: str) -> None:
+        "Set the log level: critical, fatal, error, warning, info or debug."
+        logging.basicConfig()
+        log = logging.getLogger()
+        if level.casefold() == "critical".casefold():
+            log.setLevel(logging.CRITICAL)
+        elif level.casefold() == "fatal".casefold():
+            log.setLevel(logging.FATAL)
+        elif level.casefold() == "error".casefold():
+            log.setLevel(logging.ERROR)
+        elif level.casefold() == "warning".casefold():
+            log.setLevel(logging.WARNING)
+        elif level.casefold() == "info".casefold():
+            log.setLevel(logging.INFO)
+        elif level.casefold() == "debug".casefold():
+            log.setLevel(logging.DEBUG)
+        else:
+            raise AiriosInvalidArgumentException("Invalid log level")
 
 
 async def main() -> None:
