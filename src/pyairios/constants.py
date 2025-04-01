@@ -233,6 +233,19 @@ class ModbusEvents(IntEnum):
             return "data_events"
         raise ValueError(f"Unknown modbus event value {self.value}")
 
+    @classmethod
+    def parse(cls, value: str):  # pylint: disable=too-many-return-statements
+        """Instantiate by string."""
+        if value.casefold() == "none".casefold():
+            return cls(cls.NO_EVENTS)
+        if value.casefold() == "bridge".casefold():
+            return cls(cls.BRIDGE_EVENTS)
+        if value.casefold() == "node".casefold():
+            return cls(cls.NODE_EVENTS)
+        if value.casefold() == "data".casefold():
+            return cls(cls.DATA_EVENTS)
+        raise ValueError(f"Unknown modbus_events value {value}")
+
 
 class ResetMode(IntEnum):
     """Reset modes."""
