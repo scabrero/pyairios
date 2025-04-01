@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import datetime
 import logging
+import time
 import typing as t
+import asyncio
 from dataclasses import dataclass
 
 import pymodbus.client as modbusClient
@@ -35,6 +37,10 @@ LOGGER = logging.getLogger(__name__)
 
 T = t.TypeVar("T")
 
+# Minimum time to wait between two commands sent to the device. If commands are sent too fast
+# it will not respond. This happens when connected over USB.
+MIN_TIME_BETWEEN_COMMANDS = 0.01
+
 
 @dataclass
 class AiriosBaseTransport:
@@ -64,9 +70,11 @@ class AsyncAiriosModbusClient:
     """The base class."""
 
     client: modbusClient.ModbusBaseClient
+    ts: float
 
     def __init__(self, client: modbusClient.ModbusBaseClient) -> None:
         self.client = client
+        self.ts = 0
 
     def __del__(self):
         if hasattr(self, "client") and self.client.connected:
@@ -95,6 +103,11 @@ class AsyncAiriosModbusClient:
 
         await self._reconnect()
         try:
+            elapsed = time.time() - self.ts
+            if elapsed < MIN_TIME_BETWEEN_COMMANDS:
+                delay = MIN_TIME_BETWEEN_COMMANDS - elapsed
+                await asyncio.sleep(delay)
+
             response = await self.client.read_holding_registers(register, count=length, slave=slave)
             if isinstance(response, ExceptionResponse):
                 if response.exception_code == ExceptionResponse.SLAVE_BUSY:
@@ -149,6 +162,8 @@ class AsyncAiriosModbusClient:
             message = f"Modbus exception reading register: {err}"
             LOGGER.error(message)
             raise AiriosException(message) from err
+        finally:
+            self.ts = time.time()
         return response
 
     async def _write_registers(self, register: int, value: list[int], slave: int) -> bool:
