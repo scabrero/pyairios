@@ -78,13 +78,12 @@ class AsyncAiriosModbusClient:
         self.ts = 0
         self.lock = asyncio.Lock()
 
-
     def __del__(self):
         if hasattr(self, "client") and self.client.connected:
             LOGGER.debug("Closing modbus connection")
             self.client.close()
 
-    async def _reconnect(self) -> None:
+    async def _reconnect(self) -> bool:
         try:
             if not self.client.connected:
                 LOGGER.debug("Establishing modbus connection")
@@ -98,6 +97,7 @@ class AsyncAiriosModbusClient:
             LOGGER.error(message)
             self.client.close()
             raise AiriosConnectionException from err
+        return self.client.connected
 
     async def _read_registers(self, register: int, length: int, slave: int) -> ModbusPDU:
         """Async read registers from device."""
@@ -273,6 +273,14 @@ class AsyncAiriosModbusClient:
 
         registers = register.encode(value)
         return await self._write_registers(register.description.address, registers, slave)
+
+    async def connect(self) -> bool:
+        """Establish underlaying Modbus connection."""
+        return await self._reconnect()
+
+    def close(self) -> None:
+        """Close underlaying Modbus connection."""
+        self.client.close()
 
 
 class AsyncAiriosModbusTcpClient(AsyncAiriosModbusClient):

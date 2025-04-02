@@ -21,22 +21,22 @@ from .vmn_05lm02 import VMN05LM02
 class Airios:
     """The Airios RF bridge API."""
 
+    _client: AsyncAiriosModbusClient
     bridge: BRDG02R13
 
     def __init__(
         self, transport: AiriosBaseTransport, slave_id: int = BRDG02R13_DEFAULT_SLAVE_ID
     ) -> None:
         """Initialize the API instance."""
-        client: AsyncAiriosModbusClient | None = None
         if isinstance(transport, AiriosTcpTransport):
             transport.__class__ = AiriosTcpTransport
-            client = AsyncAiriosModbusTcpClient(transport)
+            self._client = AsyncAiriosModbusTcpClient(transport)
         elif isinstance(transport, AiriosRtuTransport):
             transport.__class__ = AiriosRtuTransport
-            client = AsyncAiriosModbusRtuClient(transport)
+            self._client = AsyncAiriosModbusRtuClient(transport)
         else:
             raise AiriosException(f"Unknown trasport {transport}")
-        self.bridge = BRDG02R13(slave_id, client)
+        self.bridge = BRDG02R13(slave_id, self._client)
 
     async def nodes(self) -> list[AiriosBoundNodeInfo]:
         """Get the list of bound nodes."""
@@ -93,3 +93,11 @@ class Airios:
                 data[node.slave_id] = vmn_data
 
         return AiriosData(bridge_rf_address=bridge_rf_address, nodes=data)
+
+    async def connect(self) -> bool:
+        """Establish underlaying Modbus connection."""
+        return await self._client.connect()
+
+    def close(self) -> None:
+        """Close underlaying Modbus connection."""
+        return self._client.close()
