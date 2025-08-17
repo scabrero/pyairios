@@ -1,4 +1,4 @@
-"""Constants and datay types used by this library."""
+"""Constants and data types used by this library."""
 
 from dataclasses import dataclass
 from enum import Flag, IntEnum, auto
@@ -8,13 +8,14 @@ import datetime
 class ProductId(IntEnum):
     """The product ID is a unique product identifier.
 
-    The value is composed by three fields, poduct type + sub ID + manufacturer ID.
+    The value is composed by three fields, product type + sub ID + manufacturer ID.
     """
 
     BRDG_02R13 = 0x0001C849
     VMD_02RPS78 = 0x0001C892
     VMN_05LM02 = 0x0001C83E
     VMN_02LM11 = 0x0001C852
+    VMD_07RPS13 = 0x0001C883  # ClimaRad VenturaV1X
 
     def __str__(self) -> str:
         if self.value == self.BRDG_02R13:
@@ -25,6 +26,8 @@ class ProductId(IntEnum):
             return "VMN-05LM02"
         if self.value == self.VMN_02LM11:
             return "VMN-02LM11"
+        if self.value == self.VMD_07RPS13:
+            return "VMD-07RPS13"
         raise ValueError(f"Unknown product ID value {self.value}")
 
 
@@ -71,7 +74,7 @@ class BatteryStatus:
     available: bool
     """False means unknown or no battery present."""
     low: bool
-    """True if battery is low. Meaningfull only if available is true."""
+    """True if battery is low. Meaningful only if available is true."""
 
 
 @dataclass
@@ -81,7 +84,7 @@ class FaultStatus:
     available: bool
     """False means unknown or device does not support faults."""
     fault: bool
-    """True if faults are active. Meaningfull only if available is true."""
+    """True if faults are active. Meaningful only if available is true."""
 
 
 class ValueErrorStatus(IntEnum):
@@ -158,7 +161,7 @@ class BindingStatus(IntEnum):
     LEARNING_COMPLETED = 5
     """Learning completed."""
     INCOMING_AUTODETECT_WINDOW_CLOSED = 10
-    """Incoming binding autodection window closed."""
+    """Incoming binding autodetection window closed."""
     OUTGOING_BINDING_FAILED_NO_ANSWER = 100
     """Outgoing binding failed, no answer."""
     OUTGOING_BINDING_FAILED_INCOMPATIBLE_DEVICE = 101
