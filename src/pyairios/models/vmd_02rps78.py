@@ -22,6 +22,7 @@ from pyairios.constants import (
 from pyairios.data_model import VMD02RPS78Data
 from pyairios.device import AiriosDevice
 from pyairios.exceptions import AiriosInvalidArgumentException
+from pyairios.node import _safe_fetch
 from pyairios.registers import (
     FloatRegister,
     RegisterAccess,
@@ -200,7 +201,7 @@ class VMD02RPS78(AiriosDevice):
         return f"VMD-02RPS78@{self.slave_id}"
 
     async def capabilities(self) -> Result[VMDCapabilities]:
-        """Get the ventilation unit capabilitires."""
+        """Get the ventilation unit capabilities."""
         regdesc = self.regmap[Reg.CAPABILITIES]
         result = await self.client.get_register(regdesc, self.slave_id)
         return Result(VMDCapabilities(result.value), result.status)
