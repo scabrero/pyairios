@@ -22,8 +22,10 @@ from pyairios.exceptions import (
     AiriosException,
     AiriosInvalidArgumentException,
 )
-from pyairios.node import AiriosNode
-from pyairios.node import _safe_fetch, Reg as NodeReg
+from pyairios.models.vmd_02rps78 import VMD02RPS78
+from pyairios.models.vmn_05lm02 import VMN05LM02
+from pyairios.node import AiriosNode, _safe_fetch
+from pyairios.node import Reg as NodeReg
 from pyairios.registers import (
     DateTimeRegister,
     FloatRegister,
@@ -35,8 +37,6 @@ from pyairios.registers import (
     U16Register,
     U32Register,
 )
-from pyairios.models.vmd_02rps78 import VMD02RPS78
-from pyairios.models.vmn_05lm02 import VMN05LM02
 
 DEFAULT_SLAVE_ID = 207
 
