@@ -17,10 +17,11 @@ except ModuleNotFoundError:
     sys.path.append(f"{os.path.dirname(__file__)}/src")
     from pyairios.client import AsyncAiriosModbusRtuClient
 
-from pyairios.models.brdg_02r13 import (
-    BRDG02R13,
-    DEFAULT_SLAVE_ID as BRDG02R13_DEFAULT_SLAVE_ID,
-    SerialConfig,
+from pyairios.client import (
+    AiriosRtuTransport,
+    AiriosTcpTransport,
+    AsyncAiriosModbusClient,
+    AsyncAiriosModbusTcpClient,
 )
 from pyairios.constants import (
     Baudrate,
@@ -33,20 +34,21 @@ from pyairios.constants import (
     VMDRequestedVentilationSpeed,
     VMDVentilationSpeed,
 )
-from pyairios.models.vmd_02rps78 import VMD02RPS78
-from pyairios.models.vmn_05lm02 import VMN05LM02
 from pyairios.exceptions import (
     AiriosConnectionException,
-    AiriosIOException,
     AiriosInvalidArgumentException,
+    AiriosIOException,
     AiriosNotImplemented,
 )
-from pyairios.client import (
-    AiriosRtuTransport,
-    AiriosTcpTransport,
-    AsyncAiriosModbusClient,
-    AsyncAiriosModbusTcpClient,
+from pyairios.models.brdg_02r13 import (
+    BRDG02R13,
+    SerialConfig,
 )
+from pyairios.models.brdg_02r13 import (
+    DEFAULT_SLAVE_ID as BRDG02R13_DEFAULT_SLAVE_ID,
+)
+from pyairios.models.vmd_02rps78 import VMD02RPS78
+from pyairios.models.vmn_05lm02 import VMN05LM02
 
 
 class AiriosVMN05LM02CLI(aiocmd.PromptToolkitCmd):
@@ -326,7 +328,7 @@ class AiriosBridgeCLI(aiocmd.PromptToolkitCmd):
 
         if node_info is None:
             raise AiriosIOException(f"Node with address {slave_id} not bound")
-
+        # move all this to models/ in the files
         if node_info.product_id == ProductId.VMD_02RPS78:
             vmd = VMD02RPS78(node_info.slave_id, self.bridge.client)
             await AiriosVMD02RPS78CLI(vmd).run()
@@ -515,6 +517,8 @@ class AiriosRootCLI(aiocmd.PromptToolkitCmd):
             stop_bits=int(stop_bits),
         )
         self.client = AsyncAiriosModbusRtuClient(transport)
+        assert self.client  # to debug in test_one
+        print("client attached. Waiting for client.run() ...")
         await AiriosClientCLI(self.client).run()
 
     async def do_connect_tcp(self, host: str = "192.168.1.254", port: int = 502):

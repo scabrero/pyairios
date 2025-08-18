@@ -1,0 +1,65 @@
+import asyncio
+import logging
+import sys
+
+import pytest
+from mock_serial import MockSerial
+from serial import Serial
+
+# from pyairios.client import AsyncAiriosModbusRtuClient
+from cli import AiriosRootCLI
+
+logging.basicConfig(
+    stream=sys.stdout,
+    level=logging.DEBUG,
+    format="%(levelname)s - %(message)s"
+)
+
+class TestMathDemo:
+    def test_addition(self):
+        assert 1 + 1 == 2
+
+class TestStartPyairios:
+    def test_init_root(self):
+        device = MockSerial()
+        device.open()
+        serial = Serial(device.port)
+
+        stub = device.stub(
+            name='foo',
+            receive_bytes=b'123',
+            send_bytes=b'456'
+        )
+
+        # init CLI
+        cli = AiriosRootCLI()
+        assert cli, "no CLI"
+
+        # break down
+        serial.close()
+        device.close()
+
+    @pytest.mark.asyncio
+    @pytest.mark.timeout(2)
+    async def test_init(self):
+        device = MockSerial()
+        device.open()
+        serial = Serial(device.port)
+
+        stub = device.stub(
+            name='foo',
+            receive_bytes=b'123',
+            send_bytes=b'456'
+        )
+
+        # init CLI
+        cli = AiriosRootCLI()
+        assert cli, "no CLI"
+
+        await cli.do_connect_rtu(serial)
+        # timeout, but no error
+        assert cli.client, "no client"
+
+        # break down
+        serial.close()
+        device.close()

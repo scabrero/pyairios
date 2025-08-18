@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
+import asyncio
 import datetime
 import logging
 import time
 import typing as t
-import asyncio
 from dataclasses import dataclass
 
 import pymodbus.client as modbusClient
