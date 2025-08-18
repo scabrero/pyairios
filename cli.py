@@ -296,10 +296,6 @@ class AiriosVmdCLI(aiocmd.PromptToolkitCmd):
         """Reset the filter change timer."""
         await self.vmd.filter_reset()
 
-    async def do_scan_registers(self, start_num: int = 40000):
-        """Request all registers from start_num"""
-        print(await self.vmd.scan_registers(start_num))
-
 
 class AiriosBridgeCLI(aiocmd.PromptToolkitCmd):
     """The bridge CLI interface."""
