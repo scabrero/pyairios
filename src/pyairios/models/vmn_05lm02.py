@@ -8,6 +8,7 @@ from pyairios.client import AsyncAiriosModbusClient
 from pyairios.constants import VMDRequestedVentilationSpeed
 from pyairios.data_model import VMN05LM02Data
 from pyairios.device import AiriosDevice
+from pyairios.node import _safe_fetch
 from pyairios.registers import (
     RegisterAccess,
     RegisterAddress,

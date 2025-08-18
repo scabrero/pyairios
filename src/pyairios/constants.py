@@ -10,14 +10,16 @@ class ProductId(IntEnum):
 
     The value is composed by three fields, product type + sub ID + manufacturer ID.
     """
-
-    BRDG_02R13 = 0x0001C849
+    # TODO put these in the models files as dict id_by_key {id_key: product_id}
+    # for k:v in name_by_key:
+    BRDG_02R13 = 0x0001C849  # RF Bridge
     VMD_02RPS78 = 0x0001C892
     VMN_05LM02 = 0x0001C83E
     VMN_02LM11 = 0x0001C852
     VMD_07RPS13 = 0x0001C883  # ClimaRad VenturaV1X
-
+    # TODO these too as dict name_by_key {id_key: model_name}
     def __str__(self) -> str:
+        # for k:v in name_by_key:
         if self.value == self.BRDG_02R13:
             return "BRDG-02R13"
         if self.value == self.VMD_02RPS78:

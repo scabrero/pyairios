@@ -23,7 +23,7 @@ from pyairios.exceptions import (
     AiriosInvalidArgumentException,
 )
 from pyairios.node import AiriosNode
-from pyairios.node import Reg as NodeReg
+from pyairios.node import _safe_fetch, Reg as NodeReg
 from pyairios.registers import (
     DateTimeRegister,
     FloatRegister,
@@ -393,7 +393,7 @@ class BRDG02R13(AiriosNode):
         return nodes
 
     async def node(self, slave_id: int) -> AiriosNode:
-        """Get a node intance by its Modbus slave ID."""
+        """Get a node instance by its Modbus slave ID."""
 
         if slave_id == self.slave_id:
             return self

@@ -7,7 +7,7 @@ from typing import List
 from .client import AsyncAiriosModbusClient
 from .constants import BoundStatus, ValueErrorStatus
 from .data_model import AiriosDeviceData
-from .node import AiriosNode
+from .node import AiriosNode, _safe_fetch
 from .registers import (
     I16Register,
     RegisterAccess,
