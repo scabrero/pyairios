@@ -4,11 +4,11 @@ from __future__ import annotations
 
 from typing import List
 
-from .client import AsyncAiriosModbusClient
-from .constants import VMDRequestedVentilationSpeed
-from .data_model import VMN05LM02Data
-from .device import AiriosDevice
-from .registers import (
+from pyairios.client import AsyncAiriosModbusClient
+from pyairios.constants import VMDRequestedVentilationSpeed
+from pyairios.data_model import VMN05LM02Data
+from pyairios.device import AiriosDevice
+from pyairios.registers import (
     RegisterAccess,
     RegisterAddress,
     RegisterBase,
