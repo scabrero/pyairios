@@ -23,7 +23,7 @@ from pyairios.exceptions import (
     AiriosInvalidArgumentException,
 )
 from pyairios.node import AiriosNode
-from pyairios.node import Reg as NodeReg
+from pyairios.node import _safe_fetch, Reg as NodeReg
 from pyairios.registers import (
     DateTimeRegister,
     FloatRegister,

@@ -22,6 +22,7 @@ from pyairios.constants import (
 from pyairios.data_model import VMD02RPS78Data
 from pyairios.device import AiriosDevice
 from pyairios.exceptions import AiriosInvalidArgumentException
+from pyairios.node import _safe_fetch
 from pyairios.registers import (
     FloatRegister,
     RegisterAccess,

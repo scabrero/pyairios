@@ -82,15 +82,15 @@ class Airios:
         bridge_rf_address = brdg_data["rf_address"].value
         data[self.bridge.slave_id] = brdg_data
 
-        for node in await self.bridge.nodes():
-            if node.product_id == ProductId.VMD_02RPS78:
-                vmd = VMD02RPS78(node.slave_id, self.bridge.client)
+        for _node in await self.bridge.nodes():
+            if _node.product_id == ProductId.VMD_02RPS78:
+                vmd = VMD02RPS78(_node.slave_id, self.bridge.client)
                 vmd_data = await vmd.fetch_vmd_data()
-                data[node.slave_id] = vmd_data
-            if node.product_id == ProductId.VMN_05LM02:
-                vmn = VMN05LM02(node.slave_id, self.bridge.client)
+                data[_node.slave_id] = vmd_data
+            if _node.product_id == ProductId.VMN_05LM02:
+                vmn = VMN05LM02(_node.slave_id, self.bridge.client)
                 vmn_data = await vmn.fetch_vmn_data()
-                data[node.slave_id] = vmn_data
+                data[_node.slave_id] = vmn_data
 
         return AiriosData(bridge_rf_address=bridge_rf_address, nodes=data)
 
