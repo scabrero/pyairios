@@ -508,18 +508,18 @@ class BRDG02R13(AiriosNode):
 
         return BRDG02R13Data(
             slave_id=self.slave_id,
-            rf_address=await self._safe_fetch(self.node_rf_address),
-            product_id=await self._safe_fetch(self.node_product_id),
-            sw_version=await self._safe_fetch(self.node_software_version),
-            product_name=await self._safe_fetch(self.node_product_name),
-            rf_comm_status=await self._safe_fetch(self.node_rf_comm_status),
-            battery_status=await self._safe_fetch(self.node_battery_status),
-            fault_status=await self._safe_fetch(self.node_fault_status),
-            rf_sent_messages_last_hour=await self._safe_fetch(self.rf_sent_messages_last_hour),
-            rf_sent_messages_current_hour=await self._safe_fetch(
+            rf_address=await _safe_fetch(self.node_rf_address),
+            product_id=await _safe_fetch(self.node_product_id),
+            sw_version=await _safe_fetch(self.node_software_version),
+            product_name=await _safe_fetch(self.node_product_name),
+            rf_comm_status=await _safe_fetch(self.node_rf_comm_status),
+            battery_status=await _safe_fetch(self.node_battery_status),
+            fault_status=await _safe_fetch(self.node_fault_status),
+            rf_sent_messages_last_hour=await _safe_fetch(self.rf_sent_messages_last_hour),
+            rf_sent_messages_current_hour=await _safe_fetch(
                 self.rf_sent_messages_current_hour
             ),
-            rf_load_last_hour=await self._safe_fetch(self.rf_load_last_hour),
-            rf_load_current_hour=await self._safe_fetch(self.rf_load_current_hour),
-            power_on_time=await self._safe_fetch(self.power_on_time),
+            rf_load_last_hour=await _safe_fetch(self.rf_load_last_hour),
+            rf_load_current_hour=await _safe_fetch(self.rf_load_current_hour),
+            power_on_time=await _safe_fetch(self.power_on_time),
         )
