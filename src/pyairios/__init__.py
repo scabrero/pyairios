@@ -99,5 +99,5 @@ class Airios:
         return await self._client.connect()
 
     def close(self) -> None:
-        """Close underlaying Modbus connection."""
+        """Close underlying Modbus connection."""
         return self._client.close()
