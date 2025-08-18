@@ -609,59 +609,59 @@ class VMD02RPS78(AiriosDevice):
 
         return VMD02RPS78Data(
             slave_id=self.slave_id,
-            rf_address=await self._safe_fetch(self.node_rf_address),
-            product_id=await self._safe_fetch(self.node_product_id),
-            sw_version=await self._safe_fetch(self.node_software_version),
-            product_name=await self._safe_fetch(self.node_product_name),
-            rf_comm_status=await self._safe_fetch(self.node_rf_comm_status),
-            battery_status=await self._safe_fetch(self.node_battery_status),
-            fault_status=await self._safe_fetch(self.node_fault_status),
-            bound_status=await self._safe_fetch(self.device_bound_status),
-            value_error_status=await self._safe_fetch(self.device_value_error_status),
-            error_code=await self._safe_fetch(self.error_code),
-            ventilation_speed=await self._safe_fetch(self.ventilation_speed),
-            exhaust_fan_speed=await self._safe_fetch(self.exhaust_fan_speed),
-            supply_fan_speed=await self._safe_fetch(self.supply_fan_speed),
-            exhaust_fan_rpm=await self._safe_fetch(self.exhaust_fan_rpm),
-            supply_fan_rpm=await self._safe_fetch(self.supply_fan_rpm),
-            override_remaining_time=await self._safe_fetch(self.override_remaining_time),
-            indoor_air_temperature=await self._safe_fetch(self.indoor_air_temperature),
-            outdoor_air_temperature=await self._safe_fetch(self.outdoor_air_temperature),
-            exhaust_air_temperature=await self._safe_fetch(self.exhaust_air_temperature),
-            supply_air_temperature=await self._safe_fetch(self.supply_air_temperature),
-            filter_dirty=await self._safe_fetch(self.filter_dirty),
-            filter_remaining_percent=await self._safe_fetch(self.filter_remaining),
-            filter_duration_days=await self._safe_fetch(self.filter_duration),
-            defrost=await self._safe_fetch(self.defrost),
-            bypass_position=await self._safe_fetch(self.bypass_position),
-            bypass_mode=await self._safe_fetch(self.bypass_mode),
-            bypass_status=await self._safe_fetch(self.bypass_status),
-            preheater=await self._safe_fetch(self.preheater),
-            postheater=await self._safe_fetch(self.postheater),
-            preheater_setpoint=await self._safe_fetch(self.preheater_setpoint),
-            free_ventilation_setpoint=await self._safe_fetch(self.free_ventilation_setpoint),
-            free_ventilation_cooling_offset=await self._safe_fetch(
+            rf_address=await _safe_fetch(self.node_rf_address),
+            product_id=await _safe_fetch(self.node_product_id),
+            sw_version=await _safe_fetch(self.node_software_version),
+            product_name=await _safe_fetch(self.node_product_name),
+            rf_comm_status=await _safe_fetch(self.node_rf_comm_status),
+            battery_status=await _safe_fetch(self.node_battery_status),
+            fault_status=await _safe_fetch(self.node_fault_status),
+            bound_status=await _safe_fetch(self.device_bound_status),
+            value_error_status=await _safe_fetch(self.device_value_error_status),
+            error_code=await _safe_fetch(self.error_code),
+            ventilation_speed=await _safe_fetch(self.ventilation_speed),
+            exhaust_fan_speed=await _safe_fetch(self.exhaust_fan_speed),
+            supply_fan_speed=await _safe_fetch(self.supply_fan_speed),
+            exhaust_fan_rpm=await _safe_fetch(self.exhaust_fan_rpm),
+            supply_fan_rpm=await _safe_fetch(self.supply_fan_rpm),
+            override_remaining_time=await _safe_fetch(self.override_remaining_time),
+            indoor_air_temperature=await _safe_fetch(self.indoor_air_temperature),
+            outdoor_air_temperature=await _safe_fetch(self.outdoor_air_temperature),
+            exhaust_air_temperature=await _safe_fetch(self.exhaust_air_temperature),
+            supply_air_temperature=await _safe_fetch(self.supply_air_temperature),
+            filter_dirty=await _safe_fetch(self.filter_dirty),
+            filter_remaining_percent=await _safe_fetch(self.filter_remaining),
+            filter_duration_days=await _safe_fetch(self.filter_duration),
+            defrost=await _safe_fetch(self.defrost),
+            bypass_position=await _safe_fetch(self.bypass_position),
+            bypass_mode=await _safe_fetch(self.bypass_mode),
+            bypass_status=await _safe_fetch(self.bypass_status),
+            preheater=await _safe_fetch(self.preheater),
+            postheater=await _safe_fetch(self.postheater),
+            preheater_setpoint=await _safe_fetch(self.preheater_setpoint),
+            free_ventilation_setpoint=await _safe_fetch(self.free_ventilation_setpoint),
+            free_ventilation_cooling_offset=await _safe_fetch(
                 self.free_ventilation_cooling_offset
             ),
-            frost_protection_preheater_setpoint=await self._safe_fetch(
+            frost_protection_preheater_setpoint=await _safe_fetch(
                 self.frost_protection_preheater_setpoint
             ),
-            preset_high_fan_speed_supply=await self._safe_fetch(self.preset_high_fan_speed_supply),
-            preset_high_fan_speed_exhaust=await self._safe_fetch(
+            preset_high_fan_speed_supply=await _safe_fetch(self.preset_high_fan_speed_supply),
+            preset_high_fan_speed_exhaust=await _safe_fetch(
                 self.preset_high_fan_speed_exhaust
             ),
-            preset_medium_fan_speed_supply=await self._safe_fetch(
+            preset_medium_fan_speed_supply=await _safe_fetch(
                 self.preset_medium_fan_speed_supply
             ),
-            preset_medium_fan_speed_exhaust=await self._safe_fetch(
+            preset_medium_fan_speed_exhaust=await _safe_fetch(
                 self.preset_medium_fan_speed_exhaust
             ),
-            preset_low_fan_speed_supply=await self._safe_fetch(self.preset_low_fan_speed_supply),
-            preset_low_fan_speed_exhaust=await self._safe_fetch(self.preset_low_fan_speed_exhaust),
-            preset_standby_fan_speed_supply=await self._safe_fetch(
+            preset_low_fan_speed_supply=await _safe_fetch(self.preset_low_fan_speed_supply),
+            preset_low_fan_speed_exhaust=await _safe_fetch(self.preset_low_fan_speed_exhaust),
+            preset_standby_fan_speed_supply=await _safe_fetch(
                 self.preset_standby_fan_speed_supply
             ),
-            preset_standby_fan_speed_exhaust=await self._safe_fetch(
+            preset_standby_fan_speed_exhaust=await _safe_fetch(
                 self.preset_standby_fan_speed_exhaust
             ),
         )

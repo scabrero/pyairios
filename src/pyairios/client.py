@@ -275,11 +275,11 @@ class AsyncAiriosModbusClient:
         return await self._write_registers(register.description.address, registers, slave)
 
     async def connect(self) -> bool:
-        """Establish underlaying Modbus connection."""
+        """Establish underlying Modbus connection."""
         return await self._reconnect()
 
     def close(self) -> None:
-        """Close underlaying Modbus connection."""
+        """Close underlying Modbus connection."""
         self.client.close()
 
 
