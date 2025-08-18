@@ -10,6 +10,7 @@ from pyairios.constants import (
     FaultStatus,
     ProductId,
     RFCommStatus,
+    ValueErrorStatus,
     VMDBypassMode,
     VMDBypassPosition,
     VMDErrorCode,
@@ -17,7 +18,6 @@ from pyairios.constants import (
     VMDRequestedVentilationSpeed,
     VMDTemperature,
     VMDVentilationSpeed,
-    ValueErrorStatus,
 )
 from pyairios.registers import Result
 
