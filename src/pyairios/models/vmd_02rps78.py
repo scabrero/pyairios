@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass
-from typing import List
+
+# from dataclasses import dataclass
+# from typing import List
 
 from pyairios.client import AsyncAiriosModbusClient
 from pyairios.constants import (
@@ -20,8 +21,10 @@ from pyairios.constants import (
     VMDVentilationSpeed,
 )
 from pyairios.data_model import VMD02RPS78Data
-from pyairios.device import AiriosDevice
+
+# from pyairios.device import AiriosDevice
 from pyairios.exceptions import AiriosInvalidArgumentException
+from pyairios.models.vmd_base import VMD_BASE
 from pyairios.node import _safe_fetch
 from pyairios.registers import (
     FloatRegister,
@@ -33,172 +36,121 @@ from pyairios.registers import (
 )
 
 
-@dataclass
-class VMDPresetFansSpeeds:
-    """Preset fan speeds."""
-
-    exhaust_fan_speed: Result[int]
-    """Exhaust fan speed (%)"""
-    supply_fan_speed: Result[int]
-    """Supply fan speed (%)"""
-
-
 class Reg(RegisterAddress):
     """Register set for VMD-02RPS78 controller node."""
 
-    CURRENT_VENTILATION_SPEED = 41000
-    FAN_SPEED_EXHAUST = 41001
-    FAN_SPEED_SUPPLY = 41002
-    ERROR_CODE = 41003
-    VENTILATION_SPEED_OVERRIDE_REMAINING_TIME = 41004
-    TEMPERATURE_INDOOR = 41005
-    TEMPERATURE_OUTDOOR = 41007
-    TEMPERATURE_EXHAUST = 41009
-    TEMPERATURE_SUPPLY = 41011
-    PREHEATER = 41013
-    FILTER_DIRTY = 41014
-    DEFROST = 41015
-    BYPASS_POSITION = 41016
-    HUMIDITY_INDOOR = 41017
-    HUMIDITY_OUTDOOR = 41018
-    FLOW_INLET = 41019
-    FLOW_OUTLET = 41021
-    AIR_QUALITY = 41023
-    AIR_QUALITY_BASIS = 41024
-    CO2_LEVEL = 41025
-    POST_HEATER = 41026
-    CAPABILITIES = 41027
-    FILTER_REMAINING_DAYS = 41040
-    FILTER_DURATION = 41041
-    FILTER_REMAINING_PERCENT = 41042
-    FAN_RPM_EXHAUST = 41043
-    FAN_RPM_SUPPLY = 41044
-    BYPASS_MODE = 41050
-    BYPASS_STATUS = 41051
-    REQUESTED_VENTILATION_SPEED = 41500
-    OVERRIDE_TIME_SPEED_LOW = 41501
-    OVERRIDE_TIME_SPEED_MID = 41502
-    OVERRIDE_TIME_SPEED_HIGH = 41503
-    REQUESTED_BYPASS_MODE = 41550
-    FILTER_RESET = 42000
-    FAN_SPEED_AWAY_SUPPLY = 42001
-    FAN_SPEED_AWAY_EXHAUST = 42002
-    FAN_SPEED_LOW_SUPPLY = 42003
-    FAN_SPEED_LOW_EXHAUST = 42004
-    FAN_SPEED_MID_SUPPLY = 42005
-    FAN_SPEED_MID_EXHAUST = 42006
-    FAN_SPEED_HIGH_SUPPLY = 42007
-    FAN_SPEED_HIGH_EXHAUST = 42008
-    FROST_PROTECTION_PREHEATER_SETPOINT = 42009
-    PREHEATER_SETPOINT = 42011
-    FREE_VENTILATION_HEATING_SETPOINT = 42013
-    FREE_VENTILATION_COOLING_OFFSET = 42015
+    # only override or add differences
 
 
-class VMD02RPS78(AiriosDevice):
+def product_id() -> int:
+    # for key VMD_02RPS78
+    return 0x0001C892
+
+
+class VMD02RPS78(VMD_BASE):
     """Represents a VMD-02RPS78 controller node."""
 
     def __init__(self, slave_id: int, client: AsyncAiriosModbusClient) -> None:
         """Initialize the VMD-02RPS78 controller node instance."""
         super().__init__(slave_id, client)
-        vmd_registers: List[RegisterBase] = [
-            U16Register(Reg.CURRENT_VENTILATION_SPEED, RegisterAccess.READ | RegisterAccess.STATUS),
-            U16Register(Reg.FAN_SPEED_EXHAUST, RegisterAccess.READ | RegisterAccess.STATUS),
-            U16Register(Reg.FAN_SPEED_SUPPLY, RegisterAccess.READ | RegisterAccess.STATUS),
-            U16Register(Reg.ERROR_CODE, RegisterAccess.READ | RegisterAccess.STATUS),
-            U16Register(
-                Reg.VENTILATION_SPEED_OVERRIDE_REMAINING_TIME,
-                RegisterAccess.READ | RegisterAccess.STATUS,
-            ),
-            FloatRegister(Reg.TEMPERATURE_INDOOR, RegisterAccess.READ | RegisterAccess.STATUS),
-            FloatRegister(Reg.TEMPERATURE_OUTDOOR, RegisterAccess.READ | RegisterAccess.STATUS),
-            FloatRegister(Reg.TEMPERATURE_EXHAUST, RegisterAccess.READ | RegisterAccess.STATUS),
-            FloatRegister(Reg.TEMPERATURE_SUPPLY, RegisterAccess.READ | RegisterAccess.STATUS),
-            U16Register(Reg.PREHEATER, RegisterAccess.READ | RegisterAccess.STATUS),
-            U16Register(Reg.FILTER_DIRTY, RegisterAccess.READ | RegisterAccess.STATUS),
-            U16Register(Reg.DEFROST, RegisterAccess.READ | RegisterAccess.STATUS),
-            U16Register(Reg.BYPASS_POSITION, RegisterAccess.READ | RegisterAccess.STATUS),
-            U16Register(Reg.HUMIDITY_INDOOR, RegisterAccess.READ | RegisterAccess.STATUS),
-            U16Register(Reg.HUMIDITY_OUTDOOR, RegisterAccess.READ | RegisterAccess.STATUS),
-            FloatRegister(Reg.FLOW_INLET, RegisterAccess.READ | RegisterAccess.STATUS),
-            FloatRegister(Reg.FLOW_OUTLET, RegisterAccess.READ | RegisterAccess.STATUS),
-            U16Register(Reg.AIR_QUALITY, RegisterAccess.READ | RegisterAccess.STATUS),
-            U16Register(Reg.AIR_QUALITY_BASIS, RegisterAccess.READ | RegisterAccess.STATUS),
-            U16Register(Reg.CO2_LEVEL, RegisterAccess.READ | RegisterAccess.STATUS),
-            U16Register(Reg.POST_HEATER, RegisterAccess.READ | RegisterAccess.STATUS),
-            U16Register(Reg.CAPABILITIES, RegisterAccess.READ | RegisterAccess.STATUS),
-            U16Register(Reg.FILTER_REMAINING_DAYS, RegisterAccess.READ | RegisterAccess.STATUS),
-            U16Register(Reg.FILTER_DURATION, RegisterAccess.READ | RegisterAccess.STATUS),
-            U16Register(Reg.FILTER_REMAINING_PERCENT, RegisterAccess.READ | RegisterAccess.STATUS),
-            U16Register(Reg.FAN_RPM_EXHAUST, RegisterAccess.READ | RegisterAccess.STATUS),
-            U16Register(Reg.FAN_RPM_SUPPLY, RegisterAccess.READ | RegisterAccess.STATUS),
-            U16Register(Reg.BYPASS_MODE, RegisterAccess.READ | RegisterAccess.STATUS),
-            U16Register(Reg.BYPASS_STATUS, RegisterAccess.READ | RegisterAccess.STATUS),
-            U16Register(
-                Reg.REQUESTED_VENTILATION_SPEED,
-                RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS,
-            ),
-            U16Register(Reg.OVERRIDE_TIME_SPEED_LOW, RegisterAccess.WRITE),
-            U16Register(Reg.OVERRIDE_TIME_SPEED_MID, RegisterAccess.WRITE),
-            U16Register(Reg.OVERRIDE_TIME_SPEED_HIGH, RegisterAccess.WRITE),
-            U16Register(
-                Reg.REQUESTED_BYPASS_MODE,
-                RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS,
-            ),
-            U16Register(Reg.FILTER_RESET, RegisterAccess.WRITE | RegisterAccess.STATUS),
-            U16Register(
-                Reg.FAN_SPEED_AWAY_SUPPLY,
-                RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS,
-            ),
-            U16Register(
-                Reg.FAN_SPEED_AWAY_EXHAUST,
-                RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS,
-            ),
-            U16Register(
-                Reg.FAN_SPEED_LOW_SUPPLY,
-                RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS,
-            ),
-            U16Register(
-                Reg.FAN_SPEED_LOW_EXHAUST,
-                RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS,
-            ),
-            U16Register(
-                Reg.FAN_SPEED_MID_SUPPLY,
-                RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS,
-            ),
-            U16Register(
-                Reg.FAN_SPEED_MID_EXHAUST,
-                RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS,
-            ),
-            U16Register(
-                Reg.FAN_SPEED_HIGH_SUPPLY,
-                RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS,
-            ),
-            U16Register(
-                Reg.FAN_SPEED_HIGH_EXHAUST,
-                RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS,
-            ),
-            FloatRegister(
-                Reg.FROST_PROTECTION_PREHEATER_SETPOINT,
-                RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS,
-            ),
-            FloatRegister(
-                Reg.PREHEATER_SETPOINT,
-                RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS,
-            ),
-            FloatRegister(
-                Reg.FREE_VENTILATION_HEATING_SETPOINT,
-                RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS,
-            ),
-            FloatRegister(
-                Reg.FREE_VENTILATION_COOLING_OFFSET,
-                RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS,
-            ),
-        ]
-        self._add_registers(vmd_registers)
+        # vmd_registers: List[RegisterBase] = [
+        #     U16Register(Reg.CURRENT_VENTILATION_SPEED, RegisterAccess.READ | RegisterAccess.STATUS),
+        #     U16Register(Reg.FAN_SPEED_EXHAUST, RegisterAccess.READ | RegisterAccess.STATUS),
+        #     U16Register(Reg.FAN_SPEED_SUPPLY, RegisterAccess.READ | RegisterAccess.STATUS),
+        #     U16Register(Reg.ERROR_CODE, RegisterAccess.READ | RegisterAccess.STATUS),
+        #     U16Register(
+        #         Reg.VENTILATION_SPEED_OVERRIDE_REMAINING_TIME,
+        #         RegisterAccess.READ | RegisterAccess.STATUS,
+        #     ),
+        #     FloatRegister(Reg.TEMPERATURE_INDOOR, RegisterAccess.READ | RegisterAccess.STATUS),
+        #     FloatRegister(Reg.TEMPERATURE_OUTDOOR, RegisterAccess.READ | RegisterAccess.STATUS),
+        #     FloatRegister(Reg.TEMPERATURE_EXHAUST, RegisterAccess.READ | RegisterAccess.STATUS),
+        #     FloatRegister(Reg.TEMPERATURE_SUPPLY, RegisterAccess.READ | RegisterAccess.STATUS),
+        #     U16Register(Reg.PREHEATER, RegisterAccess.READ | RegisterAccess.STATUS),
+        #     U16Register(Reg.FILTER_DIRTY, RegisterAccess.READ | RegisterAccess.STATUS),
+        #     U16Register(Reg.DEFROST, RegisterAccess.READ | RegisterAccess.STATUS),
+        #     U16Register(Reg.BYPASS_POSITION, RegisterAccess.READ | RegisterAccess.STATUS),
+        #     U16Register(Reg.HUMIDITY_INDOOR, RegisterAccess.READ | RegisterAccess.STATUS),
+        #     U16Register(Reg.HUMIDITY_OUTDOOR, RegisterAccess.READ | RegisterAccess.STATUS),
+        #     FloatRegister(Reg.FLOW_INLET, RegisterAccess.READ | RegisterAccess.STATUS),
+        #     FloatRegister(Reg.FLOW_OUTLET, RegisterAccess.READ | RegisterAccess.STATUS),
+        #     U16Register(Reg.AIR_QUALITY, RegisterAccess.READ | RegisterAccess.STATUS),
+        #     U16Register(Reg.AIR_QUALITY_BASIS, RegisterAccess.READ | RegisterAccess.STATUS),
+        #     U16Register(Reg.CO2_LEVEL, RegisterAccess.READ | RegisterAccess.STATUS),
+        #     U16Register(Reg.POST_HEATER, RegisterAccess.READ | RegisterAccess.STATUS),
+        #     U16Register(Reg.CAPABILITIES, RegisterAccess.READ | RegisterAccess.STATUS),
+        #     U16Register(Reg.FILTER_REMAINING_DAYS, RegisterAccess.READ | RegisterAccess.STATUS),
+        #     U16Register(Reg.FILTER_DURATION, RegisterAccess.READ | RegisterAccess.STATUS),
+        #     U16Register(Reg.FILTER_REMAINING_PERCENT, RegisterAccess.READ | RegisterAccess.STATUS),
+        #     U16Register(Reg.FAN_RPM_EXHAUST, RegisterAccess.READ | RegisterAccess.STATUS),
+        #     U16Register(Reg.FAN_RPM_SUPPLY, RegisterAccess.READ | RegisterAccess.STATUS),
+        #     U16Register(Reg.BYPASS_MODE, RegisterAccess.READ | RegisterAccess.STATUS),
+        #     U16Register(Reg.BYPASS_STATUS, RegisterAccess.READ | RegisterAccess.STATUS),
+        #     U16Register(
+        #         Reg.REQUESTED_VENTILATION_SPEED,
+        #         RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS,
+        #     ),
+        #     U16Register(Reg.OVERRIDE_TIME_SPEED_LOW, RegisterAccess.WRITE),
+        #     U16Register(Reg.OVERRIDE_TIME_SPEED_MID, RegisterAccess.WRITE),
+        #     U16Register(Reg.OVERRIDE_TIME_SPEED_HIGH, RegisterAccess.WRITE),
+        #     U16Register(
+        #         Reg.REQUESTED_BYPASS_MODE,
+        #         RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS,
+        #     ),
+        #     U16Register(Reg.FILTER_RESET, RegisterAccess.WRITE | RegisterAccess.STATUS),
+        #     U16Register(
+        #         Reg.FAN_SPEED_AWAY_SUPPLY,
+        #         RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS,
+        #     ),
+        #     U16Register(
+        #         Reg.FAN_SPEED_AWAY_EXHAUST,
+        #         RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS,
+        #     ),
+        #     U16Register(
+        #         Reg.FAN_SPEED_LOW_SUPPLY,
+        #         RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS,
+        #     ),
+        #     U16Register(
+        #         Reg.FAN_SPEED_LOW_EXHAUST,
+        #         RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS,
+        #     ),
+        #     U16Register(
+        #         Reg.FAN_SPEED_MID_SUPPLY,
+        #         RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS,
+        #     ),
+        #     U16Register(
+        #         Reg.FAN_SPEED_MID_EXHAUST,
+        #         RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS,
+        #     ),
+        #     U16Register(
+        #         Reg.FAN_SPEED_HIGH_SUPPLY,
+        #         RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS,
+        #     ),
+        #     U16Register(
+        #         Reg.FAN_SPEED_HIGH_EXHAUST,
+        #         RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS,
+        #     ),
+        #     FloatRegister(
+        #         Reg.FROST_PROTECTION_PREHEATER_SETPOINT,
+        #         RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS,
+        #     ),
+        #     FloatRegister(
+        #         Reg.PREHEATER_SETPOINT,
+        #         RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS,
+        #     ),
+        #     FloatRegister(
+        #         Reg.FREE_VENTILATION_HEATING_SETPOINT,
+        #         RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS,
+        #     ),
+        #     FloatRegister(
+        #         Reg.FREE_VENTILATION_COOLING_OFFSET,
+        #         RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS,
+        #     ),
+        # ]
+        # self._add_registers(vmd_registers)
 
     def __str__(self) -> str:
-        return f"VMD-02RPS78@{self.slave_id}"
+        return f"VMD-02RPS78@{self.slave_id}"  # could be a filename
 
     async def capabilities(self) -> Result[VMDCapabilities]:
         """Get the ventilation unit capabilities."""
@@ -238,11 +190,11 @@ class VMD02RPS78(AiriosDevice):
             )
         raise AiriosInvalidArgumentException(f"Invalid temporary override speed {speed}")
 
-    async def preset_away_fans_speed(self) -> VMDPresetFansSpeeds:
-        """Get the away ventilation speed preset fan speeds."""
-        r1 = await self.client.get_register(self.regmap[Reg.FAN_SPEED_AWAY_SUPPLY], self.slave_id)
-        r2 = await self.client.get_register(self.regmap[Reg.FAN_SPEED_AWAY_EXHAUST], self.slave_id)
-        return VMDPresetFansSpeeds(supply_fan_speed=r1, exhaust_fan_speed=r2)
+    # async def preset_away_fans_speed(self) -> VMDPresetFansSpeeds:
+    #     """Get the away ventilation speed preset fan speeds."""
+    #     r1 = await self.client.get_register(self.regmap[Reg.FAN_SPEED_AWAY_SUPPLY], self.slave_id)
+    #     r2 = await self.client.get_register(self.regmap[Reg.FAN_SPEED_AWAY_EXHAUST], self.slave_id)
+    #     return VMDPresetFansSpeeds(supply_fan_speed=r1, exhaust_fan_speed=r2)
 
     async def set_preset_away_fans_speed(self, supply: int, exhaust: int) -> bool:
         """Set the away ventilation speed preset fan speeds."""
@@ -258,11 +210,11 @@ class VMD02RPS78(AiriosDevice):
         )
         return r1 and r2
 
-    async def preset_low_fans_speed(self) -> VMDPresetFansSpeeds:
-        """Get the low ventilation speed preset fan speeds."""
-        r1 = await self.client.get_register(self.regmap[Reg.FAN_SPEED_LOW_SUPPLY], self.slave_id)
-        r2 = await self.client.get_register(self.regmap[Reg.FAN_SPEED_LOW_EXHAUST], self.slave_id)
-        return VMDPresetFansSpeeds(supply_fan_speed=r1, exhaust_fan_speed=r2)
+    # async def preset_low_fans_speed(self) -> VMDPresetFansSpeeds:
+    #     """Get the low ventilation speed preset fan speeds."""
+    #     r1 = await self.client.get_register(self.regmap[Reg.FAN_SPEED_LOW_SUPPLY], self.slave_id)
+    #     r2 = await self.client.get_register(self.regmap[Reg.FAN_SPEED_LOW_EXHAUST], self.slave_id)
+    #     return VMDPresetFansSpeeds(supply_fan_speed=r1, exhaust_fan_speed=r2)
 
     async def set_preset_low_fans_speed(self, supply: int, exhaust: int) -> bool:
         """Set the low ventilation speed preset fan speeds."""
@@ -278,11 +230,11 @@ class VMD02RPS78(AiriosDevice):
         )
         return r1 and r2
 
-    async def preset_mid_fans_speed(self) -> VMDPresetFansSpeeds:
-        """Get the mid ventilation speed preset fan speeds."""
-        r1 = await self.client.get_register(self.regmap[Reg.FAN_SPEED_MID_SUPPLY], self.slave_id)
-        r2 = await self.client.get_register(self.regmap[Reg.FAN_SPEED_MID_EXHAUST], self.slave_id)
-        return VMDPresetFansSpeeds(supply_fan_speed=r1, exhaust_fan_speed=r2)
+    # async def preset_mid_fans_speed(self) -> VMDPresetFansSpeeds:
+    #     """Get the mid ventilation speed preset fan speeds."""
+    #     r1 = await self.client.get_register(self.regmap[Reg.FAN_SPEED_MID_SUPPLY], self.slave_id)
+    #     r2 = await self.client.get_register(self.regmap[Reg.FAN_SPEED_MID_EXHAUST], self.slave_id)
+    #     return VMDPresetFansSpeeds(supply_fan_speed=r1, exhaust_fan_speed=r2)
 
     async def set_preset_mid_fans_speed(self, supply: int, exhaust: int) -> bool:
         """Set the mid ventilation speed preset fan speeds."""
@@ -298,11 +250,11 @@ class VMD02RPS78(AiriosDevice):
         )
         return r1 and r2
 
-    async def preset_high_fans_speed(self) -> VMDPresetFansSpeeds:
-        """Get the high ventilation speed preset fan speeds."""
-        r1 = await self.client.get_register(self.regmap[Reg.FAN_SPEED_HIGH_SUPPLY], self.slave_id)
-        r2 = await self.client.get_register(self.regmap[Reg.FAN_SPEED_HIGH_EXHAUST], self.slave_id)
-        return VMDPresetFansSpeeds(supply_fan_speed=r1, exhaust_fan_speed=r2)
+    # async def preset_high_fans_speed(self) -> VMDPresetFansSpeeds:
+    #     """Get the high ventilation speed preset fan speeds."""
+    #     r1 = await self.client.get_register(self.regmap[Reg.FAN_SPEED_HIGH_SUPPLY], self.slave_id)
+    #     r2 = await self.client.get_register(self.regmap[Reg.FAN_SPEED_HIGH_EXHAUST], self.slave_id)
+    #     return VMDPresetFansSpeeds(supply_fan_speed=r1, exhaust_fan_speed=r2)
 
     async def set_preset_high_fans_speed(self, supply: int, exhaust: int) -> bool:
         """Set the high ventilation speed preset fan speeds."""
@@ -641,27 +593,17 @@ class VMD02RPS78(AiriosDevice):
             postheater=await _safe_fetch(self.postheater),
             preheater_setpoint=await _safe_fetch(self.preheater_setpoint),
             free_ventilation_setpoint=await _safe_fetch(self.free_ventilation_setpoint),
-            free_ventilation_cooling_offset=await _safe_fetch(
-                self.free_ventilation_cooling_offset
-            ),
+            free_ventilation_cooling_offset=await _safe_fetch(self.free_ventilation_cooling_offset),
             frost_protection_preheater_setpoint=await _safe_fetch(
                 self.frost_protection_preheater_setpoint
             ),
             preset_high_fan_speed_supply=await _safe_fetch(self.preset_high_fan_speed_supply),
-            preset_high_fan_speed_exhaust=await _safe_fetch(
-                self.preset_high_fan_speed_exhaust
-            ),
-            preset_medium_fan_speed_supply=await _safe_fetch(
-                self.preset_medium_fan_speed_supply
-            ),
-            preset_medium_fan_speed_exhaust=await _safe_fetch(
-                self.preset_medium_fan_speed_exhaust
-            ),
+            preset_high_fan_speed_exhaust=await _safe_fetch(self.preset_high_fan_speed_exhaust),
+            preset_medium_fan_speed_supply=await _safe_fetch(self.preset_medium_fan_speed_supply),
+            preset_medium_fan_speed_exhaust=await _safe_fetch(self.preset_medium_fan_speed_exhaust),
             preset_low_fan_speed_supply=await _safe_fetch(self.preset_low_fan_speed_supply),
             preset_low_fan_speed_exhaust=await _safe_fetch(self.preset_low_fan_speed_exhaust),
-            preset_standby_fan_speed_supply=await _safe_fetch(
-                self.preset_standby_fan_speed_supply
-            ),
+            preset_standby_fan_speed_supply=await _safe_fetch(self.preset_standby_fan_speed_supply),
             preset_standby_fan_speed_exhaust=await _safe_fetch(
                 self.preset_standby_fan_speed_exhaust
             ),
