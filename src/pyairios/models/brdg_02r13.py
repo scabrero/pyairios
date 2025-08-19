@@ -135,6 +135,11 @@ class Reg(RegisterAddress):
     ADDRESS_NODE_32 = 43933
 
 
+def product_id() -> int:
+    # for key VMD_02RPS78
+    return 0x0001C892
+
+
 class BRDG02R13(AiriosNode):
     """Represents a BRDG-02R13 RF bridge."""
 
@@ -516,9 +521,7 @@ class BRDG02R13(AiriosNode):
             battery_status=await _safe_fetch(self.node_battery_status),
             fault_status=await _safe_fetch(self.node_fault_status),
             rf_sent_messages_last_hour=await _safe_fetch(self.rf_sent_messages_last_hour),
-            rf_sent_messages_current_hour=await _safe_fetch(
-                self.rf_sent_messages_current_hour
-            ),
+            rf_sent_messages_current_hour=await _safe_fetch(self.rf_sent_messages_current_hour),
             rf_load_last_hour=await _safe_fetch(self.rf_load_last_hour),
             rf_load_current_hour=await _safe_fetch(self.rf_load_current_hour),
             power_on_time=await _safe_fetch(self.power_on_time),
