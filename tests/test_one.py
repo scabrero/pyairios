@@ -9,15 +9,13 @@ from serial import Serial
 # from pyairios.client import AsyncAiriosModbusRtuClient
 from cli import AiriosRootCLI
 
-logging.basicConfig(
-    stream=sys.stdout,
-    level=logging.DEBUG,
-    format="%(levelname)s - %(message)s"
-)
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG, format="%(levelname)s - %(message)s")
+
 
 class TestMathDemo:
     def test_addition(self):
         assert 1 + 1 == 2
+
 
 class TestStartPyairios:
     def test_init_root(self):
@@ -25,11 +23,7 @@ class TestStartPyairios:
         device.open()
         serial = Serial(device.port)
 
-        stub = device.stub(
-            name='foo',
-            receive_bytes=b'123',
-            send_bytes=b'456'
-        )
+        stub = device.stub(name="foo", receive_bytes=b"123", send_bytes=b"456")
 
         # init CLI
         cli = AiriosRootCLI()
@@ -46,11 +40,7 @@ class TestStartPyairios:
         device.open()
         serial = Serial(device.port)
 
-        stub = device.stub(
-            name='foo',
-            receive_bytes=b'123',
-            send_bytes=b'456'
-        )
+        stub = device.stub(name="foo", receive_bytes=b"123", send_bytes=b"456")
 
         # init CLI
         cli = AiriosRootCLI()

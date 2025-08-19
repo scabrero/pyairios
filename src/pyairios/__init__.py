@@ -44,7 +44,7 @@ class Airios:
         return await self.bridge.nodes()
 
     async def node(self, slave_id: int) -> AiriosNode:
-        """Get a node intance by its Modbus slave ID."""
+        """Get a node instance by its Modbus slave ID."""
         return await self.bridge.node(slave_id)
 
     async def bind_status(self) -> BindingStatus:
@@ -83,7 +83,10 @@ class Airios:
         bridge_rf_address = brdg_data["rf_address"].value
         data[self.bridge.slave_id] = brdg_data
 
-        for _node in await self.bridge.nodes():  # this can all go to the models files as lookup dict
+        for _node in (
+            await self.bridge.nodes()
+        ):  # this info can all go to the model class files as lookup dict?
+            # see example in cli.py
             if _node.product_id == ProductId.VMD_02RPS78:
                 vmd = VMD02RPS78(_node.slave_id, self.bridge.client)
                 vmd_data = await vmd.fetch_vmd_data()

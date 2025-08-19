@@ -24,6 +24,11 @@ class Reg(RegisterAddress):
     REQUESTED_VENTILATION_SPEED = 41000
 
 
+def product_id() -> int:
+    # for key VMN_05LM02
+    return 0x0001C83E
+
+
 class VMN05LM02(AiriosDevice):
     """Represents a VMN-05LM02 remote node."""
 
