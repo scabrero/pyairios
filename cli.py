@@ -115,7 +115,7 @@ from pyairios.models.vmd_02rps78 import VMD02RPS78
 class AiriosVMN05LM02CLI(aiocmd.PromptToolkitCmd):  # TODO subclass aiocmd_type into VMN_CLI
     """The VMN05LM02 CLI interface."""
 
-    class_pointer: str = "VMN05LM02"
+    class_pointer: str = "VMD07RPS13"  # "VMN05LM02"  TODO fix/combine
 
     def __init__(self, vmn) -> None:  # TODO subclass aiocmd_type
         """
@@ -172,7 +172,7 @@ class AiriosVMD02RPS78CLI(aiocmd.PromptToolkitCmd):  # TODO subclass aiocmd_type
         :param vmd: contains all details of this model
         """
         super().__init__()
-        self.prompt = f"[VMD-02RPS78@{vmd.slave_id}]>> "
+        self.prompt = f"[VMD-02RPS78@{vmd.slave_id}]>> "  # TODO use {prompt}
         self.vmd = vmd
 
     async def do_capabilities(self) -> None:
@@ -405,6 +405,13 @@ class AiriosBridgeCLI(aiocmd.PromptToolkitCmd):
                 node_info.slave_id, self.bridge.client
             )
             await AiriosVMD02RPS78CLI(vmd).run()
+            return
+
+        if node_info.product_id == ProductId.VMD_07RPS13:  # ClimaRad Ventura under development!!
+            vmd = modules[product_ids["VMD_07RPS13"]].VMD07RPS13(
+                node_info.slave_id, self.bridge.client
+            )
+            await AiriosVMD02RPS78CLI(vmd).run()  # base class? keep the same
             return
 
         if node_info.product_id == ProductId.VMN_05LM02:
