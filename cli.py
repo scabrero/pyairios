@@ -93,12 +93,12 @@ for file_path in modules_list:
     mod = importlib.util.module_from_spec(module_spec)
     # load the module from the spec
     module_spec.loader.exec_module(mod)  # modules[class_name])
-    modules[class_name] = mod  # store in dict
+    modules[class_name] = mod  # store the imported module in dict
     # now we can use the 123_module as if it were imported normally
     # modules[class_name].class_name.some_function_in_123()
 
     # check loading by fetching the product_id, the int te check against
-    product_ids[class_name] = modules[class_name].product_id()
+    product_ids[class_name] = modules[class_name].product_id()  # NOTE this is outside class, init?
 
 print(files)  # debug iterator result
 print(module_names)
@@ -109,13 +109,16 @@ print(product_ids)  # dict
 
 # __all__ = [os.path.basename(f)[:-3] for f in modules_list if not (f.endswith("__init__.py") or f == "brdg_02r13.py")]  # skip BRDG
 from pyairios.models.vmd_02rps78 import VMD02RPS78
+
 # from pyairios.models.vmn_05lm02 import VMN05LM02
+
+# from modules["VMD07RPS13"].VMD07RPS13  # pyairios.models.vmd_07rps13 import VMD07RPS13
 
 
 class AiriosVMN05LM02CLI(aiocmd.PromptToolkitCmd):  # TODO subclass aiocmd_type into VMN_CLI
     """The VMN05LM02 CLI interface."""
 
-    class_pointer: str = "VMD07RPS13"  # "VMN05LM02"  TODO fix/combine
+    class_pointer: str = "VMN05LM02"
 
     def __init__(self, vmn) -> None:  # TODO subclass aiocmd_type
         """
@@ -165,9 +168,9 @@ class AiriosVMN05LM02CLI(aiocmd.PromptToolkitCmd):  # TODO subclass aiocmd_type 
 class AiriosVMD02RPS78CLI(aiocmd.PromptToolkitCmd):  # TODO subclass aiocmd_type into VMD_CLI
     """The VMD02RPS78 CLI interface."""
 
-    class_pointer: str = "VMD02RPS78"
+    class_pointer: str = "VMD07RPS13"  # "VMD02RPS78"
 
-    def __init__(self, vmd) -> None:
+    def __init__(self, vmd) -> None:  # TODO subclass aiocmd_type
         """
         :param vmd: contains all details of this model
         """
@@ -200,12 +203,12 @@ class AiriosVMD02RPS78CLI(aiocmd.PromptToolkitCmd):  # TODO subclass aiocmd_type
         print(f"    {'Value error status:': <25}{res['value_error_status']}")
         print("")
 
-        print("VMD-02RPS78 data")
+        print("VMD-07RPS13 data")
         print("----------------")
         print(f"    {'Error code:': <25}{res['error_code']}")
 
         print(f"    {'Ventilation speed:': <25}{res['ventilation_speed']}")
-        print(f"    {'Override remaining time:': <25}{res['override_remaining_time']}")
+        # print(f"    {'Override remaining time:': <25}{res['override_remaining_time']}")
 
         print(
             f"    {'Supply fan speed:': <25}{res['supply_fan_speed']}% "
@@ -217,55 +220,55 @@ class AiriosVMD02RPS78CLI(aiocmd.PromptToolkitCmd):  # TODO subclass aiocmd_type
         )
 
         print(f"    {'Indoor temperature:': <25}{res['indoor_air_temperature']}")
-        print(f"    {'Outdoor temperature:': <25}{res['outdoor_air_temperature']}")
-        print(f"    {'Exhaust temperature:': <25}{res['exhaust_air_temperature']}")
-        print(f"    {'Supply temperature:': <25}{res['supply_air_temperature']}")
+        # print(f"    {'Outdoor temperature:': <25}{res['outdoor_air_temperature']}")
+        # print(f"    {'Exhaust temperature:': <25}{res['exhaust_air_temperature']}")
+        # print(f"    {'Supply temperature:': <25}{res['supply_air_temperature']}")
 
-        print(f"    {'Filter dirty:': <25}{res['filter_dirty']}")
+        # print(f"    {'Filter dirty:': <25}{res['filter_dirty']}")
         print(f"    {'Filter remaining:': <25}{res['filter_remaining_percent']} %")
-        print(f"    {'Filter duration:': <25}{res['filter_duration_days']} days")
+        # print(f"    {'Filter duration:': <25}{res['filter_duration_days']} days")
 
         print(f"    {'Bypass position:': <25}{res['bypass_position']}")
-        print(f"    {'Bypass status:': <25}{res['bypass_status']}")
-        print(f"    {'Bypass mode:': <25}{res['bypass_mode']}")
+        # print(f"    {'Bypass status:': <25}{res['bypass_status']}")
+        # print(f"    {'Bypass mode:': <25}{res['bypass_mode']}")
 
-        print(f"    {'Defrost:': <25}{res['defrost']}")
-        print(f"    {'Preheater:': <25}{res['preheater']}")
-        print(f"    {'Postheater:': <25}{res['postheater']}")
+        # print(f"    {'Defrost:': <25}{res['defrost']}")
+        # print(f"    {'Preheater:': <25}{res['preheater']}")
+        # print(f"    {'Postheater:': <25}{res['postheater']}")
         print("")
 
-        print(f"    {'Preset speeds':<25}{'Supply':<10}{'Exhaust':<10}")
-        print(f"    {'-------------':<25}")
-        print(
-            f"    {'High':<25}{str(res['preset_high_fan_speed_supply']) + ' %':<10}"
-            f"{str(res['preset_high_fan_speed_exhaust']) + ' %':<10}"
-        )
-        print(
-            f"    {'Mid':<25}{str(res['preset_medium_fan_speed_supply']) + ' %':<10}"
-            f"{str(res['preset_medium_fan_speed_exhaust']) + ' %':<10}"
-        )
-        print(
-            f"    {'Low':<25}{str(res['preset_low_fan_speed_supply']) + ' %':<10}"
-            f"{str(res['preset_low_fan_speed_exhaust']) + ' %':<10}"
-        )
-        print(
-            f"    {'Standby':<25}{str(res['preset_standby_fan_speed_supply']) + ' %':<10}"
-            f"{str(res['preset_standby_fan_speed_exhaust']) + ' %':<10}"
-        )
+        # print(f"    {'Preset speeds':<25}{'Supply':<10}{'Exhaust':<10}")
+        # print(f"    {'-------------':<25}")
+        # print(
+        #     f"    {'High':<25}{str(res['preset_high_fan_speed_supply']) + ' %':<10}"
+        #     f"{str(res['preset_high_fan_speed_exhaust']) + ' %':<10}"
+        # )
+        # print(
+        #     f"    {'Mid':<25}{str(res['preset_medium_fan_speed_supply']) + ' %':<10}"
+        #     f"{str(res['preset_medium_fan_speed_exhaust']) + ' %':<10}"
+        # )
+        # print(
+        #     f"    {'Low':<25}{str(res['preset_low_fan_speed_supply']) + ' %':<10}"
+        #     f"{str(res['preset_low_fan_speed_exhaust']) + ' %':<10}"
+        # )
+        # print(
+        #     f"    {'Standby':<25}{str(res['preset_standby_fan_speed_supply']) + ' %':<10}"
+        #     f"{str(res['preset_standby_fan_speed_exhaust']) + ' %':<10}"
+        # )
         print("")
 
         print("    Setpoints")
         print("    ---------")
-        print(
-            f"    {'Frost protection preheater setpoint:':<40}"
-            f"{res['frost_protection_preheater_setpoint']} ºC"
-        )
-        print(f"    {'Preheater setpoint:': <40}{res['preheater_setpoint']} ºC")
-        print(f"    {'Free ventilation setpoint:':<40}{res['free_ventilation_setpoint']} ºC")
-        print(
-            f"    {'Free ventilation cooling offset:':<40}"
-            f"{res['free_ventilation_cooling_offset']} K"
-        )
+        # print(
+        #     f"    {'Frost protection preheater setpoint:':<40}"
+        #     f"{res['frost_protection_preheater_setpoint']} ºC"
+        # )
+        # print(f"    {'Preheater setpoint:': <40}{res['preheater_setpoint']} ºC")
+        # print(f"    {'Free ventilation setpoint:':<40}{res['free_ventilation_setpoint']} ºC")
+        # print(
+        #     f"    {'Free ventilation cooling offset:':<40}"
+        #     f"{res['free_ventilation_cooling_offset']} K"
+        # )
 
     async def do_error_code(self) -> None:
         """Print the current error code."""
@@ -408,9 +411,15 @@ class AiriosBridgeCLI(aiocmd.PromptToolkitCmd):
             return
 
         if node_info.product_id == ProductId.VMD_07RPS13:  # ClimaRad Ventura under development!!
-            vmd = modules[product_ids["VMD_07RPS13"]].VMD07RPS13(
+            print("Ventura node starting, productId:")  # debug
+            print(product_ids["VMD07RPS13"])
+            # product_ids = {'VMD07RPS13': 116867, 'VMD02RPS78': 116882, 'VMN05LM02': 116798}
+            vmd = modules[
+                "VMD07RPS13"
+            ].VMD07RPS13(  # < error here no attribute CURRENT_VENTILATION_SPEED
                 node_info.slave_id, self.bridge.client
             )
+            print("Loaded vmd for Ventura")
             await AiriosVMD02RPS78CLI(vmd).run()  # base class? keep the same
             return
 
