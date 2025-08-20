@@ -13,7 +13,7 @@ class ProductId(IntEnum):
 
     # TODO move this to the models/ class files as def product_id()
     # the will be unique if all files in flat models/ dir
-    # n& ew definitions will be included automatically
+    # new definitions will be included automatically
     # collect them when loading the modules on init
 
     # for k:v in name_by_key:

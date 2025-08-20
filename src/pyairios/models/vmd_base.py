@@ -1,12 +1,12 @@
-"""Airios VMD-02RPS78 controller implementation."""
+"""Airios VMD-BASE controller implementation."""
 
 from __future__ import annotations
 
 import math
 import re
 
-# from dataclasses import dataclass, field
-from typing import List
+from dataclasses import dataclass, field
+#from typing import List
 
 from pyairios.client import AsyncAiriosModbusClient
 from pyairios.constants import (
@@ -34,21 +34,21 @@ from pyairios.registers import (
     U16Register,
 )
 
-# serious
-# @dataclass
-# class VMDPresetFansSpeeds:
-#     """Preset fan speeds."""
-#
-#     exhaust_fan_speed: Result[int] = field(default_factory=int)
-#     """Exhaust fan speed (%)"""
-#     supply_fan_speed: Result[int] = field(default_factory=int)
-#     """Supply fan speed (%)"""
-#
-#     def __post_init__(self):
-#         if self.exhaust_fan_speed is None:
-#             self.exhaust_fan_speed = Result(-1)
-#         if self.supply_fan_speed is None:
-#             self.supply_fan_speed = Result(-1)
+
+@dataclass
+class VMDPresetFansSpeeds:
+    """Preset fan speeds."""
+
+    exhaust_fan_speed: Result[int] = field(default_factory=int)
+    """Exhaust fan speed (%)"""
+    supply_fan_speed: Result[int] = field(default_factory=int)
+    """Supply fan speed (%)"""
+
+    def __post_init__(self):
+        if self.exhaust_fan_speed is None:
+            self.exhaust_fan_speed = Result(-1)
+        if self.supply_fan_speed is None:
+            self.supply_fan_speed = Result(-1)
 
 
 class Reg(RegisterAddress):

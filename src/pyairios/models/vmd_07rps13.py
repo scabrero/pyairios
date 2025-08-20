@@ -5,7 +5,7 @@ from __future__ import annotations
 import math
 import re
 
-# from dataclasses import dataclass
+# from dataclasses import dataclass, field
 from typing import List
 
 from pyairios.client import AsyncAiriosModbusClient
@@ -23,7 +23,7 @@ from pyairios.constants import (
 )
 from pyairios.data_model import VMD07RPS13Data  # TODO verify VMD07RPS13Data
 
-# from pyairios.device import AiriosDevice
+from pyairios.device import AiriosDevice
 from pyairios.exceptions import AiriosInvalidArgumentException
 from pyairios.models.vmd_base import VMD_BASE
 from pyairios.node import _safe_fetch
@@ -40,43 +40,43 @@ from pyairios.registers import (
 class Reg(RegisterAddress):  # only override or add differences in VMD_BASE?
     """Register set for VMD-07RPS13 ClimaRad Ventura V1X controller node."""
 
-    #  Example Request: 0x006B hex = 107 , + 40001 offset = input #40108 # = checked EB
-    CURRENT_VENTILATION_SPEED = 40002  #
-    FAN_SPEED_EXHAUST = 40011  #
-    FAN_SPEED_SUPPLY = 40010  #
-    ERROR_CODE = 40024  #
+    # # = checked EB
+    CURRENT_VENTILATION_SPEED = 12 #  40002  #
+    FAN_SPEED_EXHAUST = 9  # 40011  #
+    FAN_SPEED_SUPPLY = 10  # 40010  #
+    ERROR_CODE = 23  # 40024  #
     # VENTILATION_SPEED_OVERRIDE_REMAINING_TIME = 41004
-    # TEMPERATURE_INDOOR = 40013 #
+    TEMPERATURE_INDOOR = 12  # 40013 #
     # TEMPERATURE_OUTDOOR = 41007
     # TEMPERATURE_EXHAUST = 41009
     # TEMPERATURE_SUPPLY = 41011
     # PREHEATER = 41013
     # FILTER_DIRTY = 41014
     # DEFROST = 41015
-    BYPASS_POSITION = 40029  #
-    HUMIDITY_INDOOR = 40016  #
+    BYPASS_POSITION = 28  # 40029  #
+    HUMIDITY_INDOOR = 15  # 40016  #
     # HUMIDITY_OUTDOOR = 41018
     # FLOW_INLET = 41019
     # FLOW_OUTLET = 41021
     # AIR_QUALITY = 41023
     # AIR_QUALITY_BASIS = 41024
-    CO2_LEVEL = 40018  #
+    CO2_LEVEL = 17  # 40018  #
     # POST_HEATER = 41026
     # CAPABILITIES = 41027
     # FILTER_REMAINING_DAYS = 41040
-    FILTER_DURATION = 44177  #
+    FILTER_DURATION = 9176  # 44177  #
     # FILTER_REMAINING_PERCENT = 41042
-    FAN_RPM_EXHAUST = 40011  #
-    FAN_RPM_SUPPLY = 40010  #
+    FAN_RPM_EXHAUST = 9  #40011  #
+    FAN_RPM_SUPPLY = 10  # 40010  #
     # BYPASS_MODE = 40029
     # BYPASS_STATUS = 41051
-    REQUESTED_VENTILATION_SPEED = 41500
+    REQUESTED_VENTILATION_SPEED = 4246  #
     # OVERRIDE_TIME_SPEED_LOW = 41501
     # OVERRIDE_TIME_SPEED_MID = 41502
     # OVERRIDE_TIME_SPEED_HIGH = 41503
-    OVERRIDE_TIME_MANUAL = 44116  #
-    OVERRIDE_TIME_PAUSE = 44142  #
-    REQUESTED_BYPASS_MODE = 41550
+    OVERRIDE_TIME_MANUAL = 115  # 44116  #
+    OVERRIDE_TIME_PAUSE = 141  # 44142  #
+    # REQUESTED_BYPASS_MODE = 41550
     # FILTER_RESET = 42000
     # FAN_SPEED_AWAY_SUPPLY = 42001
     # FAN_SPEED_AWAY_EXHAUST = 42002
@@ -113,7 +113,7 @@ class VMD07RPS13(VMD_BASE):
             #     Reg.VENTILATION_SPEED_OVERRIDE_REMAINING_TIME,
             #     RegisterAccess.READ | RegisterAccess.STATUS,
             # ),
-            # FloatRegister(Reg.TEMPERATURE_INDOOR, RegisterAccess.READ | RegisterAccess.STATUS),
+            FloatRegister(Reg.TEMPERATURE_INDOOR, RegisterAccess.READ | RegisterAccess.STATUS),
             # FloatRegister(Reg.TEMPERATURE_OUTDOOR, RegisterAccess.READ | RegisterAccess.STATUS),
             # FloatRegister(Reg.TEMPERATURE_EXHAUST, RegisterAccess.READ | RegisterAccess.STATUS),
             # FloatRegister(Reg.TEMPERATURE_SUPPLY, RegisterAccess.READ | RegisterAccess.STATUS),
