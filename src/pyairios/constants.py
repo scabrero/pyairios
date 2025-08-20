@@ -18,10 +18,10 @@ class ProductId(IntEnum):
 
     # for k:v in name_by_key:
     BRDG_02R13 = 0x0001C849  # RF Bridge
-    VMD_02RPS78 = 0x0001C892
+    VMD_02RPS78 = 0x0001C892  # Siber DF Optima 2 controller v copied to model file get_product_id()
     VMN_05LM02 = 0x0001C83E
-    VMN_02LM11 = 0x0001C852
-    VMD_07RPS13 = 0x0001C883  # ClimaRad VenturaV1X TODO add model file
+    VMN_02LM11 = 0x0001C852  # Siber 4 button remote v copied to model file get_product_id()
+    VMD_07RPS13 = 0x0001C883  # ClimaRad VenturaV1X v copied to model file get_product_id()
 
     # TODO store these as dict name_by_key {id_key: model_name}
     def __str__(self) -> str:
