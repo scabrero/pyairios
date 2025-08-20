@@ -88,6 +88,49 @@ class VMD02RPS78Data(AiriosDeviceData):
     preset_standby_fan_speed_exhaust: Result[int] | None
 
 
+class VMD07RPS13Data(AiriosDeviceData):
+    """
+    VMD-07RPS13 ClimaRad Ventura V1C/V1D/V1X node data.
+    source: ClimaRad Modbus Registers Specs 2024
+    """
+
+    error_code: Result[VMDErrorCode] | None
+    ventilation_speed: Result[VMDVentilationSpeed] | None
+    # override_remaining_time: Result[int] | None
+    exhaust_fan_speed: Result[int] | None
+    supply_fan_speed: Result[int] | None
+    exhaust_fan_rpm: Result[int] | None
+    supply_fan_rpm: Result[int] | None
+    indoor_air_temperature: Result[VMDTemperature] | None
+    outdoor_air_temperature: Result[VMDTemperature] | None
+    exhaust_air_temperature: Result[VMDTemperature] | None
+    supply_air_temperature: Result[VMDTemperature] | None
+    filter_dirty: Result[int] | None
+    filter_remaining_percent: Result[int] | None
+    # filter_duration_days: Result[int] | None
+    bypass_position: Result[VMDBypassPosition] | None
+    # bypass_mode: Result[VMDBypassMode] | None
+    bypass_status: Result[int] | None
+    # defrost: Result[int] | None
+    # preheater: Result[VMDHeater] | None
+    # postheater: Result[VMDHeater] | None
+    # preheater_setpoint: Result[float] | None
+    # free_ventilation_setpoint: Result[float] | None
+    # free_ventilation_cooling_offset: Result[float] | None
+    # frost_protection_preheater_setpoint: Result[float] | None
+    # preset_high_fan_speed_supply: Result[int] | None
+    # preset_high_fan_speed_exhaust: Result[int] | None
+    # preset_medium_fan_speed_supply: Result[int] | None
+    # preset_medium_fan_speed_exhaust: Result[int] | None
+    # preset_low_fan_speed_supply: Result[int] | None
+    # preset_low_fan_speed_exhaust: Result[int] | None
+    # preset_standby_fan_speed_supply: Result[int] | None
+    # preset_standby_fan_speed_exhaust: Result[int] | None
+
+
+##### special devices ######
+
+
 class BRDG02R13Data(AiriosNodeData):
     """BRDG-02R13 node data."""
 
