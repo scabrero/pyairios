@@ -58,7 +58,7 @@ modules_list = glob.glob(os.path.join(os.path.dirname(__file__), "src/pyairios/m
 # A major benefit of the glob library is that it includes the path to the file in each item
 # print(modules_list)
 
-# all (usable) models found are stored in 3 dicts:
+# all (usable) models found are stored in 3 lists and 3 dicts:
 files = []
 module_names = []
 class_names = []
@@ -77,43 +77,34 @@ for file_path in modules_list:
         continue
     module_name = file_name[:-3]
     module_names.append(module_name)  # debug
-    # and import module by that name
-    # module = __import__(module_name)
-    # klass = getattr(module, str(class_name))()
-    # from pyairios.models.vmd_02rps78 import klass
     class_name: str = str(re.sub(r"_", "", module_name).upper())  # drop non-alpha end .extension
     assert class_name is not None
     class_names.append(class_name)  # debug
     prompts[class_name] = str(module_name.upper())  # convert to upper case, dict by class_name
 
-    # prefer importlib
-    # create a spec for the module
+    # preferred method importlib
+    # create a spec for the module:
     module_spec = importlib.util.spec_from_file_location(module_name, file_path)
-    # store the spec in a dict by class name
+    # store the spec in a dict by class name:
     mod = importlib.util.module_from_spec(module_spec)
-    # load the module from the spec
-    module_spec.loader.exec_module(mod)  # modules[class_name])
-    modules[class_name] = mod  # store the imported module in dict
-    # now we can use the 123_module as if it were imported normally
-    # modules[class_name].class_name.some_function_in_123()
+    # load the module from the spec:
+    module_spec.loader.exec_module(mod)
+    # store the imported module in dict:
+    modules[class_name] = mod
+    # now we can use the module as if it were imported normally
 
     # check loading by fetching the product_id, the int te check against
     product_ids[class_name] = modules[class_name].product_id()  # NOTE this is outside class, init?
 
+print("files found:")
 print(files)  # debug iterator result
 print(module_names)
 print(class_names)
 print(prompts)  # dict
+print("modules loaded:")
 print(modules)  # dict
 print(product_ids)  # dict
-
-# __all__ = [os.path.basename(f)[:-3] for f in modules_list if not (f.endswith("__init__.py") or f == "brdg_02r13.py")]  # skip BRDG
-from pyairios.models.vmd_02rps78 import VMD02RPS78
-
-# from pyairios.models.vmn_05lm02 import VMN05LM02
-
-# from modules["VMD07RPS13"].VMD07RPS13  # pyairios.models.vmd_07rps13 import VMD07RPS13
-
+# all loaded up
 
 class AiriosVMN05LM02CLI(aiocmd.PromptToolkitCmd):  # TODO subclass aiocmd_type into VMN_CLI
     """The VMN05LM02 CLI interface."""
@@ -168,7 +159,7 @@ class AiriosVMN05LM02CLI(aiocmd.PromptToolkitCmd):  # TODO subclass aiocmd_type 
 class AiriosVMD02RPS78CLI(aiocmd.PromptToolkitCmd):  # TODO subclass aiocmd_type into VMD_CLI
     """The VMD02RPS78 CLI interface."""
 
-    class_pointer: str = "VMD07RPS13"  # "VMD02RPS78"
+    class_pointer: str = "VMD07RPS13"  # or "VMD02RPS78"
 
     def __init__(self, vmd) -> None:  # TODO subclass aiocmd_type
         """
@@ -205,30 +196,30 @@ class AiriosVMD02RPS78CLI(aiocmd.PromptToolkitCmd):  # TODO subclass aiocmd_type
 
         print("VMD-07RPS13 data")
         print("----------------")
-        print(f"    {'Error code:': <25}{res['error_code']}")
+        # print(f"    {'Error code:': <25}{res['error_code']}")
+        #
+        # print(f"    {'Ventilation speed:': <25}{res['ventilation_speed']}")
+        # # print(f"    {'Override remaining time:': <25}{res['override_remaining_time']}")
+        #
+        # print(
+        #     f"    {'Supply fan speed:': <25}{res['supply_fan_speed']}% "
+        #     f"({res['supply_fan_rpm']} RPM)"
+        # )
+        # print(
+        #     f"    {'Exhaust fan speed:': <25}{res['exhaust_fan_speed']}% "
+        #     f"({res['exhaust_fan_rpm']} RPM)"
+        # )
 
-        print(f"    {'Ventilation speed:': <25}{res['ventilation_speed']}")
-        # print(f"    {'Override remaining time:': <25}{res['override_remaining_time']}")
-
-        print(
-            f"    {'Supply fan speed:': <25}{res['supply_fan_speed']}% "
-            f"({res['supply_fan_rpm']} RPM)"
-        )
-        print(
-            f"    {'Exhaust fan speed:': <25}{res['exhaust_fan_speed']}% "
-            f"({res['exhaust_fan_rpm']} RPM)"
-        )
-
-        print(f"    {'Indoor temperature:': <25}{res['indoor_air_temperature']}")
+        # print(f"    {'Indoor temperature:': <25}{res['indoor_air_temperature']}")  # test soon
         # print(f"    {'Outdoor temperature:': <25}{res['outdoor_air_temperature']}")
         # print(f"    {'Exhaust temperature:': <25}{res['exhaust_air_temperature']}")
         # print(f"    {'Supply temperature:': <25}{res['supply_air_temperature']}")
 
         # print(f"    {'Filter dirty:': <25}{res['filter_dirty']}")
-        print(f"    {'Filter remaining:': <25}{res['filter_remaining_percent']} %")
+        # print(f"    {'Filter remaining:': <25}{res['filter_remaining_percent']} %")  # test soon
         # print(f"    {'Filter duration:': <25}{res['filter_duration_days']} days")
 
-        print(f"    {'Bypass position:': <25}{res['bypass_position']}")
+        # print(f"    {'Bypass position:': <25}{res['bypass_position']}")  # test soon
         # print(f"    {'Bypass status:': <25}{res['bypass_status']}")
         # print(f"    {'Bypass mode:': <25}{res['bypass_mode']}")
 
@@ -410,7 +401,7 @@ class AiriosBridgeCLI(aiocmd.PromptToolkitCmd):
             await AiriosVMD02RPS78CLI(vmd).run()
             return
 
-        if node_info.product_id == ProductId.VMD_07RPS13:  # ClimaRad Ventura under development!!
+        if node_info.product_id == ProductId.VMD_07RPS13:  # ClimaRad Ventura - under development!!
             print("Ventura node starting, productId:")  # debug
             print(product_ids["VMD07RPS13"])
             # product_ids = {'VMD07RPS13': 116867, 'VMD02RPS78': 116882, 'VMN05LM02': 116798}
