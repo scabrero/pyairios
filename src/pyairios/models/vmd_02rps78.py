@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import math
+import re
 
 # from dataclasses import dataclass
 from typing import List
+
 from pyairios.client import AsyncAiriosModbusClient
 from pyairios.constants import (
     VMDBypassMode,
@@ -19,7 +21,7 @@ from pyairios.constants import (
     VMDTemperature,
     VMDVentilationSpeed,
 )
-from pyairios.data_model import VMD02RPS78Data
+from pyairios.data_model import AiriosDeviceData
 
 # from pyairios.device import AiriosDevice
 from pyairios.exceptions import AiriosInvalidArgumentException
@@ -85,6 +87,43 @@ class Reg(RegisterAddress):  # only override or add differences in VMD_BASE?
     PREHEATER_SETPOINT = 42011
     FREE_VENTILATION_HEATING_SETPOINT = 42013
     FREE_VENTILATION_COOLING_OFFSET = 42015
+
+
+class VMD02RPS78Data(AiriosDeviceData):
+    """VMD-02RPS78 node data."""
+
+    error_code: Result[VMDErrorCode] | None
+    ventilation_speed: Result[VMDVentilationSpeed] | None
+    override_remaining_time: Result[int] | None
+    exhaust_fan_speed: Result[int] | None
+    supply_fan_speed: Result[int] | None
+    exhaust_fan_rpm: Result[int] | None
+    supply_fan_rpm: Result[int] | None
+    indoor_air_temperature: Result[VMDTemperature] | None
+    outdoor_air_temperature: Result[VMDTemperature] | None
+    exhaust_air_temperature: Result[VMDTemperature] | None
+    supply_air_temperature: Result[VMDTemperature] | None
+    filter_dirty: Result[int] | None
+    filter_remaining_percent: Result[int] | None
+    filter_duration_days: Result[int] | None
+    bypass_position: Result[VMDBypassPosition] | None
+    bypass_mode: Result[VMDBypassMode] | None
+    bypass_status: Result[int] | None
+    defrost: Result[int] | None
+    preheater: Result[VMDHeater] | None
+    postheater: Result[VMDHeater] | None
+    preheater_setpoint: Result[float] | None
+    free_ventilation_setpoint: Result[float] | None
+    free_ventilation_cooling_offset: Result[float] | None
+    frost_protection_preheater_setpoint: Result[float] | None
+    preset_high_fan_speed_supply: Result[int] | None
+    preset_high_fan_speed_exhaust: Result[int] | None
+    preset_medium_fan_speed_supply: Result[int] | None
+    preset_medium_fan_speed_exhaust: Result[int] | None
+    preset_low_fan_speed_supply: Result[int] | None
+    preset_low_fan_speed_exhaust: Result[int] | None
+    preset_standby_fan_speed_supply: Result[int] | None
+    preset_standby_fan_speed_exhaust: Result[int] | None
 
 
 def product_id() -> int:
@@ -195,7 +234,8 @@ class VMD02RPS78(VMD_BASE):
         self._add_registers(vmd_registers)
 
     def __str__(self) -> str:
-        return f"VMD-02RPS78@{self.slave_id}"  # could be a filename
+        prompt = str(re.sub(r"_", "-", self.__module__.__getattribute__(__name__).upper()))
+        return f"{prompt}@{self.slave_id}"
 
     async def capabilities(self) -> Result[VMDCapabilities]:
         """Get the ventilation unit capabilities."""
@@ -652,4 +692,80 @@ class VMD02RPS78(VMD_BASE):
             preset_standby_fan_speed_exhaust=await _safe_fetch(
                 self.preset_standby_fan_speed_exhaust
             ),
+        )
+
+    def print_data(self, res) -> None:
+        """
+        Print labels + states for this particular model, including VMD base fields
+
+        :param res: the result retrieved earlier by CLI using fetch_vmd_data()
+        :return: no confirmation, outputs to serial monitor
+        """
+        super().print_data(res)
+
+        print("VMD-02RPS78 data")
+        print("----------------")
+        print(f"    {'Error code:': <25}{res['error_code']}")
+
+        print(f"    {'Ventilation speed:': <25}{res['ventilation_speed']}")
+        # print(f"    {'Override remaining time:': <25}{res['override_remaining_time']}")
+
+        print(
+            f"    {'Supply fan speed:': <25}{res['supply_fan_speed']}% "
+            f"({res['supply_fan_rpm']} RPM)"
+        )
+        print(
+            f"    {'Exhaust fan speed:': <25}{res['exhaust_fan_speed']}% "
+            f"({res['exhaust_fan_rpm']} RPM)"
+        )
+
+        print(f"    {'Indoor temperature:': <25}{res['indoor_air_temperature']}")  # test soon
+        print(f"    {'Outdoor temperature:': <25}{res['outdoor_air_temperature']}")
+        print(f"    {'Exhaust temperature:': <25}{res['exhaust_air_temperature']}")
+        print(f"    {'Supply temperature:': <25}{res['supply_air_temperature']}")
+
+        print(f"    {'Filter dirty:': <25}{res['filter_dirty']}")
+        print(f"    {'Filter remaining:': <25}{res['filter_remaining_percent']} %")  # test soon
+        print(f"    {'Filter duration:': <25}{res['filter_duration_days']} days")
+
+        print(f"    {'Bypass position:': <25}{res['bypass_position']}")  # test soon
+        print(f"    {'Bypass status:': <25}{res['bypass_status']}")
+        print(f"    {'Bypass mode:': <25}{res['bypass_mode']}")
+
+        print(f"    {'Defrost:': <25}{res['defrost']}")
+        print(f"    {'Preheater:': <25}{res['preheater']}")
+        print(f"    {'Postheater:': <25}{res['postheater']}")
+        print("")
+
+        print(f"    {'Preset speeds':<25}{'Supply':<10}{'Exhaust':<10}")
+        print(f"    {'-------------':<25}")
+        print(
+            f"    {'High':<25}{str(res['preset_high_fan_speed_supply']) + ' %':<10}"
+            f"{str(res['preset_high_fan_speed_exhaust']) + ' %':<10}"
+        )
+        print(
+            f"    {'Mid':<25}{str(res['preset_medium_fan_speed_supply']) + ' %':<10}"
+            f"{str(res['preset_medium_fan_speed_exhaust']) + ' %':<10}"
+        )
+        print(
+            f"    {'Low':<25}{str(res['preset_low_fan_speed_supply']) + ' %':<10}"
+            f"{str(res['preset_low_fan_speed_exhaust']) + ' %':<10}"
+        )
+        print(
+            f"    {'Standby':<25}{str(res['preset_standby_fan_speed_supply']) + ' %':<10}"
+            f"{str(res['preset_standby_fan_speed_exhaust']) + ' %':<10}"
+        )
+        print("")
+
+        print("    Setpoints")
+        print("    ---------")
+        print(
+            f"    {'Frost protection preheater setpoint:':<40}"
+            f"{res['frost_protection_preheater_setpoint']} ºC"
+        )
+        print(f"    {'Preheater setpoint:': <40}{res['preheater_setpoint']} ºC")
+        print(f"    {'Free ventilation setpoint:':<40}{res['free_ventilation_setpoint']} ºC")
+        print(
+            f"    {'Free ventilation cooling offset:':<40}"
+            f"{res['free_ventilation_cooling_offset']} K"
         )
