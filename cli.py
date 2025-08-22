@@ -58,32 +58,34 @@ modules_list = glob.glob(os.path.join(os.path.dirname(__file__), "src/pyairios/m
 # A major benefit of the glob library is that it includes the path to the file in each item
 # print(modules_list)
 
-# all (usable) models found are stored in 3 lists and 3 dicts:
-files = []
-module_names = []
-class_names = []
-prompts: dict[str, str] = {}  # used to fill in CLI prompt model
-product_ids: dict[str, str] = {}  # dict with ids by their class name (replaces enum in const.py)
-modules: dict[str, ModuleType] = {}  # dict with imported modules by their class name
+# debug lists:
+# files = []
+# module_names_list = []
+# class_names_list = []
+
+# all (usable) models found are stored in 3 dicts:
+module_names: dict[str, str] = {}
+# a dict with module names by class name, used to fill in CLI prompt model
+product_ids: dict[str, str] = {}
+# a dict with ids by class name (replaces enum in const.py)
+modules: dict[str, ModuleType] = {}
+# a dict with imported modules by class name
 
 for file_path in modules_list:
     file_name = str(os.path.basename(file_path))
-    files.append(file_name)  # debug
+    # files.append(file_name)  # debug
     if (
-        file_name.endswith("__init__.py")
-        or file_name == "brdg_02r13.py"
-        or file_name.endswith("_base.py")
-    ):  # skip BRDG, base models
+        file_name == "__init__.py" or file_name == "brdg_02r13.py" or file_name.endswith("_base.py")
+    ):  # skip BRDG and the base model definitions
         continue
-    module_name = file_name[:-3]
-    module_names.append(module_name)  # debug
-    class_name: str = str(re.sub(r"_", "", module_name).upper())  # drop non-alpha end .extension
+    module_name = file_name[:-3]  # drop '.py' file extension
+    # module_names_list.append(module_name)  # debug
+    class_name: str = str(re.sub(r"_", "", module_name).upper())  # drop '_'
     assert class_name is not None
-    class_names.append(class_name)  # debug
-    prompts[class_name] = str(module_name.upper())  # convert to upper case, dict by class_name
+    # class_names_list.append(class_name)  # debug
+    module_names[class_name] = str(module_name.upper())  # convert to upper case, dict by class_name
 
-    # preferred method importlib
-    # create a spec for the module:
+    # using importlib, create a spec for the module:
     module_spec = importlib.util.spec_from_file_location(module_name, file_path)
     # store the spec in a dict by class name:
     mod = importlib.util.module_from_spec(module_spec)
@@ -94,29 +96,33 @@ for file_path in modules_list:
     # now we can use the module as if it were imported normally
 
     # check loading by fetching the product_id, the int te check against
-    product_ids[class_name] = modules[class_name].product_id()  # NOTE this is outside class, init?
+    product_ids[class_name] = modules[class_name].product_id()
 
-print("files found:")
-print(files)  # debug iterator result
-print(module_names)
-print(class_names)
-print(prompts)  # dict
+# print("files found:")
+# print(files)  # debug iterator result
+# print(module_names_list)
+# print(class_names_list)
+print("module names by key:")
+print(module_names)  # dict
 print("modules loaded:")
 print(modules)  # dict
+print("product_id's loaded:")
 print(product_ids)  # dict
 # all loaded up
 
-class AiriosVMN05LM02CLI(aiocmd.PromptToolkitCmd):  # TODO subclass aiocmd_type into VMN_CLI
-    """The VMN05LM02 CLI interface."""
 
-    class_pointer: str = "VMN05LM02"
+class AiriosVmnCLI(aiocmd.PromptToolkitCmd):
+    """The VMN_ modules common CLI interface."""
+
+    class_pointer: str = "VMN"
 
     def __init__(self, vmn) -> None:  # TODO subclass aiocmd_type
         """
         :param vmn: contains all details of this model
         """
         super().__init__()
-        self.prompt = f"[VMN-05LM02@{vmn.slave_id}]>> "
+        self.class_pointer = str(vmn)
+        self.prompt = f"[{str(vmn)}]>> "
         self.vmn = vmn
 
     async def do_received_product_id(self) -> None:
@@ -151,22 +157,21 @@ class AiriosVMN05LM02CLI(aiocmd.PromptToolkitCmd):  # TODO subclass aiocmd_type 
         print(f"    {'Value error status:': <25}{res['value_error_status']}")
         print("")
 
-        print("VMN-02LM11 data")
-        print("----------------")
-        print(f"    {'Requested ventilation speed:': <40}{res['requested_ventilation_speed']}")
+        self.vmn.print_data(res)
 
 
-class AiriosVMD02RPS78CLI(aiocmd.PromptToolkitCmd):  # TODO subclass aiocmd_type into VMD_CLI
-    """The VMD02RPS78 CLI interface."""
+class AiriosVmdCLI(aiocmd.PromptToolkitCmd):
+    """The VMD_ modules common CLI interface."""
 
-    class_pointer: str = "VMD07RPS13"  # or "VMD02RPS78"
+    class_pointer: str = "VMD"  # (how) is this used?
 
-    def __init__(self, vmd) -> None:  # TODO subclass aiocmd_type
+    def __init__(self, vmd) -> None:
         """
         :param vmd: contains all details of this model
         """
         super().__init__()
-        self.prompt = f"[VMD-02RPS78@{vmd.slave_id}]>> "  # TODO use {prompt}
+        self.class_pointer = str(vmd)
+        self.prompt = f"[{str(vmd)}@{vmd.slave_id}]>> "
         self.vmd = vmd
 
     async def do_capabilities(self) -> None:
@@ -176,7 +181,7 @@ class AiriosVMD02RPS78CLI(aiocmd.PromptToolkitCmd):  # TODO subclass aiocmd_type
 
     async def do_status(self) -> None:  # pylint: disable=too-many-statements
         """Print the device status."""
-        res = await self.vmd.fetch_vmd_data()
+        res = await self.vmd.fetch_vmd_data()  # customised in model file
         print("Node data")
         print("---------")
         print(f"    {'Product ID:': <25}{res['product_id']}")
@@ -194,72 +199,7 @@ class AiriosVMD02RPS78CLI(aiocmd.PromptToolkitCmd):  # TODO subclass aiocmd_type
         print(f"    {'Value error status:': <25}{res['value_error_status']}")
         print("")
 
-        print("VMD-07RPS13 data")
-        print("----------------")
-        # print(f"    {'Error code:': <25}{res['error_code']}")
-        #
-        # print(f"    {'Ventilation speed:': <25}{res['ventilation_speed']}")
-        # # print(f"    {'Override remaining time:': <25}{res['override_remaining_time']}")
-        #
-        # print(
-        #     f"    {'Supply fan speed:': <25}{res['supply_fan_speed']}% "
-        #     f"({res['supply_fan_rpm']} RPM)"
-        # )
-        # print(
-        #     f"    {'Exhaust fan speed:': <25}{res['exhaust_fan_speed']}% "
-        #     f"({res['exhaust_fan_rpm']} RPM)"
-        # )
-
-        # print(f"    {'Indoor temperature:': <25}{res['indoor_air_temperature']}")  # test soon
-        # print(f"    {'Outdoor temperature:': <25}{res['outdoor_air_temperature']}")
-        # print(f"    {'Exhaust temperature:': <25}{res['exhaust_air_temperature']}")
-        # print(f"    {'Supply temperature:': <25}{res['supply_air_temperature']}")
-
-        # print(f"    {'Filter dirty:': <25}{res['filter_dirty']}")
-        # print(f"    {'Filter remaining:': <25}{res['filter_remaining_percent']} %")  # test soon
-        # print(f"    {'Filter duration:': <25}{res['filter_duration_days']} days")
-
-        # print(f"    {'Bypass position:': <25}{res['bypass_position']}")  # test soon
-        # print(f"    {'Bypass status:': <25}{res['bypass_status']}")
-        # print(f"    {'Bypass mode:': <25}{res['bypass_mode']}")
-
-        # print(f"    {'Defrost:': <25}{res['defrost']}")
-        # print(f"    {'Preheater:': <25}{res['preheater']}")
-        # print(f"    {'Postheater:': <25}{res['postheater']}")
-        print("")
-
-        # print(f"    {'Preset speeds':<25}{'Supply':<10}{'Exhaust':<10}")
-        # print(f"    {'-------------':<25}")
-        # print(
-        #     f"    {'High':<25}{str(res['preset_high_fan_speed_supply']) + ' %':<10}"
-        #     f"{str(res['preset_high_fan_speed_exhaust']) + ' %':<10}"
-        # )
-        # print(
-        #     f"    {'Mid':<25}{str(res['preset_medium_fan_speed_supply']) + ' %':<10}"
-        #     f"{str(res['preset_medium_fan_speed_exhaust']) + ' %':<10}"
-        # )
-        # print(
-        #     f"    {'Low':<25}{str(res['preset_low_fan_speed_supply']) + ' %':<10}"
-        #     f"{str(res['preset_low_fan_speed_exhaust']) + ' %':<10}"
-        # )
-        # print(
-        #     f"    {'Standby':<25}{str(res['preset_standby_fan_speed_supply']) + ' %':<10}"
-        #     f"{str(res['preset_standby_fan_speed_exhaust']) + ' %':<10}"
-        # )
-        print("")
-
-        print("    Setpoints")
-        print("    ---------")
-        # print(
-        #     f"    {'Frost protection preheater setpoint:':<40}"
-        #     f"{res['frost_protection_preheater_setpoint']} ºC"
-        # )
-        # print(f"    {'Preheater setpoint:': <40}{res['preheater_setpoint']} ºC")
-        # print(f"    {'Free ventilation setpoint:':<40}{res['free_ventilation_setpoint']} ºC")
-        # print(
-        #     f"    {'Free ventilation cooling offset:':<40}"
-        #     f"{res['free_ventilation_cooling_offset']} K"
-        # )
+        self.vmd.print_data(res)
 
     async def do_error_code(self) -> None:
         """Print the current error code."""
@@ -393,39 +333,43 @@ class AiriosBridgeCLI(aiocmd.PromptToolkitCmd):
 
         if node_info is None:
             raise AiriosIOException(f"Node with address {slave_id} not bound")
-        # move some of this to base class?
-        if node_info.product_id == ProductId.VMD_02RPS78:
-            vmd = modules[product_ids["VMD_02RPS78"]].VMD02RPS78(
-                node_info.slave_id, self.bridge.client
-            )
-            await AiriosVMD02RPS78CLI(vmd).run()
-            return
 
-        if node_info.product_id == ProductId.VMD_07RPS13:  # ClimaRad Ventura - under development!!
-            print("Ventura node starting, productId:")  # debug
-            print(product_ids["VMD07RPS13"])
-            # product_ids = {'VMD07RPS13': 116867, 'VMD02RPS78': 116882, 'VMN05LM02': 116798}
-            vmd = modules[
-                "VMD07RPS13"
-            ].VMD07RPS13(  # < error here no attribute CURRENT_VENTILATION_SPEED
-                node_info.slave_id, self.bridge.client
-            )
-            print("Loaded vmd for Ventura")
-            await AiriosVMD02RPS78CLI(vmd).run()  # base class? keep the same
-            return
+        # example imported product_ids = {'VMD07RPS13': 116867, 'VMD02RPS78': 116882, 'VMN05LM02': 116798}
+        for key, value in product_ids.items():
+            if node_info.product_id == value:  # == ProductId.VMD_02RPS78:
+                if key.startswith("VMD_"):
+                    vmd = modules[module_names[key]].key(  # modules[VMD_02RPS78].VMD02RPS78(
+                        node_info.slave_id, self.bridge.client
+                    )
+                    await AiriosVmdCLI(vmd).run()
+                    print("Loaded vmd for {key}")
+                    return
 
-        if node_info.product_id == ProductId.VMN_05LM02:
-            vmn = modules[product_ids["VMN_05LM02"]].VMN05LM02(
-                node_info.slave_id, self.bridge.client
-            )
-            await AiriosVMN05LM02CLI(vmn).run()
-            return
-        # TODO replace above block by loop to autodiscover, use some neutral param vnx
-        # for k, v in product_ids:
-        #     if node_info.product_id == v:
-        #         vmx = modules[k](node_info.slave_id, self.bridge.client)
-        #         await AiriosVMN05LM02CLI(vmx).run()
-        #         return
+                # this worked, but required adding any model + dedicated CLI class:
+                # if node_info.product_id == ProductId.VMD_07RPS13:  # VMD_07RPS13 = ClimaRad Ventura
+                # print("Ventura node starting, productId:")  # debug
+                # print(product_ids["VMD07RPS13"])
+                # vmd = modules[
+                #     "VMD07RPS13"
+                # ].VMD07RPS13(
+                #     node_info.slave_id, self.bridge.client
+                # )
+                # await AiriosVmdCLI(vmd).run()
+                # return
+
+                if key.startswith("VMN_"):
+                    vmn = modules[module_names[key]].key(  # modules[VMD_02RPS78].VMD02RPS78(
+                        node_info.slave_id, self.bridge.client
+                    )
+                    await AiriosVmnCLI(vmn).run()
+                    print("Loaded vmd for {key}")
+                    return
+        # if node_info.product_id == ProductId.VMN_05LM02:
+        #     vmn = modules["VMN_05LM02"].VMN05LM02(
+        #         node_info.slave_id, self.bridge.client
+        #     )
+        #     await AiriosVmnCLI(vmn).run()
+        #     return
 
         raise AiriosNotImplemented(f"{node_info.product_id} not implemented")
 
@@ -579,26 +523,6 @@ class AiriosClientCLI(aiocmd.PromptToolkitCmd):  # pylint: disable=too-few-publi
         await AiriosBridgeCLI(bridge).run()
 
 
-async def do_set_log_level(level: str) -> None:
-    """Set the log level: critical, fatal, error, warning, info or debug."""
-    logging.basicConfig()
-    log = logging.getLogger()
-    if level.casefold() == "critical".casefold():
-        log.setLevel(logging.CRITICAL)
-    elif level.casefold() == "fatal".casefold():
-        log.setLevel(logging.FATAL)
-    elif level.casefold() == "error".casefold():
-        log.setLevel(logging.ERROR)
-    elif level.casefold() == "warning".casefold():
-        log.setLevel(logging.WARNING)
-    elif level.casefold() == "info".casefold():
-        log.setLevel(logging.INFO)
-    elif level.casefold() == "debug".casefold():
-        log.setLevel(logging.DEBUG)
-    else:
-        raise AiriosInvalidArgumentException("Invalid log level")
-
-
 class AiriosRootCLI(aiocmd.PromptToolkitCmd):
     """CLI root context."""
 
@@ -641,6 +565,25 @@ class AiriosRootCLI(aiocmd.PromptToolkitCmd):
         """Disconnect from bridge."""
         if self.client:
             self.client = None
+
+    async def do_set_log_level(level: str) -> None:
+        """Set the log level: critical, fatal, error, warning, info or debug."""
+        logging.basicConfig()
+        log = logging.getLogger()
+        if level.casefold() == "critical".casefold():
+            log.setLevel(logging.CRITICAL)
+        elif level.casefold() == "fatal".casefold():
+            log.setLevel(logging.FATAL)
+        elif level.casefold() == "error".casefold():
+            log.setLevel(logging.ERROR)
+        elif level.casefold() == "warning".casefold():
+            log.setLevel(logging.WARNING)
+        elif level.casefold() == "info".casefold():
+            log.setLevel(logging.INFO)
+        elif level.casefold() == "debug".casefold():
+            log.setLevel(logging.DEBUG)
+        else:
+            raise AiriosInvalidArgumentException("Invalid log level")
 
 
 async def main() -> None:

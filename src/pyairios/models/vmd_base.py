@@ -4,10 +4,9 @@ from __future__ import annotations
 
 import math
 import re
-
 from dataclasses import dataclass, field
-#from typing import List
 
+# from typing import List
 from pyairios.client import AsyncAiriosModbusClient
 from pyairios.constants import (
     VMDBypassMode,
@@ -21,7 +20,8 @@ from pyairios.constants import (
     VMDTemperature,
     VMDVentilationSpeed,
 )
-from pyairios.data_model import VMD02RPS78Data, VMD07RPS13Data
+
+# from pyairios.data_model import VMD02RPS78Data, VMD07RPS13Data
 from pyairios.device import AiriosDevice
 from pyairios.exceptions import AiriosInvalidArgumentException
 from pyairios.node import _safe_fetch
@@ -56,7 +56,7 @@ class Reg(RegisterAddress):
 
 
 def product_id() -> int:
-    # base class should not be called
+    # base class, should not be called
     return 0x0
 
 
@@ -162,8 +162,10 @@ class VMD_BASE(AiriosDevice):
         # ]
         # self._add_registers(vmd_registers)
 
-    # def __str__(self) -> str:
-    #     return f"VMD-02RPS78@{self.slave_id}"  # TODO pass in  prompt
     def __str__(self) -> str:
+        # TODO how to use this from subclasses using correct slave_id?
         prompt = str(re.sub(r"_", "-", self.__module__.__getattribute__(__name__).upper()))
         return f"{prompt}@{self.slave_id}"
+
+    def print_data(self, result) -> None:
+        print("----------------")

@@ -21,8 +21,7 @@ from pyairios.constants import (
     VMDTemperature,
     VMDVentilationSpeed,
 )
-from pyairios.data_model import VMD07RPS13Data  # TODO verify VMD07RPS13Data
-
+from pyairios.data_model import AiriosDeviceData
 from pyairios.device import AiriosDevice
 from pyairios.exceptions import AiriosInvalidArgumentException
 from pyairios.models.vmd_base import VMD_BASE
@@ -37,11 +36,11 @@ from pyairios.registers import (
 )
 
 
-class Reg(RegisterAddress):  # only override or add differences in VMD_BASE?
-    """Register set for VMD-07RPS13 ClimaRad Ventura V1X controller node."""
+class Reg(RegisterAddress):  # only override or add differences in VMD_BASE
+    """The Register set for VMD-07RPS13 ClimaRad Ventura V1X controller node."""
 
-    # # = checked EB
-    CURRENT_VENTILATION_SPEED = 12 #  40002  #
+    # numbers marked "#" were checked from docs by EB
+    CURRENT_VENTILATION_SPEED = 12  #  40002  #
     FAN_SPEED_EXHAUST = 9  # 40011  #
     FAN_SPEED_SUPPLY = 10  # 40010  #
     ERROR_CODE = 23  # 40024  #
@@ -66,7 +65,7 @@ class Reg(RegisterAddress):  # only override or add differences in VMD_BASE?
     # FILTER_REMAINING_DAYS = 41040
     FILTER_DURATION = 9176  # 44177  #
     # FILTER_REMAINING_PERCENT = 41042
-    FAN_RPM_EXHAUST = 9  #40011  #
+    FAN_RPM_EXHAUST = 9  # 40011  #
     FAN_RPM_SUPPLY = 10  # 40010  #
     # BYPASS_MODE = 40029
     # BYPASS_STATUS = 41051
@@ -91,6 +90,46 @@ class Reg(RegisterAddress):  # only override or add differences in VMD_BASE?
     # FREE_VENTILATION_HEATING_SETPOINT = 42013
     # FREE_VENTILATION_COOLING_OFFSET = 42015
     # not in existing list:
+
+
+class VMD07RPS13Data(AiriosDeviceData):
+    """
+    VMD-07RPS13 ClimaRad Ventura V1C/V1D/V1X node data.
+    source: ClimaRad Modbus Registers Specs 2024
+    """
+
+    error_code: Result[VMDErrorCode] | None
+    ventilation_speed: Result[VMDVentilationSpeed] | None
+    # override_remaining_time: Result[int] | None
+    exhaust_fan_speed: Result[int] | None
+    supply_fan_speed: Result[int] | None
+    exhaust_fan_rpm: Result[int] | None
+    supply_fan_rpm: Result[int] | None
+    indoor_air_temperature: Result[VMDTemperature] | None
+    outdoor_air_temperature: Result[VMDTemperature] | None
+    exhaust_air_temperature: Result[VMDTemperature] | None
+    supply_air_temperature: Result[VMDTemperature] | None
+    filter_dirty: Result[int] | None
+    filter_remaining_percent: Result[int] | None
+    # filter_duration_days: Result[int] | None
+    bypass_position: Result[VMDBypassPosition] | None
+    # bypass_mode: Result[VMDBypassMode] | None
+    bypass_status: Result[int] | None
+    # defrost: Result[int] | None
+    # preheater: Result[VMDHeater] | None
+    # postheater: Result[VMDHeater] | None
+    # preheater_setpoint: Result[float] | None
+    # free_ventilation_setpoint: Result[float] | None
+    # free_ventilation_cooling_offset: Result[float] | None
+    # frost_protection_preheater_setpoint: Result[float] | None
+    # preset_high_fan_speed_supply: Result[int] | None
+    # preset_high_fan_speed_exhaust: Result[int] | None
+    # preset_medium_fan_speed_supply: Result[int] | None
+    # preset_medium_fan_speed_exhaust: Result[int] | None
+    # preset_low_fan_speed_supply: Result[int] | None
+    # preset_low_fan_speed_exhaust: Result[int] | None
+    # preset_standby_fan_speed_supply: Result[int] | None
+    # preset_standby_fan_speed_exhaust: Result[int] | None
 
 
 def product_id() -> int:
@@ -206,6 +245,7 @@ class VMD07RPS13(VMD_BASE):
 
     async def capabilities(self) -> Result[VMDCapabilities]:
         """Get the ventilation unit capabilities."""
+        assert self.regmap[Reg.CAPABILITIES]
         regdesc = self.regmap[Reg.CAPABILITIES]
         result = await self.client.get_register(regdesc, self.slave_id)
         return Result(VMDCapabilities(result.value), result.status)
@@ -609,10 +649,10 @@ class VMD07RPS13(VMD_BASE):
             self.regmap[Reg.FAN_SPEED_AWAY_EXHAUST], value, self.slave_id
         )
 
-    async def fetch_vmd_data(self) -> VMD07RPS13Data:  # pylint: disable=duplicate-code # TODO VMD07RPS13Data:
+    async def fetch_vmd_data(self) -> VMD07RPS13Data:  # pylint: disable=duplicate-code
         """Fetch all controller data at once."""
 
-        return VMD07RPS13Data(  # TODO confirm
+        return VMD07RPS13Data(  # TODO confirm all
             slave_id=self.slave_id,
             rf_address=await _safe_fetch(self.node_rf_address),
             product_id=await _safe_fetch(self.node_product_id),
@@ -660,3 +700,79 @@ class VMD07RPS13(VMD_BASE):
             #     self.preset_standby_fan_speed_exhaust
             # ),
         )
+
+    def print_data(self, res) -> None:
+        """
+        Print labels + states for this particular model, including VMD base fields
+
+        :param res: the result retrieved earlier by CLI using fetch_vmd_data()
+        :return: no confirmation, outputs to serial monitor
+        """
+        super().print_data(res)
+
+        print("VMD-07RPS13 data")
+        print("----------------")
+        # print(f"    {'Error code:': <25}{res['error_code']}")
+        #
+        # print(f"    {'Ventilation speed:': <25}{res['ventilation_speed']}")
+        # # print(f"    {'Override remaining time:': <25}{res['override_remaining_time']}")
+        #
+        # print(
+        #     f"    {'Supply fan speed:': <25}{res['supply_fan_speed']}% "
+        #     f"({res['supply_fan_rpm']} RPM)"
+        # )
+        # print(
+        #     f"    {'Exhaust fan speed:': <25}{res['exhaust_fan_speed']}% "
+        #     f"({res['exhaust_fan_rpm']} RPM)"
+        # )
+
+        # print(f"    {'Indoor temperature:': <25}{res['indoor_air_temperature']}")  # test soon
+        # print(f"    {'Outdoor temperature:': <25}{res['outdoor_air_temperature']}")
+        # print(f"    {'Exhaust temperature:': <25}{res['exhaust_air_temperature']}")
+        # print(f"    {'Supply temperature:': <25}{res['supply_air_temperature']}")
+
+        # print(f"    {'Filter dirty:': <25}{res['filter_dirty']}")
+        # print(f"    {'Filter remaining:': <25}{res['filter_remaining_percent']} %")  # test soon
+        # print(f"    {'Filter duration:': <25}{res['filter_duration_days']} days")
+
+        # print(f"    {'Bypass position:': <25}{res['bypass_position']}")  # test soon
+        # print(f"    {'Bypass status:': <25}{res['bypass_status']}")
+        # print(f"    {'Bypass mode:': <25}{res['bypass_mode']}")
+
+        # print(f"    {'Defrost:': <25}{res['defrost']}")
+        # print(f"    {'Preheater:': <25}{res['preheater']}")
+        # print(f"    {'Postheater:': <25}{res['postheater']}")
+        print("")
+
+        # print(f"    {'Preset speeds':<25}{'Supply':<10}{'Exhaust':<10}")
+        # print(f"    {'-------------':<25}")
+        # print(
+        #     f"    {'High':<25}{str(res['preset_high_fan_speed_supply']) + ' %':<10}"
+        #     f"{str(res['preset_high_fan_speed_exhaust']) + ' %':<10}"
+        # )
+        # print(
+        #     f"    {'Mid':<25}{str(res['preset_medium_fan_speed_supply']) + ' %':<10}"
+        #     f"{str(res['preset_medium_fan_speed_exhaust']) + ' %':<10}"
+        # )
+        # print(
+        #     f"    {'Low':<25}{str(res['preset_low_fan_speed_supply']) + ' %':<10}"
+        #     f"{str(res['preset_low_fan_speed_exhaust']) + ' %':<10}"
+        # )
+        # print(
+        #     f"    {'Standby':<25}{str(res['preset_standby_fan_speed_supply']) + ' %':<10}"
+        #     f"{str(res['preset_standby_fan_speed_exhaust']) + ' %':<10}"
+        # )
+        print("")
+
+        print("    Setpoints")
+        print("    ---------")
+        # print(
+        #     f"    {'Frost protection preheater setpoint:':<40}"
+        #     f"{res['frost_protection_preheater_setpoint']} ºC"
+        # )
+        # print(f"    {'Preheater setpoint:': <40}{res['preheater_setpoint']} ºC")
+        # print(f"    {'Free ventilation setpoint:':<40}{res['free_ventilation_setpoint']} ºC")
+        # print(
+        #     f"    {'Free ventilation cooling offset:':<40}"
+        #     f"{res['free_ventilation_cooling_offset']} K"
+        # )

@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import re
 from typing import List
 
 from pyairios.client import AsyncAiriosModbusClient
 from pyairios.constants import VMDRequestedVentilationSpeed
-from pyairios.data_model import VMN05LM02Data
+from pyairios.data_model import AiriosDeviceData
+
+# from pyairios.data_model import VMN05LM02Data
 from pyairios.device import AiriosDevice
 from pyairios.node import _safe_fetch
 from pyairios.registers import (
@@ -22,6 +25,12 @@ class Reg(RegisterAddress):
     """Register set for VMN-05LM02 remote node."""
 
     REQUESTED_VENTILATION_SPEED = 41000
+
+
+class VMN05LM02Data(AiriosDeviceData):
+    """VMN-05LM02 remote node data."""
+
+    requested_ventilation_speed: Result[VMDRequestedVentilationSpeed] | None
 
 
 def product_id() -> int:
@@ -43,7 +52,9 @@ class VMN05LM02(AiriosDevice):
         self._add_registers(vmn_registers)
 
     def __str__(self) -> str:
-        return f"VMN-05LM02@{self.slave_id}"
+        # return f"VMN-05LM02@{self.slave_id}"
+        prompt = str(re.sub(r"_", "-", self.__module__.__getattribute__(__name__).upper()))
+        return f"{prompt}@{self.slave_id}"
 
     async def requested_ventilation_speed(self) -> Result[VMDRequestedVentilationSpeed]:
         """Get the requested ventilation speed."""
@@ -67,3 +78,15 @@ class VMN05LM02(AiriosDevice):
             value_error_status=await _safe_fetch(self.device_value_error_status),
             requested_ventilation_speed=await _safe_fetch(self.requested_ventilation_speed),
         )
+
+    def print_data(self, res) -> None:
+        """
+        Print labels + states for this particular model, including VMD base fields
+
+        :param res: the result retrieved earlier by CLI using fetch_vmd_data()
+        :return: no confirmation, outputs to serial monitor
+        """
+        # super().print_data(res)  # no superclass set up yet
+        print("VMN-02LM11 data")
+        print("----------------")
+        print(f"    {'Requested ventilation speed:': <40}{res['requested_ventilation_speed']}")
