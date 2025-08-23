@@ -11,12 +11,11 @@ class ProductId(IntEnum):
     The value is composed by three fields, product type + sub ID + manufacturer ID.
     """
 
-    # TODO move this to the models/ class files as def product_id()
+    # moved this to the models/ class files as def product_id()
     # the will be unique if all files in flat models/ dir
     # new definitions will be included automatically
     # collect them when loading the modules on init
 
-    # for k:v in name_by_key:
     BRDG_02R13 = 0x0001C849  # RF Bridge
     VMD_02RPS78 = 0x0001C892  # Siber DF Optima 2 controller v copied to model file get_product_id()
     VMN_05LM02 = 0x0001C83E
@@ -38,7 +37,7 @@ class ProductId(IntEnum):
             return "VMD-07RPS13"
         raise ValueError(
             f"Unknown product ID value {self.value}"
-        )  # . Create a definition to models/")
+        )  # . Create a definition to models/
 
 
 class BoundStatus(IntEnum):
