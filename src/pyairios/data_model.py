@@ -11,13 +11,6 @@ from pyairios.constants import (
     ProductId,
     RFCommStatus,
     ValueErrorStatus,
-    VMDBypassMode,
-    VMDBypassPosition,
-    VMDErrorCode,
-    VMDHeater,
-    VMDRequestedVentilationSpeed,
-    VMDTemperature,
-    VMDVentilationSpeed,
 )
 from pyairios.registers import Result
 
