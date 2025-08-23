@@ -247,12 +247,18 @@ class VmdNode(VmdBase):
         prompt = str(re.sub(r"_", "-", self.__module__.upper()))
         return f"{prompt}@{self.slave_id}"
 
-    async def sniff_registers(self, start_num: int) -> Result[VMDVentilationSpeed]:
+    async def scan_registers(self, start_num: int) -> dict[int, Result]:
+        """
+        Query  a range of 1000 RegisterAddress'es from the Modus client for debugging.
+        :param start_num: first address int
+        :return: a dict of all received responses by index
+        """
         collected: dict[int, Result] = {}
-        for i in range(start_num, start_num + 1000):
-            # Read reg
+        for i in range(start_num, start_num + 1): # + 1000):
             try:
-                result = await self.client.get_register(i, self.slave_id)
+                addr: RegisterAddress = i
+                regdesc = self.regmap[addr]
+                result = await self.client.get_register(regdesc, self.slave_id)
                 collected[i] = Result(result.value, result.status)
             except ValueError:
                 continue  # just skip
