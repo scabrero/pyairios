@@ -6,23 +6,23 @@ from enum import Flag, IntEnum, auto
 
 
 class ProductId(IntEnum):
-    """The product ID is a unique product identifier.
-
-    The value is composed by three fields, product type + sub ID + manufacturer ID.
+    """
+    The product ID is a unique product identifier.
+    The value is composed of three fields: product type + sub ID + manufacturer ID.
     """
 
-    # moved this to the models/ class files as def product_id()
-    # the will be unique if all files in flat models/ dir
-    # new definitions will be included automatically
-    # collect them when loading the modules on init
+    # this info was moved to the models/ class files as product_id()
+    # get the dict from bridge by calling bridge.get_product_ids()
+    # they will be unique as long as all files are in flat models/ dir
+    # new definitions will be picked up automatically
+    # will remain in use for type hints
 
     BRDG_02R13 = 0x0001C849  # RF Bridge
     VMD_02RPS78 = 0x0001C892  # Siber DF Optima 2 controller v copied to model file get_product_id()
-    VMN_05LM02 = 0x0001C83E
-    VMN_02LM11 = 0x0001C852  # Siber 4 button remote v copied to model file get_product_id()
+    VMN_05LM02 = 0x0001C83E  # Siber 4 button remote v copied to model file get_product_id()
+    VMN_02LM11 = 0x0001C852
     VMD_07RPS13 = 0x0001C883  # ClimaRad VenturaV1X v copied to model file get_product_id()
 
-    # TODO store these as dict name_by_key {id_key: model_name}
     def __str__(self) -> str:
         # for k:v in name_by_key:
         if self.value == self.BRDG_02R13:
@@ -35,9 +35,7 @@ class ProductId(IntEnum):
             return "VMN-02LM11"
         if self.value == self.VMD_07RPS13:
             return "VMD-07RPS13"
-        raise ValueError(
-            f"Unknown product ID value {self.value}"
-        )  # . Create a definition to models/
+        raise ValueError(f"Unknown product ID value {self.value}")
 
 
 class BoundStatus(IntEnum):

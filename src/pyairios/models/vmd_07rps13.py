@@ -11,7 +11,7 @@ from typing import List
 
 from pyairios.client import AsyncAiriosModbusClient
 from pyairios.constants import (
-    VMDBypassMode,
+    # VMDBypassMode,
     VMDBypassPosition,
     # VMDCapabilities,
     VMDErrorCode,
@@ -23,7 +23,8 @@ from pyairios.constants import (
     VMDVentilationSpeed,
 )
 from pyairios.data_model import AiriosDeviceData
-from pyairios.exceptions import AiriosInvalidArgumentException
+
+# from pyairios.exceptions import AiriosInvalidArgumentException
 from pyairios.models.vmd_base import VmdBase
 from pyairios.node import _safe_fetch
 from pyairios.registers import (
@@ -41,42 +42,42 @@ LOGGER = logging.getLogger(__name__)
 class Reg(RegisterAddress):  # only override or add differences in VMD_BASE
     """The Register set for VMD-07RPS13 ClimaRad Ventura V1 controller node."""
 
-    # numbers marked "#" were checked from docs by EB
-    CURRENT_VENTILATION_SPEED = 12  #  40002  #
-    FAN_SPEED_EXHAUST = 9  # 40011  #
-    FAN_SPEED_SUPPLY = 10  # 40010  #
-    ERROR_CODE = 23  # 40024  #
+    # numbers after "#" are from oem docs
+    CURRENT_VENTILATION_SPEED = 40002  # 12 #
+    FAN_SPEED_EXHAUST = 40011  # 9 #
+    FAN_SPEED_SUPPLY = 40010  # 10 #
+    ERROR_CODE = 40024  # 23 #
     # VENTILATION_SPEED_OVERRIDE_REMAINING_TIME = 41004
-    TEMPERATURE_INDOOR = 12  # 40013 #
+    TEMPERATURE_INDOOR = 40013  # 12 #
     TEMPERATURE_OUTDOOR = 41007
     # TEMPERATURE_EXHAUST = 41009
     # TEMPERATURE_SUPPLY = 41011
     # PREHEATER = 41013
     # FILTER_DIRTY = 41014
     # DEFROST = 41015
-    BYPASS_POSITION = 28  # 40029  #
-    HUMIDITY_INDOOR = 15  # 40016  #
+    BYPASS_POSITION = 40029  # 28 #
+    HUMIDITY_INDOOR = 40016  # 15 #
     # HUMIDITY_OUTDOOR = 41018
     # FLOW_INLET = 41019
     # FLOW_OUTLET = 41021
     # AIR_QUALITY = 41023
     # AIR_QUALITY_BASIS = 41024
-    CO2_LEVEL = 17  # 40018  #
+    CO2_LEVEL = 40018  # 17 #
     # POST_HEATER = 41026
     # CAPABILITIES = 41027
     # FILTER_REMAINING_DAYS = 41040
     # FILTER_DURATION = 9176  # 44177  #
     FILTER_REMAINING_PERCENT = 41042
-    FAN_RPM_EXHAUST = 9  # 40011  #
-    FAN_RPM_SUPPLY = 10  # 40010  #
+    FAN_RPM_EXHAUST = 40011  # 9 #
+    FAN_RPM_SUPPLY = 40010  # 10 #
     # BYPASS_MODE = 40029
     # BYPASS_STATUS = 41051
     REQUESTED_VENTILATION_SPEED = 4246  #
     # OVERRIDE_TIME_SPEED_LOW = 41501
     # OVERRIDE_TIME_SPEED_MID = 41502
     # OVERRIDE_TIME_SPEED_HIGH = 41503
-    OVERRIDE_TIME_MANUAL = 115  # 44116  #
-    OVERRIDE_TIME_PAUSE = 141  # 44142  #
+    OVERRIDE_TIME_MANUAL = 44116  # 115 #
+    OVERRIDE_TIME_PAUSE = 44142  # 141 #
     # REQUESTED_BYPASS_MODE = 41550
     # FILTER_RESET = 42000
     # FAN_SPEED_AWAY_SUPPLY = 42001

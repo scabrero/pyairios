@@ -2,36 +2,14 @@
 
 from __future__ import annotations
 
-import math
 import re
 from dataclasses import dataclass, field
 
-# from typing import List
 from pyairios.client import AsyncAiriosModbusClient
-from pyairios.constants import (
-    VMDBypassMode,
-    VMDBypassPosition,
-    VMDCapabilities,
-    VMDErrorCode,
-    VMDHeater,
-    VMDHeaterStatus,
-    VMDRequestedVentilationSpeed,
-    VMDSensorStatus,
-    VMDTemperature,
-    VMDVentilationSpeed,
-)
-
-# from pyairios.data_model import VMD02RPS78Data, VMD07RPS13Data
 from pyairios.device import AiriosDevice
-from pyairios.exceptions import AiriosInvalidArgumentException
-from pyairios.node import _safe_fetch
 from pyairios.registers import (
-    FloatRegister,
-    RegisterAccess,
     RegisterAddress,
-    RegisterBase,
     Result,
-    U16Register,
 )
 
 
@@ -66,6 +44,7 @@ class VmdBase(AiriosDevice):
     def __init__(self, slave_id: int, client: AsyncAiriosModbusClient) -> None:
         """Initialize the VMD-x controller node instance."""
         super().__init__(slave_id, client)
+
         # vmd_registers: List[RegisterBase] = [
         #     U16Register(Reg.CURRENT_VENTILATION_SPEED, RegisterAccess.READ | RegisterAccess.STATUS),
         #     U16Register(Reg.FAN_SPEED_EXHAUST, RegisterAccess.READ | RegisterAccess.STATUS),
@@ -163,8 +142,7 @@ class VmdBase(AiriosDevice):
         # self._add_registers(vmd_registers)
 
     def __str__(self) -> str:
-        # TODO how to use this from subclasses using correct slave_id?
-        prompt = str(re.sub(r"_", "-", self.__module__.__getattribute__(__name__).upper()))
+        prompt = str(re.sub(r"_", "-", self.__module__.upper()))
         return f"{prompt}@{self.slave_id}"
 
     def print_data(self, result) -> None:

@@ -87,7 +87,7 @@ class Airios:
 
         for _node in await self.bridge.nodes():  # this info is in the model class files
             # lookup node model family by key # compare to cli.py
-            for key, _id in self.bridge.get_product_ids():  # ids by model_key (names) from bridge
+            for key, _id in self.bridge.get_product_ids():  # index of ids by model_key (names)
                 if _node.product_id == _id:
                     LOGGER.debug(f"Start matching init for: {key}")
                     if key.startswith("VMD"):
@@ -98,6 +98,7 @@ class Airios:
                         vmn = self.bridge.modules[key].VmnNode(_node.slave_id, self.bridge.client)
                         vmn_data = await vmn.fetch_vmn_data()
                         data[_node.slave_id] = vmn_data
+                    # new Airios 'families' would be added to this filter
 
         return AiriosData(bridge_rf_address=bridge_rf_address, nodes=data)
 
