@@ -60,7 +60,7 @@ def product_id() -> int:
     return 0x0
 
 
-class VMD_BASE(AiriosDevice):
+class VmdBase(AiriosDevice):
     """Base class for VMD-xxx controller nodes."""
 
     def __init__(self, slave_id: int, client: AsyncAiriosModbusClient) -> None:

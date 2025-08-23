@@ -1,9 +1,9 @@
 """The Airios RF bridge API entrypoint."""
 
+import logging
+
 from pyairios.models.brdg_02r13 import BRDG02R13
 from pyairios.models.brdg_02r13 import DEFAULT_SLAVE_ID as BRDG02R13_DEFAULT_SLAVE_ID
-from pyairios.models.vmd_02rps78 import VMD02RPS78
-from pyairios.models.vmn_05lm02 import VMN05LM02
 
 from .client import (
     AiriosBaseTransport,
@@ -17,6 +17,8 @@ from .constants import BindingStatus, ProductId
 from .data_model import AiriosBoundNodeInfo, AiriosData, AiriosNodeData
 from .exceptions import AiriosException
 from .node import AiriosNode
+
+LOGGER = logging.getLogger(__name__)
 
 
 class Airios:
@@ -83,18 +85,19 @@ class Airios:
         bridge_rf_address = brdg_data["rf_address"].value
         data[self.bridge.slave_id] = brdg_data
 
-        for _node in (
-            await self.bridge.nodes()
-        ):  # this info can all go to the model class files as lookup dict?
-            # see example in cli.py
-            if _node.product_id == ProductId.VMD_02RPS78:
-                vmd = VMD02RPS78(_node.slave_id, self.bridge.client)
-                vmd_data = await vmd.fetch_vmd_data()
-                data[_node.slave_id] = vmd_data
-            if _node.product_id == ProductId.VMN_05LM02:
-                vmn = VMN05LM02(_node.slave_id, self.bridge.client)
-                vmn_data = await vmn.fetch_vmn_data()
-                data[_node.slave_id] = vmn_data
+        for _node in await self.bridge.nodes():  # this info is in the model class files
+            # lookup node model family by key # compare to cli.py
+            for key, _id in self.bridge.get_product_ids():  # ids by model_key (names) from bridge
+                if _node.product_id == _id:
+                    LOGGER.debug(f"Start matching init for: {key}")
+                    if key.startswith("VMD"):
+                        vmd = self.bridge.modules[key].VmdNode(_node.slave_id, self.bridge.client)
+                        vmd_data = await vmd.fetch_vmd_data()
+                        data[_node.slave_id] = vmd_data
+                    if key.startswith("VMN"):
+                        vmn = self.bridge.modules[key].VmnNode(_node.slave_id, self.bridge.client)
+                        vmn_data = await vmn.fetch_vmn_data()
+                        data[_node.slave_id] = vmn_data
 
         return AiriosData(bridge_rf_address=bridge_rf_address, nodes=data)
 

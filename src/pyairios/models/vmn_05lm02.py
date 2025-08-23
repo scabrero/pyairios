@@ -1,7 +1,8 @@
-"""Airios VMN-05LM02 remote implementation."""
+"""Airios VMN-05LM02 Siber 4 button Remote implementation."""
 
 from __future__ import annotations
 
+import logging
 import re
 from typing import List
 
@@ -19,6 +20,8 @@ from pyairios.registers import (
     Result,
     U16Register,
 )
+
+LOGGER = logging.getLogger(__name__)
 
 
 class Reg(RegisterAddress):
@@ -38,12 +41,13 @@ def product_id() -> int:
     return 0x0001C83E
 
 
-class VMN05LM02(AiriosDevice):
-    """Represents a VMN-05LM02 remote node."""
+class VmnNode(AiriosDevice):
+    """Represents a VMN-05LM02 Siber 4 button remote node."""
 
     def __init__(self, slave_id: int, client: AsyncAiriosModbusClient) -> None:
         """Initialize the VMN-05LM02 node instance."""
         super().__init__(slave_id, client)
+        LOGGER.debug(f"Starting Siber Remote VmnNode({slave_id})")
         vmn_registers: List[RegisterBase] = [
             U16Register(
                 Reg.REQUESTED_VENTILATION_SPEED, RegisterAccess.READ | RegisterAccess.STATUS
@@ -52,8 +56,7 @@ class VMN05LM02(AiriosDevice):
         self._add_registers(vmn_registers)
 
     def __str__(self) -> str:
-        # return f"VMN-05LM02@{self.slave_id}"
-        prompt = str(re.sub(r"_", "-", self.__module__.__getattribute__(__name__).upper()))
+        prompt = str(re.sub(r"_", "-", self.__module__.upper()))
         return f"{prompt}@{self.slave_id}"
 
     async def requested_ventilation_speed(self) -> Result[VMDRequestedVentilationSpeed]:
