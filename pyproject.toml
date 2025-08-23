@@ -48,3 +48,6 @@ exclude = [
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/pyairios"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src/", "."]

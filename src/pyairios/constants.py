@@ -1,23 +1,30 @@
 """Constants and data types used by this library."""
 
+import datetime
 from dataclasses import dataclass
 from enum import Flag, IntEnum, auto
-import datetime
 
 
 class ProductId(IntEnum):
-    """The product ID is a unique product identifier.
-
-    The value is composed by three fields, product type + sub ID + manufacturer ID.
+    """
+    The product ID is a unique product identifier.
+    The value is composed of three fields: product type + sub ID + manufacturer ID.
     """
 
-    BRDG_02R13 = 0x0001C849
-    VMD_02RPS78 = 0x0001C892
-    VMN_05LM02 = 0x0001C83E
+    # this info was moved to the models/ class files as product_id()
+    # get the dict from bridge by calling bridge.get_product_ids()
+    # they will be unique as long as all files are in flat models/ dir
+    # new definitions will be picked up automatically
+    # will remain in use for type hints
+
+    BRDG_02R13 = 0x0001C849  # RF Bridge
+    VMD_02RPS78 = 0x0001C892  # Siber DF Optima 2 controller v copied to model file get_product_id()
+    VMN_05LM02 = 0x0001C83E  # Siber 4 button remote v copied to model file get_product_id()
     VMN_02LM11 = 0x0001C852
-    VMD_07RPS13 = 0x0001C883  # ClimaRad VenturaV1X
+    VMD_07RPS13 = 0x0001C883  # ClimaRad VenturaV1X v copied to model file get_product_id()
 
     def __str__(self) -> str:
+        # for k:v in name_by_key:
         if self.value == self.BRDG_02R13:
             return "BRDG-02R13"
         if self.value == self.VMD_02RPS78:

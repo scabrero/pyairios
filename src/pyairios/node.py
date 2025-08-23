@@ -21,7 +21,7 @@ from .registers import (
     U32Register,
 )
 
-_LOGGER = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 class Reg(RegisterAddress):
@@ -57,8 +57,16 @@ class Reg(RegisterAddress):
     FAULT_HISTORY_COMM_STATUS = 40307
 
 
+async def _safe_fetch(fetcher: Callable):
+    try:
+        result = await fetcher()
+    except AiriosException:
+        return None
+    return result
+
+
 class AiriosNode:
-    """Represents a RF node."""
+    """Represents an RF node."""
 
     client: AsyncAiriosModbusClient
     slave_id: int
@@ -194,12 +202,12 @@ class AiriosNode:
         for i in range(0, nrecs):
             ok = await self.client.set_register(self.regmap[Reg.RF_STATS_INDEX], i, self.slave_id)
             if not ok:
-                _LOGGER.warning("Failed to write %d to RF stats index register", i)
+                LOGGER.warning("Failed to write %d to RF stats index register", i)
                 continue
             r = await self.client.get_register(self.regmap[Reg.RF_STATS_DEVICE], self.slave_id)
             device_id: int = r.value
             r = await self.client.get_register(self.regmap[Reg.RF_STATS_AVERAGE], self.slave_id)
-            averate: int = r.value
+            average: int = r.value
             r = await self.client.get_register(self.regmap[Reg.RF_STATS_STDDEV], self.slave_id)
             stddev: float = r.value
             r = await self.client.get_register(self.regmap[Reg.RF_STATS_MIN], self.slave_id)
@@ -214,7 +222,7 @@ class AiriosNode:
             age = datetime.timedelta(minutes=r.value)
             rec = RFStats.Record(
                 device_id=device_id,
-                averate=averate,
+                averate=average,
                 stddev=stddev,
                 minimum=minimum,
                 maximum=maximum,
@@ -225,23 +233,16 @@ class AiriosNode:
             recs.append(rec)
         return RFStats(records=recs)
 
-    async def _safe_fetch(self, fetcher: Callable):
-        try:
-            result = await fetcher()
-        except AiriosException:
-            return None
-        return result
-
     async def fetch_node(self) -> AiriosNodeData:  # pylint: disable=duplicate-code
         """Fetch relevant node data at once."""
 
         return AiriosNodeData(
             slave_id=self.slave_id,
-            rf_address=await self._safe_fetch(self.node_rf_address),
-            product_id=await self._safe_fetch(self.node_product_id),
-            sw_version=await self._safe_fetch(self.node_software_version),
-            product_name=await self._safe_fetch(self.node_product_name),
-            rf_comm_status=await self._safe_fetch(self.node_rf_comm_status),
-            battery_status=await self._safe_fetch(self.node_battery_status),
-            fault_status=await self._safe_fetch(self.node_fault_status),
+            rf_address=await _safe_fetch(self.node_rf_address),
+            product_id=await _safe_fetch(self.node_product_id),
+            sw_version=await _safe_fetch(self.node_software_version),
+            product_name=await _safe_fetch(self.node_product_name),
+            rf_comm_status=await _safe_fetch(self.node_rf_comm_status),
+            battery_status=await _safe_fetch(self.node_battery_status),
+            fault_status=await _safe_fetch(self.node_fault_status),
         )

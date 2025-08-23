@@ -1,13 +1,16 @@
-"""Airios VMD-02RPS78 controller implementation."""
+"""Airios VMD-02RPS78 Siber DF Optima 2 controller implementation."""
 
 from __future__ import annotations
 
+import logging
 import math
-from dataclasses import dataclass
+import re
+
+# from dataclasses import dataclass
 from typing import List
 
-from .client import AsyncAiriosModbusClient
-from .constants import (
+from pyairios.client import AsyncAiriosModbusClient
+from pyairios.constants import (
     VMDBypassMode,
     VMDBypassPosition,
     VMDCapabilities,
@@ -19,10 +22,11 @@ from .constants import (
     VMDTemperature,
     VMDVentilationSpeed,
 )
-from .data_model import VMD02RPS78Data
-from .device import AiriosDevice
-from .exceptions import AiriosInvalidArgumentException
-from .registers import (
+from pyairios.data_model import AiriosDeviceData
+from pyairios.exceptions import AiriosInvalidArgumentException
+from pyairios.models.vmd_base import VmdBase
+from pyairios.node import _safe_fetch
+from pyairios.registers import (
     FloatRegister,
     RegisterAccess,
     RegisterAddress,
@@ -31,19 +35,11 @@ from .registers import (
     U16Register,
 )
 
-
-@dataclass
-class VMDPresetFansSpeeds:
-    """Preset fan speeds."""
-
-    exhaust_fan_speed: Result[int]
-    """Exhaust fan speed (%)"""
-    supply_fan_speed: Result[int]
-    """Supply fan speed (%)"""
+LOGGER = logging.getLogger(__name__)
 
 
-class Reg(RegisterAddress):
-    """Register set for VMD-02RPS78 controller node."""
+class Reg(RegisterAddress):  # only override or add differences in VMD_BASE?
+    """Register set for VMD-02RPS78 Siber DF Optima 2 controller node."""
 
     CURRENT_VENTILATION_SPEED = 41000
     FAN_SPEED_EXHAUST = 41001
@@ -94,12 +90,55 @@ class Reg(RegisterAddress):
     FREE_VENTILATION_COOLING_OFFSET = 42015
 
 
-class VMD02RPS78(AiriosDevice):
+class VMD02RPS78Data(AiriosDeviceData):
+    """VMD-02RPS78 node data."""
+
+    error_code: Result[VMDErrorCode] | None
+    ventilation_speed: Result[VMDVentilationSpeed] | None
+    override_remaining_time: Result[int] | None
+    exhaust_fan_speed: Result[int] | None
+    supply_fan_speed: Result[int] | None
+    exhaust_fan_rpm: Result[int] | None
+    supply_fan_rpm: Result[int] | None
+    indoor_air_temperature: Result[VMDTemperature] | None
+    outdoor_air_temperature: Result[VMDTemperature] | None
+    exhaust_air_temperature: Result[VMDTemperature] | None
+    supply_air_temperature: Result[VMDTemperature] | None
+    filter_dirty: Result[int] | None
+    filter_remaining_percent: Result[int] | None
+    filter_duration_days: Result[int] | None
+    bypass_position: Result[VMDBypassPosition] | None
+    bypass_mode: Result[VMDBypassMode] | None
+    bypass_status: Result[int] | None
+    defrost: Result[int] | None
+    preheater: Result[VMDHeater] | None
+    postheater: Result[VMDHeater] | None
+    preheater_setpoint: Result[float] | None
+    free_ventilation_setpoint: Result[float] | None
+    free_ventilation_cooling_offset: Result[float] | None
+    frost_protection_preheater_setpoint: Result[float] | None
+    preset_high_fan_speed_supply: Result[int] | None
+    preset_high_fan_speed_exhaust: Result[int] | None
+    preset_medium_fan_speed_supply: Result[int] | None
+    preset_medium_fan_speed_exhaust: Result[int] | None
+    preset_low_fan_speed_supply: Result[int] | None
+    preset_low_fan_speed_exhaust: Result[int] | None
+    preset_standby_fan_speed_supply: Result[int] | None
+    preset_standby_fan_speed_exhaust: Result[int] | None
+
+
+def product_id() -> int:
+    # for key VMD_02RPS78
+    return 0x0001C892
+
+
+class VmdNode(VmdBase):
     """Represents a VMD-02RPS78 controller node."""
 
     def __init__(self, slave_id: int, client: AsyncAiriosModbusClient) -> None:
         """Initialize the VMD-02RPS78 controller node instance."""
         super().__init__(slave_id, client)
+        LOGGER.debug(f"Starting Siber VmdNode({slave_id})")
         vmd_registers: List[RegisterBase] = [
             U16Register(Reg.CURRENT_VENTILATION_SPEED, RegisterAccess.READ | RegisterAccess.STATUS),
             U16Register(Reg.FAN_SPEED_EXHAUST, RegisterAccess.READ | RegisterAccess.STATUS),
@@ -197,10 +236,11 @@ class VMD02RPS78(AiriosDevice):
         self._add_registers(vmd_registers)
 
     def __str__(self) -> str:
-        return f"VMD-02RPS78@{self.slave_id}"
+        prompt = str(re.sub(r"_", "-", self.__module__.upper()))
+        return f"{prompt}@{self.slave_id}"
 
     async def capabilities(self) -> Result[VMDCapabilities]:
-        """Get the ventilation unit capabilitires."""
+        """Get the ventilation unit capabilities."""
         regdesc = self.regmap[Reg.CAPABILITIES]
         result = await self.client.get_register(regdesc, self.slave_id)
         return Result(VMDCapabilities(result.value), result.status)
@@ -237,11 +277,11 @@ class VMD02RPS78(AiriosDevice):
             )
         raise AiriosInvalidArgumentException(f"Invalid temporary override speed {speed}")
 
-    async def preset_away_fans_speed(self) -> VMDPresetFansSpeeds:
-        """Get the away ventilation speed preset fan speeds."""
-        r1 = await self.client.get_register(self.regmap[Reg.FAN_SPEED_AWAY_SUPPLY], self.slave_id)
-        r2 = await self.client.get_register(self.regmap[Reg.FAN_SPEED_AWAY_EXHAUST], self.slave_id)
-        return VMDPresetFansSpeeds(supply_fan_speed=r1, exhaust_fan_speed=r2)
+    # async def preset_away_fans_speed(self) -> VMDPresetFansSpeeds:
+    #     """Get the away ventilation speed preset fan speeds."""
+    #     r1 = await self.client.get_register(self.regmap[Reg.FAN_SPEED_AWAY_SUPPLY], self.slave_id)
+    #     r2 = await self.client.get_register(self.regmap[Reg.FAN_SPEED_AWAY_EXHAUST], self.slave_id)
+    #     return VMDPresetFansSpeeds(supply_fan_speed=r1, exhaust_fan_speed=r2)
 
     async def set_preset_away_fans_speed(self, supply: int, exhaust: int) -> bool:
         """Set the away ventilation speed preset fan speeds."""
@@ -257,11 +297,11 @@ class VMD02RPS78(AiriosDevice):
         )
         return r1 and r2
 
-    async def preset_low_fans_speed(self) -> VMDPresetFansSpeeds:
-        """Get the low ventilation speed preset fan speeds."""
-        r1 = await self.client.get_register(self.regmap[Reg.FAN_SPEED_LOW_SUPPLY], self.slave_id)
-        r2 = await self.client.get_register(self.regmap[Reg.FAN_SPEED_LOW_EXHAUST], self.slave_id)
-        return VMDPresetFansSpeeds(supply_fan_speed=r1, exhaust_fan_speed=r2)
+    # async def preset_low_fans_speed(self) -> VMDPresetFansSpeeds:
+    #     """Get the low ventilation speed preset fan speeds."""
+    #     r1 = await self.client.get_register(self.regmap[Reg.FAN_SPEED_LOW_SUPPLY], self.slave_id)
+    #     r2 = await self.client.get_register(self.regmap[Reg.FAN_SPEED_LOW_EXHAUST], self.slave_id)
+    #     return VMDPresetFansSpeeds(supply_fan_speed=r1, exhaust_fan_speed=r2)
 
     async def set_preset_low_fans_speed(self, supply: int, exhaust: int) -> bool:
         """Set the low ventilation speed preset fan speeds."""
@@ -277,11 +317,11 @@ class VMD02RPS78(AiriosDevice):
         )
         return r1 and r2
 
-    async def preset_mid_fans_speed(self) -> VMDPresetFansSpeeds:
-        """Get the mid ventilation speed preset fan speeds."""
-        r1 = await self.client.get_register(self.regmap[Reg.FAN_SPEED_MID_SUPPLY], self.slave_id)
-        r2 = await self.client.get_register(self.regmap[Reg.FAN_SPEED_MID_EXHAUST], self.slave_id)
-        return VMDPresetFansSpeeds(supply_fan_speed=r1, exhaust_fan_speed=r2)
+    # async def preset_mid_fans_speed(self) -> VMDPresetFansSpeeds:
+    #     """Get the mid ventilation speed preset fan speeds."""
+    #     r1 = await self.client.get_register(self.regmap[Reg.FAN_SPEED_MID_SUPPLY], self.slave_id)
+    #     r2 = await self.client.get_register(self.regmap[Reg.FAN_SPEED_MID_EXHAUST], self.slave_id)
+    #     return VMDPresetFansSpeeds(supply_fan_speed=r1, exhaust_fan_speed=r2)
 
     async def set_preset_mid_fans_speed(self, supply: int, exhaust: int) -> bool:
         """Set the mid ventilation speed preset fan speeds."""
@@ -297,11 +337,11 @@ class VMD02RPS78(AiriosDevice):
         )
         return r1 and r2
 
-    async def preset_high_fans_speed(self) -> VMDPresetFansSpeeds:
-        """Get the high ventilation speed preset fan speeds."""
-        r1 = await self.client.get_register(self.regmap[Reg.FAN_SPEED_HIGH_SUPPLY], self.slave_id)
-        r2 = await self.client.get_register(self.regmap[Reg.FAN_SPEED_HIGH_EXHAUST], self.slave_id)
-        return VMDPresetFansSpeeds(supply_fan_speed=r1, exhaust_fan_speed=r2)
+    # async def preset_high_fans_speed(self) -> VMDPresetFansSpeeds:
+    #     """Get the high ventilation speed preset fan speeds."""
+    #     r1 = await self.client.get_register(self.regmap[Reg.FAN_SPEED_HIGH_SUPPLY], self.slave_id)
+    #     r2 = await self.client.get_register(self.regmap[Reg.FAN_SPEED_HIGH_EXHAUST], self.slave_id)
+    #     return VMDPresetFansSpeeds(supply_fan_speed=r1, exhaust_fan_speed=r2)
 
     async def set_preset_high_fans_speed(self, supply: int, exhaust: int) -> bool:
         """Set the high ventilation speed preset fan speeds."""
@@ -609,59 +649,125 @@ class VMD02RPS78(AiriosDevice):
 
         return VMD02RPS78Data(
             slave_id=self.slave_id,
-            rf_address=await self._safe_fetch(self.node_rf_address),
-            product_id=await self._safe_fetch(self.node_product_id),
-            sw_version=await self._safe_fetch(self.node_software_version),
-            product_name=await self._safe_fetch(self.node_product_name),
-            rf_comm_status=await self._safe_fetch(self.node_rf_comm_status),
-            battery_status=await self._safe_fetch(self.node_battery_status),
-            fault_status=await self._safe_fetch(self.node_fault_status),
-            bound_status=await self._safe_fetch(self.device_bound_status),
-            value_error_status=await self._safe_fetch(self.device_value_error_status),
-            error_code=await self._safe_fetch(self.error_code),
-            ventilation_speed=await self._safe_fetch(self.ventilation_speed),
-            exhaust_fan_speed=await self._safe_fetch(self.exhaust_fan_speed),
-            supply_fan_speed=await self._safe_fetch(self.supply_fan_speed),
-            exhaust_fan_rpm=await self._safe_fetch(self.exhaust_fan_rpm),
-            supply_fan_rpm=await self._safe_fetch(self.supply_fan_rpm),
-            override_remaining_time=await self._safe_fetch(self.override_remaining_time),
-            indoor_air_temperature=await self._safe_fetch(self.indoor_air_temperature),
-            outdoor_air_temperature=await self._safe_fetch(self.outdoor_air_temperature),
-            exhaust_air_temperature=await self._safe_fetch(self.exhaust_air_temperature),
-            supply_air_temperature=await self._safe_fetch(self.supply_air_temperature),
-            filter_dirty=await self._safe_fetch(self.filter_dirty),
-            filter_remaining_percent=await self._safe_fetch(self.filter_remaining),
-            filter_duration_days=await self._safe_fetch(self.filter_duration),
-            defrost=await self._safe_fetch(self.defrost),
-            bypass_position=await self._safe_fetch(self.bypass_position),
-            bypass_mode=await self._safe_fetch(self.bypass_mode),
-            bypass_status=await self._safe_fetch(self.bypass_status),
-            preheater=await self._safe_fetch(self.preheater),
-            postheater=await self._safe_fetch(self.postheater),
-            preheater_setpoint=await self._safe_fetch(self.preheater_setpoint),
-            free_ventilation_setpoint=await self._safe_fetch(self.free_ventilation_setpoint),
-            free_ventilation_cooling_offset=await self._safe_fetch(
-                self.free_ventilation_cooling_offset
-            ),
-            frost_protection_preheater_setpoint=await self._safe_fetch(
+            rf_address=await _safe_fetch(self.node_rf_address),
+            product_id=await _safe_fetch(self.node_product_id),
+            sw_version=await _safe_fetch(self.node_software_version),
+            product_name=await _safe_fetch(self.node_product_name),
+            rf_comm_status=await _safe_fetch(self.node_rf_comm_status),
+            battery_status=await _safe_fetch(self.node_battery_status),
+            fault_status=await _safe_fetch(self.node_fault_status),
+            bound_status=await _safe_fetch(self.device_bound_status),
+            value_error_status=await _safe_fetch(self.device_value_error_status),
+            error_code=await _safe_fetch(self.error_code),
+            ventilation_speed=await _safe_fetch(self.ventilation_speed),
+            exhaust_fan_speed=await _safe_fetch(self.exhaust_fan_speed),
+            supply_fan_speed=await _safe_fetch(self.supply_fan_speed),
+            exhaust_fan_rpm=await _safe_fetch(self.exhaust_fan_rpm),
+            supply_fan_rpm=await _safe_fetch(self.supply_fan_rpm),
+            override_remaining_time=await _safe_fetch(self.override_remaining_time),
+            indoor_air_temperature=await _safe_fetch(self.indoor_air_temperature),
+            outdoor_air_temperature=await _safe_fetch(self.outdoor_air_temperature),
+            exhaust_air_temperature=await _safe_fetch(self.exhaust_air_temperature),
+            supply_air_temperature=await _safe_fetch(self.supply_air_temperature),
+            filter_dirty=await _safe_fetch(self.filter_dirty),
+            filter_remaining_percent=await _safe_fetch(self.filter_remaining),
+            filter_duration_days=await _safe_fetch(self.filter_duration),
+            defrost=await _safe_fetch(self.defrost),
+            bypass_position=await _safe_fetch(self.bypass_position),
+            bypass_mode=await _safe_fetch(self.bypass_mode),
+            bypass_status=await _safe_fetch(self.bypass_status),
+            preheater=await _safe_fetch(self.preheater),
+            postheater=await _safe_fetch(self.postheater),
+            preheater_setpoint=await _safe_fetch(self.preheater_setpoint),
+            free_ventilation_setpoint=await _safe_fetch(self.free_ventilation_setpoint),
+            free_ventilation_cooling_offset=await _safe_fetch(self.free_ventilation_cooling_offset),
+            frost_protection_preheater_setpoint=await _safe_fetch(
                 self.frost_protection_preheater_setpoint
             ),
-            preset_high_fan_speed_supply=await self._safe_fetch(self.preset_high_fan_speed_supply),
-            preset_high_fan_speed_exhaust=await self._safe_fetch(
-                self.preset_high_fan_speed_exhaust
-            ),
-            preset_medium_fan_speed_supply=await self._safe_fetch(
-                self.preset_medium_fan_speed_supply
-            ),
-            preset_medium_fan_speed_exhaust=await self._safe_fetch(
-                self.preset_medium_fan_speed_exhaust
-            ),
-            preset_low_fan_speed_supply=await self._safe_fetch(self.preset_low_fan_speed_supply),
-            preset_low_fan_speed_exhaust=await self._safe_fetch(self.preset_low_fan_speed_exhaust),
-            preset_standby_fan_speed_supply=await self._safe_fetch(
-                self.preset_standby_fan_speed_supply
-            ),
-            preset_standby_fan_speed_exhaust=await self._safe_fetch(
+            preset_high_fan_speed_supply=await _safe_fetch(self.preset_high_fan_speed_supply),
+            preset_high_fan_speed_exhaust=await _safe_fetch(self.preset_high_fan_speed_exhaust),
+            preset_medium_fan_speed_supply=await _safe_fetch(self.preset_medium_fan_speed_supply),
+            preset_medium_fan_speed_exhaust=await _safe_fetch(self.preset_medium_fan_speed_exhaust),
+            preset_low_fan_speed_supply=await _safe_fetch(self.preset_low_fan_speed_supply),
+            preset_low_fan_speed_exhaust=await _safe_fetch(self.preset_low_fan_speed_exhaust),
+            preset_standby_fan_speed_supply=await _safe_fetch(self.preset_standby_fan_speed_supply),
+            preset_standby_fan_speed_exhaust=await _safe_fetch(
                 self.preset_standby_fan_speed_exhaust
             ),
+        )
+
+    def print_data(self, res) -> None:
+        """
+        Print labels + states for this particular model, including VMD base fields
+
+        :param res: the result retrieved earlier by CLI using fetch_vmd_data()
+        :return: no confirmation, outputs to serial monitor
+        """
+        super().print_data(res)
+
+        print("VMD-02RPS78 data")
+        print("----------------")
+        print(f"    {'Error code:': <25}{res['error_code']}")
+
+        print(f"    {'Ventilation speed:': <25}{res['ventilation_speed']}")
+        # print(f"    {'Override remaining time:': <25}{res['override_remaining_time']}")
+
+        print(
+            f"    {'Supply fan speed:': <25}{res['supply_fan_speed']}% "
+            f"({res['supply_fan_rpm']} RPM)"
+        )
+        print(
+            f"    {'Exhaust fan speed:': <25}{res['exhaust_fan_speed']}% "
+            f"({res['exhaust_fan_rpm']} RPM)"
+        )
+
+        print(f"    {'Indoor temperature:': <25}{res['indoor_air_temperature']}")  # test soon
+        print(f"    {'Outdoor temperature:': <25}{res['outdoor_air_temperature']}")
+        print(f"    {'Exhaust temperature:': <25}{res['exhaust_air_temperature']}")
+        print(f"    {'Supply temperature:': <25}{res['supply_air_temperature']}")
+
+        print(f"    {'Filter dirty:': <25}{res['filter_dirty']}")
+        print(f"    {'Filter remaining:': <25}{res['filter_remaining_percent']} %")  # test soon
+        print(f"    {'Filter duration:': <25}{res['filter_duration_days']} days")
+
+        print(f"    {'Bypass position:': <25}{res['bypass_position']}")  # test soon
+        print(f"    {'Bypass status:': <25}{res['bypass_status']}")
+        print(f"    {'Bypass mode:': <25}{res['bypass_mode']}")
+
+        print(f"    {'Defrost:': <25}{res['defrost']}")
+        print(f"    {'Preheater:': <25}{res['preheater']}")
+        print(f"    {'Postheater:': <25}{res['postheater']}")
+        print("")
+
+        print(f"    {'Preset speeds':<25}{'Supply':<10}{'Exhaust':<10}")
+        print(f"    {'-------------':<25}")
+        print(
+            f"    {'High':<25}{str(res['preset_high_fan_speed_supply']) + ' %':<10}"
+            f"{str(res['preset_high_fan_speed_exhaust']) + ' %':<10}"
+        )
+        print(
+            f"    {'Mid':<25}{str(res['preset_medium_fan_speed_supply']) + ' %':<10}"
+            f"{str(res['preset_medium_fan_speed_exhaust']) + ' %':<10}"
+        )
+        print(
+            f"    {'Low':<25}{str(res['preset_low_fan_speed_supply']) + ' %':<10}"
+            f"{str(res['preset_low_fan_speed_exhaust']) + ' %':<10}"
+        )
+        print(
+            f"    {'Standby':<25}{str(res['preset_standby_fan_speed_supply']) + ' %':<10}"
+            f"{str(res['preset_standby_fan_speed_exhaust']) + ' %':<10}"
+        )
+        print("")
+
+        print("    Setpoints")
+        print("    ---------")
+        print(
+            f"    {'Frost protection preheater setpoint:':<40}"
+            f"{res['frost_protection_preheater_setpoint']} ºC"
+        )
+        print(f"    {'Preheater setpoint:': <40}{res['preheater_setpoint']} ºC")
+        print(f"    {'Free ventilation setpoint:':<40}{res['free_ventilation_setpoint']} ºC")
+        print(
+            f"    {'Free ventilation cooling offset:':<40}"
+            f"{res['free_ventilation_cooling_offset']} K"
         )
