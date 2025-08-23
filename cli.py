@@ -53,15 +53,11 @@ from pyairios.models.brdg_02r13 import (
     DEFAULT_SLAVE_ID as BRDG02R13_DEFAULT_SLAVE_ID,
 )
 
+LOGGER = logging.getLogger(__name__)
+
 # analyse and import all VMx.py files from the models/ folder
 modules_list = glob.glob(os.path.join(os.path.dirname(__file__), "src/pyairios/models/*.py"))
 # A major benefit of the glob library is that it includes the path to the file in each item
-# print(modules_list)
-
-# debug lists:
-# files = []
-# module_names_list = []
-# class_names_list = []
 
 # all (usable) models found are stored in 3 dicts:
 module_names: dict[str, str] = {}
@@ -73,40 +69,33 @@ modules: dict[str, ModuleType] = {}
 
 for file_path in modules_list:
     file_name = str(os.path.basename(file_path))
-    # files.append(file_name)  # debug
     if (
         file_name == "__init__.py" or file_name == "brdg_02r13.py" or file_name.endswith("_base.py")
     ):  # skip BRDG and the base model definitions
         continue
     module_name = file_name[:-3]  # drop '.py' file extension
-    # module_names_list.append(module_name)  # debug
-    class_name: str = str(re.sub(r"_", "", module_name).upper())  # drop '_'
-    assert class_name is not None
-    # class_names_list.append(class_name)  # debug
-    module_names[class_name] = str(module_name.upper())  # convert to upper case, dict by class_name
+    model_key: str = str(re.sub(r"_", "", module_name).upper())  # drop '_'
+    assert model_key is not None
+    module_names[model_key] = str(module_name.upper())  # convert to upper case, dict by class_name
 
-    # using importlib, create a spec for the module:
+    # using importlib, create a spec for each module:
     module_spec = importlib.util.spec_from_file_location(module_name, file_path)
     # store the spec in a dict by class name:
     mod = importlib.util.module_from_spec(module_spec)
     # load the module from the spec:
     module_spec.loader.exec_module(mod)
     # store the imported module in dict:
-    modules[class_name] = mod
+    modules[model_key] = mod
     # now we can use the module as if it were imported normally
 
     # check loading by fetching the product_id, the int te check against
-    product_ids[class_name] = modules[class_name].product_id()
+    product_ids[model_key] = modules[model_key].product_id()
 
-# print("files found:")
-# print(files)  # debug iterator result
-# print(module_names_list)
-# print(class_names_list)
-print("module names by key:")
+print("module_names by key:")
 print(module_names)  # dict
-print("modules loaded:")
+print("Loaded modules:")
 print(modules)  # dict
-print("product_id's loaded:")
+print("Loaded product_id's:")
 print(product_ids)  # dict
 # all loaded up
 
@@ -170,9 +159,13 @@ class AiriosVmdCLI(aiocmd.PromptToolkitCmd):
         :param vmd: contains all details of this model
         """
         super().__init__()
-        self.class_pointer = str(vmd)
-        self.prompt = f"[{str(vmd)}@{vmd.slave_id}]>> "
+        LOGGER.debug(f"Entering VmdCLI for vmd {str(vmd)}")
         self.vmd = vmd
+        LOGGER.debug("Update class_pointer")
+        self.class_pointer = str(vmd)
+        LOGGER.debug(f"Assembling prompt for {self.class_pointer}")
+        self.prompt = f"[{str(vmd)}]>> "
+        LOGGER.debug("VmdCLI init completed")
 
     async def do_capabilities(self) -> None:
         """Print the device RF capabilities."""
@@ -307,6 +300,10 @@ class AiriosVmdCLI(aiocmd.PromptToolkitCmd):
         """Reset the filter change timer."""
         await self.vmd.filter_reset()
 
+    async def do_registers(self, start_num: int = 40000):
+        """Request all registers from start_num"""
+        print(await self.vmd.sniff_registers(start_num))
+
 
 class AiriosBridgeCLI(aiocmd.PromptToolkitCmd):
     """The bridge CLI interface."""
@@ -334,44 +331,41 @@ class AiriosBridgeCLI(aiocmd.PromptToolkitCmd):
         if node_info is None:
             raise AiriosIOException(f"Node with address {slave_id} not bound")
 
-        # example imported product_ids = {'VMD07RPS13': 116867, 'VMD02RPS78': 116882, 'VMN05LM02': 116798}
+        print()  # just a spacer
+
+        # find by product_ids: {'VMD07RPS13': 116867, 'VMD02RPS78': 116882, 'VMN05LM02': 116798}
+        # compare to src/pyairios/_init_.py: fetch models from bridge
         for key, value in product_ids.items():
-            if node_info.product_id == value:  # == ProductId.VMD_02RPS78:
-                if key.startswith("VMD_"):
-                    vmd = modules[module_names[key]].key(  # modules[VMD_02RPS78].VMD02RPS78(
+            LOGGER.debug(f"Looking up Key: {key}, Value: {value}")
+            # DEBUG:__main__:Looking up Key: VMD07RPS13, Value: 116867
+            if value == node_info.product_id:
+                LOGGER.debug(f"Start matching CLI for: {key}")
+                if key.startswith("VMD"):
+                    LOGGER.debug("Start vmdCLI")
+                    # DEBUG:__main__:Start matching CLI for: VMD_07RPS13
+                    vmd = modules[key].VmdNode(  # use fixed class name in all VMD models
                         node_info.slave_id, self.bridge.client
                     )
+                    LOGGER.debug(f"await AiriosVmdCLI for: {key}")  # << up to here OK
+                    # DEBUG:__main__:await AiriosVmdCLI for: VMD07RPS13
+                    # Command failed:  'str' object has no attribute 'vmd_07rps13'
                     await AiriosVmdCLI(vmd).run()
-                    print("Loaded vmd for {key}")
+                    LOGGER.debug(f"Loaded vmd for {key}")
                     return
 
-                # this worked, but required adding any model + dedicated CLI class:
-                # if node_info.product_id == ProductId.VMD_07RPS13:  # VMD_07RPS13 = ClimaRad Ventura
-                # print("Ventura node starting, productId:")  # debug
-                # print(product_ids["VMD07RPS13"])
-                # vmd = modules[
-                #     "VMD07RPS13"
-                # ].VMD07RPS13(
-                #     node_info.slave_id, self.bridge.client
-                # )
-                # await AiriosVmdCLI(vmd).run()
-                # return
-
-                if key.startswith("VMN_"):
-                    vmn = modules[module_names[key]].key(  # modules[VMD_02RPS78].VMD02RPS78(
+                elif key.startswith("VMN"):
+                    LOGGER.debug("Start vmnCLI")
+                    vmn = modules[key].VmnNode(  # modules[VMD_02RPS78].VMD02RPS78(
                         node_info.slave_id, self.bridge.client
                     )
+                    LOGGER.debug(f"await AiriosVmnCLI: {key}")
                     await AiriosVmnCLI(vmn).run()
-                    print("Loaded vmd for {key}")
+                    LOGGER.debug("Loaded vmn for {key}")
                     return
-        # if node_info.product_id == ProductId.VMN_05LM02:
-        #     vmn = modules["VMN_05LM02"].VMN05LM02(
-        #         node_info.slave_id, self.bridge.client
-        #     )
-        #     await AiriosVmnCLI(vmn).run()
-        #     return
 
-        raise AiriosNotImplemented(f"{node_info.product_id} not implemented")
+        raise AiriosNotImplemented(
+            f"{node_info.product_id} not implemented. Drop new definitions in models/"
+        )
 
     async def do_rf_sent_messages(self) -> None:
         """Print the RF sent messages."""
@@ -566,10 +560,13 @@ class AiriosRootCLI(aiocmd.PromptToolkitCmd):
         if self.client:
             self.client = None
 
-    async def do_set_log_level(level: str) -> None:
+    async def do_set_log_level(self, level: str) -> None:
         """Set the log level: critical, fatal, error, warning, info or debug."""
+        if level is None:
+            return
         logging.basicConfig()
         log = logging.getLogger()
+
         if level.casefold() == "critical".casefold():
             log.setLevel(logging.CRITICAL)
         elif level.casefold() == "fatal".casefold():

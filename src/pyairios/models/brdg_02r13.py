@@ -1,8 +1,13 @@
 """Airios BRDG-02R13 RF bridge implementation."""
 
+import glob
+import importlib.util
 import logging
+import os
+import re
 from dataclasses import dataclass
 from datetime import datetime, timedelta
+from types import ModuleType
 from typing import List
 
 from pyairios.client import AsyncAiriosModbusClient
@@ -22,8 +27,6 @@ from pyairios.exceptions import (
     AiriosException,
     AiriosInvalidArgumentException,
 )
-from pyairios.models.vmd_02rps78 import VMD02RPS78
-from pyairios.models.vmn_05lm02 import VMN05LM02
 from pyairios.node import AiriosNode, _safe_fetch
 from pyairios.node import Reg as NodeReg
 from pyairios.registers import (
@@ -40,7 +43,7 @@ from pyairios.registers import (
 
 DEFAULT_SLAVE_ID = 207
 
-_LOGGER = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 @dataclass
@@ -136,17 +139,26 @@ class Reg(RegisterAddress):
 
 
 def product_id() -> int:
-    # for key VMD_02RPS78
-    return 0x0001C892
+    # for key BRDG-02R13
+    return 0x0001C849
 
 
 class BRDG02R13(AiriosNode):
     """Represents a BRDG-02R13 RF bridge."""
 
+    # all (usable) models found are stored in 3 dicts:
+    module_names: dict[str, str] = {}
+    # a dict with module names by class name, used to fill in CLI prompt model
+    product_ids: dict[str, str] = {}
+    # a dict with ids by class name (replaces enum in const.py)
+    modules: dict[str, ModuleType] = {}
+    # a dict with imported modules by class name
+
     def __init__(self, slave_id: int, client: AsyncAiriosModbusClient) -> None:
         """Initialize the BRDG-02R13 RF bridge instance."""
 
         super().__init__(slave_id, client)
+        LOGGER.debug("Init Bridge")
         brdg_registers: List[RegisterBase] = [
             U16Register(Reg.CUSTOMER_PRODUCT_ID, RegisterAccess.READ | RegisterAccess.WRITE),
             DateTimeRegister(Reg.UTC_TIME, RegisterAccess.READ | RegisterAccess.WRITE),
@@ -208,9 +220,54 @@ class BRDG02R13(AiriosNode):
             U16Register(Reg.ADDRESS_NODE_32, RegisterAccess.READ),
         ]
         self._add_registers(brdg_registers)
+        self._load_models()
 
     def __str__(self) -> str:
         return f"BRDG-02R13@{self.slave_id}"
+
+    def _load_models(self) -> None:
+        # analyse and import all VMx.py files from the models/ folder
+        modules_list = glob.glob(
+            os.path.join(os.path.dirname(__file__), "*.py")
+        )  # we are in models/
+
+        for file_path in modules_list:
+            file_name = str(os.path.basename(file_path))
+            if (
+                file_name == "__init__.py"
+                or file_name == "brdg_02r13.py"
+                or file_name.endswith("_base.py")
+            ):  # skip BRDG and the base model definitions
+                continue
+            module_name = file_name[:-3]  # drop '.py' file extension
+            model_key: str = str(re.sub(r"_", "", module_name).upper())  # drop '_'
+            assert model_key is not None
+
+            # using importlib, create a spec for each module:
+            module_spec = importlib.util.spec_from_file_location(module_name, file_path)
+            # store the spec in a dict by class name:
+            mod = importlib.util.module_from_spec(module_spec)
+            # load the module from the spec:
+            module_spec.loader.exec_module(mod)
+            # store the imported module in dict:
+            self.modules[model_key] = mod
+            # now we can use the module as if it were imported normally
+
+            # check loading by fetching the product_id, the int te check against
+            self.product_ids[model_key] = self.modules[model_key].product_id()
+
+        print("Loaded modules:")
+        print(self.modules)  # dict
+        print("Loaded product_id's:")
+        print(self.product_ids)  # dict
+        # all loaded up
+
+    def get_product_ids(self) -> dict[str, str]:
+        """
+        Handy util to pick up a list of all supported models with their productId.
+        :return: dict of all controller and accessory definitions installed
+        """
+        return self.product_ids
 
     async def bind_controller(
         self,
@@ -329,7 +386,7 @@ class BRDG02R13(AiriosNode):
         )
 
     async def nodes(self) -> List[AiriosBoundNodeInfo]:
-        """Get the list of bound nodes."""
+        """Get the list of bound nodes registered on the bridge."""
 
         reg_descs: List[RegisterBase] = [
             self.regmap[Reg.ADDRESS_NODE_1],
@@ -379,12 +436,12 @@ class BRDG02R13(AiriosNode):
             if result is None or result.value is None:
                 continue
             try:
-                product_id = ProductId(result.value)
+                _product_id = ProductId(result.value)
             except ValueError:
-                _LOGGER.warning("Unknown product ID %s", result.value)
+                LOGGER.warning("Unknown product ID %s", result.value)
                 continue
             else:
-                product_id = ProductId(result.value)
+                _product_id = ProductId(result.value)
 
             result = await self.client.get_register(self.regmap[NodeReg.RF_ADDRESS], slave_id)
             if result is None or result.value is None:
@@ -392,7 +449,7 @@ class BRDG02R13(AiriosNode):
             rf_address = result.value
 
             info = AiriosBoundNodeInfo(
-                slave_id=slave_id, product_id=product_id, rf_address=rf_address
+                slave_id=slave_id, product_id=_product_id, rf_address=rf_address
             )
             nodes.append(info)
         return nodes
@@ -401,15 +458,20 @@ class BRDG02R13(AiriosNode):
         """Get a node instance by its Modbus slave ID."""
 
         if slave_id == self.slave_id:
-            return self
+            return self  # the bridge as node
 
         for node in await self.nodes():
             if node.slave_id != slave_id:
                 continue
-            if node.product_id == ProductId.VMD_02RPS78:
-                return VMD02RPS78(node.slave_id, self.client)
-            if node.product_id == ProductId.VMN_05LM02:
-                return VMN05LM02(node.slave_id, self.client)
+
+            # loop through the models
+            for key, id in self.product_ids:
+                if node.product_id == id:
+                    LOGGER.debug(f"Start matching CLI for: {key}")
+                    if key.startswith("VMD"):
+                        return self.modules[key].VmdNode(node.slave_id, self.client)
+                    if key.startswith("VMN"):
+                        return self.modules[key].VmnNode(node.slave_id, self.client)
 
         raise AiriosException(f"Node {slave_id} not found")
 

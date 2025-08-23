@@ -1,7 +1,8 @@
-"""Airios VMD-02RPS78 controller implementation."""
+"""Airios VMD-02RPS78 Siber DF Optima 2 controller implementation."""
 
 from __future__ import annotations
 
+import logging
 import math
 import re
 
@@ -22,10 +23,8 @@ from pyairios.constants import (
     VMDVentilationSpeed,
 )
 from pyairios.data_model import AiriosDeviceData
-
-# from pyairios.device import AiriosDevice
 from pyairios.exceptions import AiriosInvalidArgumentException
-from pyairios.models.vmd_base import VMD_BASE
+from pyairios.models.vmd_base import VmdBase
 from pyairios.node import _safe_fetch
 from pyairios.registers import (
     FloatRegister,
@@ -36,9 +35,11 @@ from pyairios.registers import (
     U16Register,
 )
 
+LOGGER = logging.getLogger(__name__)
+
 
 class Reg(RegisterAddress):  # only override or add differences in VMD_BASE?
-    """Register set for VMD-02RPS78 controller node."""
+    """Register set for VMD-02RPS78 Siber DF Optima 2 controller node."""
 
     CURRENT_VENTILATION_SPEED = 41000
     FAN_SPEED_EXHAUST = 41001
@@ -131,12 +132,13 @@ def product_id() -> int:
     return 0x0001C892
 
 
-class VMD02RPS78(VMD_BASE):
+class VmdNode(VmdBase):
     """Represents a VMD-02RPS78 controller node."""
 
     def __init__(self, slave_id: int, client: AsyncAiriosModbusClient) -> None:
         """Initialize the VMD-02RPS78 controller node instance."""
         super().__init__(slave_id, client)
+        LOGGER.debug(f"Starting Siber VmdNode({slave_id})")
         vmd_registers: List[RegisterBase] = [
             U16Register(Reg.CURRENT_VENTILATION_SPEED, RegisterAccess.READ | RegisterAccess.STATUS),
             U16Register(Reg.FAN_SPEED_EXHAUST, RegisterAccess.READ | RegisterAccess.STATUS),
@@ -234,7 +236,7 @@ class VMD02RPS78(VMD_BASE):
         self._add_registers(vmd_registers)
 
     def __str__(self) -> str:
-        prompt = str(re.sub(r"_", "-", self.__module__.__getattribute__(__name__).upper()))
+        prompt = str(re.sub(r"_", "-", self.__module__.upper()))
         return f"{prompt}@{self.slave_id}"
 
     async def capabilities(self) -> Result[VMDCapabilities]:
