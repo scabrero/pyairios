@@ -110,9 +110,9 @@ class AiriosVmnCLI(aiocmd.PromptToolkitCmd):
         :param vmn: contains all details of this model
         """
         super().__init__()
+        self.vmn = vmn
         self.class_pointer = str(vmn)
         self.prompt = f"[{str(vmn)}]>> "
-        self.vmn = vmn
 
     async def do_received_product_id(self) -> None:
         """Print the received product ID from the device."""
@@ -159,13 +159,9 @@ class AiriosVmdCLI(aiocmd.PromptToolkitCmd):
         :param vmd: contains all details of this model
         """
         super().__init__()
-        LOGGER.debug(f"Entering VmdCLI for vmd {str(vmd)}")
         self.vmd = vmd
-        LOGGER.debug("Update class_pointer")
         self.class_pointer = str(vmd)
-        LOGGER.debug(f"Assembling prompt for {self.class_pointer}")
         self.prompt = f"[{str(vmd)}]>> "
-        LOGGER.debug("VmdCLI init completed")
 
     async def do_capabilities(self) -> None:
         """Print the device RF capabilities."""

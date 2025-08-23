@@ -256,10 +256,10 @@ class BRDG02R13(AiriosNode):
             # check loading by fetching the product_id, the int te check against
             self.product_ids[model_key] = self.modules[model_key].product_id()
 
-        print("Loaded modules:")
-        print(self.modules)  # dict
-        print("Loaded product_id's:")
-        print(self.product_ids)  # dict
+        LOGGER.debug("Loaded modules:")
+        LOGGER.debug(self.modules)  # dict
+        LOGGER.info("Loaded product_id's:")
+        LOGGER.info(self.product_ids)  # dict
         # all loaded up
 
     def get_product_ids(self) -> dict[str, str]:
@@ -472,6 +472,7 @@ class BRDG02R13(AiriosNode):
                         return self.modules[key].VmdNode(node.slave_id, self.client)
                     if key.startswith("VMN"):
                         return self.modules[key].VmnNode(node.slave_id, self.client)
+                    # add new Airios 'families' to this filter
 
         raise AiriosException(f"Node {slave_id} not found")
 

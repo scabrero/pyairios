@@ -1,4 +1,3 @@
-import asyncio
 import logging
 import sys
 
@@ -29,20 +28,18 @@ class TestStartPyairios:
         device.close()
 
     @pytest.mark.asyncio
-    @pytest.mark.timeout(2)
+    @pytest.mark.timeout(1)
     async def test_init(self):
         device = MockSerial()
         device.open()
         serial = Serial(device.port)
 
-        stub = device.stub(name="foo", receive_bytes=b"123", send_bytes=b"456")
+        # stub = device.stub(name="foo", receive_bytes=b"123", send_bytes=b"456")
 
         # init CLI
         cli = AiriosRootCLI()
-        assert cli, "no CLI"
-
         await cli.do_connect_rtu(serial)
-        # timeout, but no error
+        # TODO timeout here, but no error
         assert cli.client, "no client"
 
         # break down
