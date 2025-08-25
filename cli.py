@@ -36,8 +36,8 @@ from pyairios.constants import (
     ResetMode,
     StopBits,
     VMDBypassMode,
-    VMDRequestedVentilationSpeed,
-    VMDVentilationSpeed,
+    # VMDVentilationSpeed,
+    VMDVentilationMode,
 )
 from pyairios.exceptions import (
     AiriosConnectionException,
@@ -149,10 +149,10 @@ class AiriosVmnCLI(aiocmd.PromptToolkitCmd):
         self.vmn.print_data(res)
 
 
-class AiriosVmdCLI(aiocmd.PromptToolkitCmd):
-    """The VMD_ modules common CLI interface."""
+class AiriosVmd07rps13CLI(aiocmd.PromptToolkitCmd):
+    """The VMD07RPS13 ClimaRad Ventura V1 CLI interface."""
 
-    class_pointer: str = "VMD"  # (how) is this used?
+    class_pointer: str = "VMD07RPS13"  # (how) is this used?
 
     def __init__(self, vmd) -> None:
         """
@@ -195,75 +195,41 @@ class AiriosVmdCLI(aiocmd.PromptToolkitCmd):
         res = await self.vmd.error_code()
         print(f"{res}")
 
-    async def do_ventilation_mode(self, preset: str) -> None:
+    async def do_ventilation_mode(self) -> None:
         """Print the ventilation mode."""
         res = await self.vmd.ventilation_mode()
         print(f"{'Supply fan speed:': <25}{res.ventilation_mode}")
 
     async def do_ventilation_speed(self) -> None:
-        """Print the current ventilation speed."""
-        res = await self.vmd.ventilation_speed()
-        if res.value in [
-            VMDVentilationSpeed.OVERRIDE_LOW,
-            VMDVentilationSpeed.OVERRIDE_MID,
-            VMDVentilationSpeed.OVERRIDE_HIGH,
-        ]:
-            rem = await self.vmd.override_remaining_time()
-            print(f"{res.value} ({rem.value} min. remaining)")
-        else:
-            print(f"{res}")
+        """Print the current ventilation mode."""
+        res = await self.vmd.ventilation_mode()
+        print(f"{res}")
+        # if res.value in [
+        #     VMDVentilationMode.ON,
+        #     VMDVentilationMode.OVERRIDE_MID,
+        #     VMDVentilationMode.OVERRIDE_HIGH,
+        # ]:
+        #     rem = await self.vmd.override_remaining_time()
+        #     print(f"{res.value} ({rem.value} min. remaining)")
+        # else:
+        #     print(f"{res}")
         if res.status is not None:
             print(f"{res.status}")
 
-    async def do_set_ventilation_speed(self, preset: str) -> None:
-        """Change the ventilation speed."""
-        s = VMDRequestedVentilationSpeed.parse(preset)
-        await self.vmd.set_ventilation_speed(s)
+    async def do_set_ventilation_mode(self, preset: int) -> None:
+        """Change the ventilation mode. 0=Off, 2=On, 3=Man1, 5=Man3, 8=Service"""
+        # s = VMDRequestedVentilationSpeed.parse(preset)
+        await self.vmd.set_ventilation_mode(preset)  # (s) lookup?
 
-    async def do_set_ventilation_speed_override_time(self, preset: str, minutes: str) -> None:
-        """Change the ventilation speed for a limited time."""
-        s = VMDRequestedVentilationSpeed.parse(preset)
-        await self.vmd.set_ventilation_speed_override_time(s, int(minutes))
+    async def do_indoor_humidity(self):
+        """Print the indoor humidity level in %."""
+        res = await self.vmd.indoor_humidity()
+        print(f"{res}")
 
-    async def do_preset_away_fans_speeds(self):
-        """Print the away preset fan speeds."""
-        res = await self.vmd.preset_away_fans_speed()
-        print(f"{'Supply fan speed:': <25}{res.supply_fan_speed}%")
-        print(f"{'Exhaust fan speed:': <25}{res.exhaust_fan_speed}%")
-
-    async def do_set_preset_away_fans_speeds(self, supply: int, exhaust: int):
-        """Change the away preset fan speeds."""
-        await self.vmd.set_preset_away_fans_speed(int(supply), int(exhaust))
-
-    async def do_preset_low_fans_speeds(self):
-        """Print the low preset fan speeds."""
-        res = await self.vmd.preset_low_fans_speed()
-        print(f"{'Supply fan speed:': <25}{res.supply_fan_speed}%")
-        print(f"{'Exhaust fan speed:': <25}{res.exhaust_fan_speed}%")
-
-    async def do_set_preset_low_fans_speeds(self, supply: int, exhaust: int):
-        """Change the low preset fan speeds."""
-        await self.vmd.set_preset_low_fans_speed(int(supply), int(exhaust))
-
-    async def do_preset_mid_fans_speeds(self):
-        """Print the mid preset fan speeds."""
-        res = await self.vmd.preset_mid_fans_speed()
-        print(f"{'Supply fan speed:': <25}{res.supply_fan_speed}%")
-        print(f"{'Exhaust fan speed:': <25}{res.exhaust_fan_speed}%")
-
-    async def do_set_preset_mid_fans_speeds(self, supply: int, exhaust: int):
-        """Change the mid preset fan speeds."""
-        await self.vmd.set_preset_mid_fans_speed(int(supply), int(exhaust))
-
-    async def do_preset_high_fans_speeds(self):
-        """Print the high preset fan speeds."""
-        res = await self.vmd.preset_high_fans_speed()
-        print(f"{'Supply fan speed:': <25}{res.supply_fan_speed}%")
-        print(f"{'Exhaust fan speed:': <25}{res.exhaust_fan_speed}%")
-
-    async def do_set_preset_high_fans_speeds(self, supply: int, exhaust: int):
-        """Change the high preset fan speeds."""
-        await self.vmd.set_preset_high_fans_speed(int(supply), int(exhaust))
+    async def do_outdoor_humidity(self):
+        """Print the outdoor humidity level in %."""
+        res = await self.vmd.outdoor_humidity()
+        print(f"{res}")
 
     async def do_bypass_position(self):
         """Print the bypass position."""
@@ -337,16 +303,16 @@ class AiriosBridgeCLI(aiocmd.PromptToolkitCmd):
             # DEBUG:__main__:Looking up Key: VMD07RPS13, Value: 116867
             if value == node_info.product_id:
                 LOGGER.debug(f"Start matching CLI for: {key}")
-                if key.startswith("VMD"):
+                if key.startswith("VMD"):  # TODO copy back in per model
                     LOGGER.debug("Start vmdCLI")
                     # DEBUG:__main__:Start matching CLI for: VMD_07RPS13
                     vmd = modules[key].VmdNode(  # use fixed class name in all VMD models
                         node_info.slave_id, self.bridge.client
                     )
-                    LOGGER.debug(f"await AiriosVmdCLI for: {key}")  # << up to here OK
+                    LOGGER.debug(f"await AiriosVmd07rps13CLI for: {key}")
                     # DEBUG:__main__:await AiriosVmdCLI for: VMD07RPS13
                     # Command failed:  'str' object has no attribute 'vmd_07rps13'
-                    await AiriosVmdCLI(vmd).run()
+                    await AiriosVmd07rps13CLI(vmd).run()
                     LOGGER.debug(f"Loaded vmd for {key}")
                     return
 
