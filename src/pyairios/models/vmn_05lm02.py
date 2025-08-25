@@ -85,7 +85,7 @@ class VmnNode(AiriosDevice):
         """
         Print labels + states for this particular model, including VMD base fields
 
-        :param res: the result retrieved earlier by CLI using fetch_vmd_data()
+        :param res: the result retrieved earlier by CLI using fetch_vmn_data()
         :return: no confirmation, outputs to serial monitor
         """
         # super().print_data(res)  # no superclass set up yet

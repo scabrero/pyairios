@@ -195,6 +195,11 @@ class AiriosVmdCLI(aiocmd.PromptToolkitCmd):
         res = await self.vmd.error_code()
         print(f"{res}")
 
+    async def do_ventilation_mode(self, preset: str) -> None:
+        """Print the ventilation mode."""
+        res = await self.vmd.ventilation_mode()
+        print(f"{'Supply fan speed:': <25}{res.ventilation_mode}")
+
     async def do_ventilation_speed(self) -> None:
         """Print the current ventilation speed."""
         res = await self.vmd.ventilation_speed()
