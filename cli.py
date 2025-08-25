@@ -195,6 +195,11 @@ class AiriosVmdCLI(aiocmd.PromptToolkitCmd):
         res = await self.vmd.error_code()
         print(f"{res}")
 
+    async def do_ventilation_mode(self, preset: str) -> None:
+        """Print the ventilation mode."""
+        res = await self.vmd.ventilation_mode()
+        print(f"{'Supply fan speed:': <25}{res.ventilation_mode}")
+
     async def do_ventilation_speed(self) -> None:
         """Print the current ventilation speed."""
         res = await self.vmd.ventilation_speed()
@@ -295,10 +300,6 @@ class AiriosVmdCLI(aiocmd.PromptToolkitCmd):
     async def do_filter_reset(self):
         """Reset the filter change timer."""
         await self.vmd.filter_reset()
-
-    async def do_scan_registers(self, start_num: int = 40000):
-        """Request all registers from start_num"""
-        print(await self.vmd.scan_registers(start_num))
 
 
 class AiriosBridgeCLI(aiocmd.PromptToolkitCmd):
