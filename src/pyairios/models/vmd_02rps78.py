@@ -235,9 +235,9 @@ class VmdNode(VmdBase):
         ]
         self._add_registers(vmd_registers)
 
-    def __str__(self) -> str:
-        prompt = str(re.sub(r"_", "-", self.__module__.upper()))
-        return f"{prompt}@{self.slave_id}"
+    # def __str__(self) -> str:
+    #     prompt = str(re.sub(r"_", "-", self.__module__.upper()))
+    #     return f"{prompt}@{self.slave_id}"
 
     async def capabilities(self) -> Result[VMDCapabilities]:
         """Get the ventilation unit capabilities."""
