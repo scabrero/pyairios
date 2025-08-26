@@ -36,8 +36,9 @@ from pyairios.constants import (
     ResetMode,
     StopBits,
     VMDBypassMode,
-    # VMDVentilationSpeed,
-    VMDVentilationMode,
+    VMDVentilationSpeed,
+    VMDRequestedVentilationSpeed,
+    # VMDVentilationMode,
 )
 from pyairios.exceptions import (
     AiriosConnectionException,
@@ -147,6 +148,152 @@ class AiriosVmnCLI(aiocmd.PromptToolkitCmd):
         print("")
 
         self.vmn.print_data(res)
+
+
+class AiriosVMD02RPS78CLI(aiocmd.PromptToolkitCmd):
+    """The VMD02RPS78 CLI interface."""
+
+    def __init__(self, vmd) -> None:
+        """
+        :param vmd: contains all details of this model
+        """
+        super().__init__()
+        self.vmd = vmd
+        self.class_pointer = str(vmd)
+        self.prompt = f"[{str(vmd)}]>> "
+
+    async def do_capabilities(self) -> None:
+        """Print the device RF capabilities."""
+        res = await self.vmd.capabilities()
+        print(f"{res.value} ({res.status})")
+
+    async def do_status(self) -> None:  # pylint: disable=too-many-statements
+        """Print the device status."""
+        res = await self.vmd.fetch_vmd_data()
+        print("Node data")
+        print("---------")
+        print(f"    {'Product ID:': <25}{res['product_id']}")
+        print(f"    {'Product Name:': <25}{res['product_name']}")
+        print(f"    {'Software version:': <25}{res['sw_version']}")
+        print(f"    {'RF address:': <25}{res['rf_address']}")
+        print("")
+
+        print("Device data")
+        print("---------")
+        print(f"    {'RF comm status:': <25}{res['rf_comm_status']}")
+        print(f"    {'Battery status:': <25}{res['battery_status']}")
+        print(f"    {'Fault status:': <25}{res['fault_status']}")
+        print(f"    {'Bound status:': <25}{res['bound_status']}")
+        print(f"    {'Value error status:': <25}{res['value_error_status']}")
+        print("")
+
+        self.vmd.print_data(res)
+
+    async def do_error_code(self) -> None:
+        """Print the current error code."""
+        res = await self.vmd.error_code()
+        print(f"{res}")
+
+    async def do_ventilation_speed(self) -> None:
+        """Print the current ventilation speed."""
+        res = await self.vmd.ventilation_speed()
+        if res.value in [
+            VMDVentilationSpeed.OVERRIDE_LOW,
+            VMDVentilationSpeed.OVERRIDE_MID,
+            VMDVentilationSpeed.OVERRIDE_HIGH,
+        ]:
+            rem = await self.vmd.override_remaining_time()
+            print(f"{res.value} ({rem.value} min. remaining)")
+        else:
+            print(f"{res}")
+        if res.status is not None:
+            print(f"{res.status}")
+
+    async def do_set_ventilation_speed(self, preset: str) -> None:
+        """Change the ventilation speed."""
+        s = VMDRequestedVentilationSpeed.parse(preset)
+        await self.vmd.set_ventilation_speed(s)
+
+    async def do_set_ventilation_speed_override_time(self, preset: str, minutes: str) -> None:
+        """Change the ventilation speed for a limited time."""
+        s = VMDRequestedVentilationSpeed.parse(preset)
+        await self.vmd.set_ventilation_speed_override_time(s, int(minutes))
+
+    async def do_preset_away_fans_speeds(self):
+        """Print the away preset fan speeds."""
+        res = await self.vmd.preset_away_fans_speed()
+        print(f"{'Supply fan speed:': <25}{res.supply_fan_speed}%")
+        print(f"{'Exhaust fan speed:': <25}{res.exhaust_fan_speed}%")
+
+    async def do_set_preset_away_fans_speeds(self, supply: int, exhaust: int):
+        """Change the away preset fan speeds."""
+        await self.vmd.set_preset_away_fans_speed(int(supply), int(exhaust))
+
+    async def do_preset_low_fans_speeds(self):
+        """Print the low preset fan speeds."""
+        res = await self.vmd.preset_low_fans_speed()
+        print(f"{'Supply fan speed:': <25}{res.supply_fan_speed}%")
+        print(f"{'Exhaust fan speed:': <25}{res.exhaust_fan_speed}%")
+
+    async def do_set_preset_low_fans_speeds(self, supply: int, exhaust: int):
+        """Change the low preset fan speeds."""
+        await self.vmd.set_preset_low_fans_speed(int(supply), int(exhaust))
+
+    async def do_preset_mid_fans_speeds(self):
+        """Print the mid preset fan speeds."""
+        res = await self.vmd.preset_mid_fans_speed()
+        print(f"{'Supply fan speed:': <25}{res.supply_fan_speed}%")
+        print(f"{'Exhaust fan speed:': <25}{res.exhaust_fan_speed}%")
+
+    async def do_set_preset_mid_fans_speeds(self, supply: int, exhaust: int):
+        """Change the mid preset fan speeds."""
+        await self.vmd.set_preset_mid_fans_speed(int(supply), int(exhaust))
+
+    async def do_preset_high_fans_speeds(self):
+        """Print the high preset fan speeds."""
+        res = await self.vmd.preset_high_fans_speed()
+        print(f"{'Supply fan speed:': <25}{res.supply_fan_speed}%")
+        print(f"{'Exhaust fan speed:': <25}{res.exhaust_fan_speed}%")
+
+    async def do_set_preset_high_fans_speeds(self, supply: int, exhaust: int):
+        """Change the high preset fan speeds."""
+        await self.vmd.set_preset_high_fans_speed(int(supply), int(exhaust))
+
+    async def do_bypass_position(self):
+        """Print the bypass position."""
+        res = await self.vmd.bypass_position()
+        print(f"{res}")
+
+    async def do_bypass_status(self):
+        """Print the bypass status."""
+        res = await self.vmd.bypass_status()
+        print(f"{res}")
+
+    async def do_bypass_mode(self):
+        """Print the bypass mode."""
+        res = await self.vmd.bypass_mode()
+        print(f"{res}")
+
+    async def do_set_bypass_mode(self, mode: str):
+        """Change the bypass mode."""
+        v = VMDBypassMode.parse(mode)
+        await self.vmd.set_bypass_mode(v)
+
+    async def do_filter_duration(self):
+        """Print the filter duration."""
+        res = await self.vmd.filter_duration()
+        print(f"{res}")
+
+    async def do_filter_remaining(self):
+        """Print the filter remaining percentage."""
+        r1 = await self.vmd.filter_remaining()
+        r2 = await self.vmd.filter_remaining_days()
+        r3 = await self.vmd.filter_duration()
+        print(f"{r1.value} % ({r2.value} of {r3.value} days)")
+
+    async def do_filter_reset(self):
+        """Reset the filter change timer."""
+        await self.vmd.filter_reset()
 
 
 class AiriosVmd07rps13CLI(aiocmd.PromptToolkitCmd):

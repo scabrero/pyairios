@@ -16,7 +16,7 @@ from pyairios.registers import (
 @dataclass
 class VMDPresetFansSpeeds:
     """Preset fan speeds."""
-
+    # this must load from vmd_base to prevent None error
     exhaust_fan_speed: Result[int] = field(default_factory=int)
     """Exhaust fan speed (%)"""
     supply_fan_speed: Result[int] = field(default_factory=int)
