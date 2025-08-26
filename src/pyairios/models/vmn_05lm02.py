@@ -9,7 +9,6 @@ from typing import List
 from pyairios.client import AsyncAiriosModbusClient
 from pyairios.constants import VMDRequestedVentilationSpeed
 from pyairios.data_model import AiriosDeviceData
-
 from pyairios.device import AiriosDevice
 from pyairios.node import _safe_fetch
 from pyairios.registers import (
@@ -89,6 +88,6 @@ class VmnNode(AiriosDevice):
         :return: no confirmation, outputs to serial monitor
         """
         # super().print_data(res)  # no superclass set up yet
-        print("VMN-02LM11 data")
+        print("VMN-05LM02 data")
         print("----------------")
         print(f"    {'Requested ventilation speed:': <40}{res['requested_ventilation_speed']}")

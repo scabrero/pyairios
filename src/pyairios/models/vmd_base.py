@@ -6,6 +6,7 @@ import re
 from dataclasses import dataclass, field
 
 from pyairios.client import AsyncAiriosModbusClient
+from pyairios.constants import VMDCapabilities
 from pyairios.device import AiriosDevice
 from pyairios.registers import (
     RegisterAddress,
@@ -16,6 +17,7 @@ from pyairios.registers import (
 @dataclass
 class VMDPresetFansSpeeds:
     """Preset fan speeds."""
+
     # this must load from vmd_base to prevent None error
     exhaust_fan_speed: Result[int] = field(default_factory=int)
     """Exhaust fan speed (%)"""
@@ -144,6 +146,9 @@ class VmdBase(AiriosDevice):
     def __str__(self) -> str:
         prompt = str(re.sub(r"_", "-", self.__module__.upper()))
         return f"{prompt}@{self.slave_id}"
+
+    async def capabilities(self) -> Result[VMDCapabilities] | None:
+        return None
 
     def print_data(self, result) -> None:
         print("----------------")

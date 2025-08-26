@@ -41,6 +41,10 @@ class Airios:
             raise AiriosException(f"Unknown transport {transport}")
         self.bridge = BRDG02R13(slave_id, self._client)
 
+    def get_product_ids(self) -> dict[str, str]:
+        """Get the dict of installed product_ids."""
+        return self.bridge.get_product_ids()
+
     async def nodes(self) -> list[AiriosBoundNodeInfo]:
         """Get the list of bound nodes."""
         return await self.bridge.nodes()
@@ -91,6 +95,8 @@ class Airios:
                 if _node.product_id == _id:
                     LOGGER.debug(f"Start matching init for: {key}")
                     if key.startswith("VMD"):
+                        # this is only necessary because every "family" has a different node class name
+                        # TODO refactor by renaming every node class the same?
                         vmd = self.bridge.modules[key].VmdNode(_node.slave_id, self.bridge.client)
                         vmd_data = await vmd.fetch_vmd_data()
                         data[_node.slave_id] = vmd_data

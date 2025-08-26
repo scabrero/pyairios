@@ -36,9 +36,9 @@ from pyairios.constants import (
     ResetMode,
     StopBits,
     VMDBypassMode,
-    VMDVentilationSpeed,
     VMDRequestedVentilationSpeed,
     # VMDVentilationMode,
+    VMDVentilationSpeed,
 )
 from pyairios.exceptions import (
     AiriosConnectionException,
@@ -101,7 +101,7 @@ print(product_ids)  # dict
 # all loaded up
 
 
-class AiriosVmnCLI(aiocmd.PromptToolkitCmd):
+class AiriosVMN05LM02CLI(aiocmd.PromptToolkitCmd):
     """The VMN_ modules common CLI interface."""
 
     class_pointer: str = "VMN"
@@ -296,7 +296,7 @@ class AiriosVMD02RPS78CLI(aiocmd.PromptToolkitCmd):
         await self.vmd.filter_reset()
 
 
-class AiriosVmd07rps13CLI(aiocmd.PromptToolkitCmd):
+class AiriosVMD07RPS13CLI(aiocmd.PromptToolkitCmd):
     """The VMD07RPS13 ClimaRad Ventura V1 CLI interface."""
 
     class_pointer: str = "VMD07RPS13"  # (how) is this used?
@@ -450,27 +450,30 @@ class AiriosBridgeCLI(aiocmd.PromptToolkitCmd):
             # DEBUG:__main__:Looking up Key: VMD07RPS13, Value: 116867
             if value == node_info.product_id:
                 LOGGER.debug(f"Start matching CLI for: {key}")
-                if key.startswith("VMD"):  # TODO copy back in per model
-                    LOGGER.debug("Start vmdCLI")
-                    # DEBUG:__main__:Start matching CLI for: VMD_07RPS13
+                if key == "VMD02RPS78":  # CLI for each model
+                    LOGGER.debug("Start AiriosVMD07RPS13CLI")
                     vmd = modules[key].VmdNode(  # use fixed class name in all VMD models
                         node_info.slave_id, self.bridge.client
                     )
-                    LOGGER.debug(f"await AiriosVmd07rps13CLI for: {key}")
-                    # DEBUG:__main__:await AiriosVmdCLI for: VMD07RPS13
-                    # Command failed:  'str' object has no attribute 'vmd_07rps13'
-                    await AiriosVmd07rps13CLI(vmd).run()
-                    LOGGER.debug(f"Loaded vmd for {key}")
+                    LOGGER.debug(f"await AiriosVMD02RPS78CLI for: {key}")
+                    await AiriosVMD02RPS78CLI(vmd).run()
+                    LOGGER.debug(f"Loaded CLI for {key}")
                     return
-
-                elif key.startswith("VMN"):
-                    LOGGER.debug("Start vmnCLI")
-                    vmn = modules[key].VmnNode(  # modules[VMD_02RPS78].VMD02RPS78(
+                elif key == "VMD07RPS13":  # ClimaRad Ventura
+                    LOGGER.debug("Start AiriosVMD07RPS13CLI")
+                    vmd = modules[key].VmdNode(  # use fixed class name in all VMD models
                         node_info.slave_id, self.bridge.client
                     )
-                    LOGGER.debug(f"await AiriosVmnCLI: {key}")
-                    await AiriosVmnCLI(vmn).run()
-                    LOGGER.debug("Loaded vmn for {key}")
+                    LOGGER.debug(f"await AiriosVMD07RPS13CLI for: {key}")
+                    await AiriosVMD07RPS13CLI(vmd).run()
+                    LOGGER.debug(f"Loaded CLI for {key}")
+                    return
+                elif key == "VMN05LM02":  # Remote
+                    LOGGER.debug("Start CLI")
+                    vmn = modules[key].VmnNode(node_info.slave_id, self.bridge.client)
+                    LOGGER.debug(f"await AiriosVMN05LM02CLI: {key}")
+                    await AiriosVMN05LM02CLI(vmn).run()
+                    LOGGER.debug("Loaded CLI for {key}")
                     return
 
         raise AiriosNotImplemented(
