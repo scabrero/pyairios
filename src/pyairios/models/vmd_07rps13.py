@@ -11,7 +11,6 @@ from typing import List
 
 from pyairios.client import AsyncAiriosModbusClient
 from pyairios.constants import (
-    VMDBypassMode,
     VMDBypassPosition,
     VMDErrorCode,
     VMDHeater,
@@ -19,6 +18,7 @@ from pyairios.constants import (
     VMDSensorStatus,
     VMDTemperature,
     VMDVentilationMode,
+    VMDCapabilities,
 )
 from pyairios.data_model import AiriosDeviceData
 from pyairios.exceptions import AiriosInvalidArgumentException
@@ -50,12 +50,24 @@ class Reg(RegisterAddress):  # only override or add differences in VMD_BASE
 
     # numbers after "#" are from oem docs
     SYSTEM_VENT_CONFIG = 42021
-    VENTILATION_MODE = 41120  # 1,RO, uint8, "Main Room Ventilation Mode"
-    VENTILATION_SUB_MODE = 41121  # 1, RO, uint8, "Main Room Ventilation Sub Mode"
-    VENTILATION_SUB_MODE_EXH = 41122  # RW
-    TEMP_VENTILATION_MODE = 41123  # 1,RO, uint8, "Main Room Ventilation Mode"
-    TEMP_VENTILATION_SUB_MODE = 41124  # 1, RO, uint8, "Main Room Ventilation Sub Mode"
-    TEMP_VENTILATION_SUB_MODE_EXH = 41125  # RW
+
+    VENTILATION_MODE = 41100  # 1,R, uint8, "Main Room Ventilation Mode"
+    VENTILATION_SUB_MODE = 41101  # 1, R, uint8, "Main Room Ventilation Sub Mode"
+    VENTILATION_SUB_MODE_EXH = 41102  # R, uint8, Main Room Vent. Sub Mode Cont. Exh.
+
+    TEMP_VENTILATION_MODE = 41103  # 1,R, uint8, "Main Room Ventilation Mode"
+    TEMP_VENTILATION_SUB_MODE = 41104  # 1, R, uint8, "Main Room Ventilation Sub Mode"
+    # TEMP_VENTILATION_SUB_MODE_EXH = 41105  # R, uint8, Main Room Vent. Sub Mode Cont. Exh.
+
+    REQ_VENTILATION_MODE = 41120  # 1,RW, uint8, "Main Room Ventilation Mode"
+    REQ_VENTILATION_SUB_MODE = 41121  # 1, RW, uint8, "Main Room Ventilation Sub Mode"
+    REQ_VENTILATION_SUB_MODE_EXH = 41122  # 1, R, uint8, "Main Room Ventilation Sub Mode"
+    REQ_TEMP_VENTILATION_MODE = 41123  # 1,RW, uint8, "Main Room Temp.Ventilation Mode"
+    REQ_TEMP_VENTILATION_SUB_MODE = 41124  # 1, RW, uint8, "Main Room Temp.Ventilation Sub Mode"
+    # REQ_TEMP_VENTILATION_SUB_MODE_EXH = (
+    #     41125  # RW, uint8, Main Room Temp. Vent. Sub Mode Cont. Exh.
+    # )
+
     FAN_SPEED_EXHAUST = 41019  # 9 #
     FAN_SPEED_SUPPLY = 41020  # 10 # confirmed in CLI
     ERROR_CODE = 41032  # 23 #
@@ -63,7 +75,6 @@ class Reg(RegisterAddress):  # only override or add differences in VMD_BASE
     TEMPERATURE_OUTDOOR = 41003  # inlet temp
     TEMPERATURE_EXHAUST = 41005  # same as TEMP_INDOOR?
     TEMPERATURE_SUPPLY = 41003  # same as TEMP_OUTDOOR?
-    FILTER_DIRTY = 41017
     HUMIDITY_INDOOR = 41007  # 15 # main room exh hum
     HUMIDITY_OUTDOOR = 41002
     FLOW_INLET = 41024
@@ -73,15 +84,16 @@ class Reg(RegisterAddress):  # only override or add differences in VMD_BASE
     POST_HEATER_DEMAND = 41023
     FILTER_REMAINING_DAYS = 41028
     FILTER_DURATION = 41029
+    FILTER_DIRTY = 41017
     FILTER_REMAINING_PERCENT = 41030  # Air Filter Time Percent
-    FAN_RPM_EXHAUST = 40011  # 9 #
-    FAN_RPM_SUPPLY = 40010  # 10 #
     BYPASS_POSITION = 41015  # 28 #
-    PRODUCT_VARIANT = 42010  # 1,RW, uint8, "Product Variant"
+    ROOM_INSTANCE = 41126  # 1, RW, uint8, "Room instance"
+    SET_PERSON_PRESENT = 41150  # 1, RW, uint8, "Set Person Present"
+    FILTER_RESET = 41151
     BASIC_VENTILATION_ENABLE = 42000
     BASIC_VENTILATION_LEVEL = 42001
+    PRODUCT_VARIANT = 42010  # 1,RW, uint8, "Product Variant"
     OVERRIDE_TIME_MANUAL = 42009  # 115 # "Temporary Override Duration"
-    FILTER_RESET = 41151
 
 
 class VMD07RPS13Data(AiriosDeviceData):
@@ -93,24 +105,25 @@ class VMD07RPS13Data(AiriosDeviceData):
     error_code: Result[VMDErrorCode] | None
     system_ventilation_config: Result[int] | None
     ventilation_mode: Result[int] | None
+    ventilation_sub_mode_exh: Result[int] | None
     ventilation_sub_mode: Result[int] | None
     temp_ventilation_mode: Result[int] | None
     temp_ventilation_sub_mode: Result[int] | None
+    temp_ventilation_sub_mode_exh: Result[int] | None
     exhaust_fan_speed: Result[int] | None
     supply_fan_speed: Result[int] | None
-    exhaust_fan_rpm: Result[int] | None
-    supply_fan_rpm: Result[int] | None
     indoor_air_temperature: Result[VMDTemperature] | None
     outdoor_air_temperature: Result[VMDTemperature] | None
     exhaust_air_temperature: Result[VMDTemperature] | None
     supply_air_temperature: Result[VMDTemperature] | None
     filter_dirty: Result[int] | None
-    filter_remaining_percent: Result[int] | None
-    filter_duration: Result[int] | None
+    filter_remaining_days: Result[int] | None
     bypass_position: Result[VMDBypassPosition] | None
     product_variant: Result[int] | None
-    postheater: Result[VMDHeater] | None
+    # postheater: Result[VMDHeater] | None
+    co2_level: Result[int] | None
     co2_control_setpoint: Result[int] | None
+    basic_ventilation_enable: Result[int] | None
 
 
 def product_id() -> int:
@@ -150,10 +163,10 @@ class VmdNode(VmdBase):
             U16Register(Reg.CO2_LEVEL, RegisterAccess.READ | RegisterAccess.STATUS),
             U16Register(Reg.POST_HEATER_DEMAND, RegisterAccess.READ | RegisterAccess.STATUS),
             U16Register(Reg.FILTER_REMAINING_DAYS, RegisterAccess.READ | RegisterAccess.STATUS),
-            U16Register(Reg.FILTER_DURATION, RegisterAccess.READ | RegisterAccess.STATUS),
-            U16Register(Reg.FILTER_REMAINING_PERCENT, RegisterAccess.READ | RegisterAccess.STATUS),
-            U16Register(Reg.FAN_RPM_EXHAUST, RegisterAccess.READ | RegisterAccess.STATUS),
-            U16Register(Reg.FAN_RPM_SUPPLY, RegisterAccess.READ | RegisterAccess.STATUS),
+            # U16Register(Reg.FILTER_DURATION, RegisterAccess.READ | RegisterAccess.STATUS),
+            # U16Register(Reg.FILTER_REMAINING_PERCENT, RegisterAccess.READ | RegisterAccess.STATUS),
+            # U16Register(Reg.FAN_RPM_EXHAUST, RegisterAccess.READ | RegisterAccess.STATUS),
+            # U16Register(Reg.FAN_RPM_SUPPLY, RegisterAccess.READ | RegisterAccess.STATUS),
             U16Register(
                 Reg.PRODUCT_VARIANT,
                 RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS,
@@ -175,16 +188,32 @@ class VmdNode(VmdBase):
         ]
         self._add_registers(vmd_registers)
 
-    # def __str__(self) -> str:  # use the base class?
-    #     prompt = str(re.sub(r"_", "-", self.__module__.upper()))
-    #     return f"{prompt}@{self.slave_id}"
-
     # getters and setters
 
-    async def set_basic_ventilation_level(self, speed: float) -> bool:
+    async def capabilities(self) -> Result[VMDCapabilities] | None:
+        """Get the ventilation unit capabilities."""
+        # regdesc = self.regmap[Reg.CAPABILITIES]
+        # result = await self.client.get_register(regdesc, self.slave_id)
+        # return Result(VMDCapabilities(result.value), result.status)
+        # TODO create some other set of capabilities: mode, bypass, ...
+        return None
+
+    async def basic_ventilation_enable(self) -> Result[int]:
+        """Get base ventilation enabled."""
+        return await self.client.get_register(
+            self.regmap[Reg.BASIC_VENTILATION_ENABLE], self.slave_id
+        )
+
+    async def set_basic_ventilation_enable(self, mode: int) -> bool:
+        """Set base ventilation enabled/disabled."""
+        return await self.client.set_register(
+            self.regmap[Reg.BASIC_VENTILATION_ENABLE], mode, self.slave_id
+        )
+
+    async def set_basic_ventilation_level(self, level: int) -> bool:
         """Set the base ventilation level."""
         return await self.client.set_register(
-            self.regmap[Reg.BASIC_VENTILATION_LEVEL], speed, self.slave_id
+            self.regmap[Reg.BASIC_VENTILATION_LEVEL], level, self.slave_id
         )
 
     # async def set_ventilation_speed_override_time(
@@ -207,45 +236,46 @@ class VmdNode(VmdBase):
     #         )
     #     raise AiriosInvalidArgumentException(f"Invalid temporary override speed {speed}")
 
-    # async def bypass_mode(self) -> Result[VMDBypassMode]:
-    #     """Get the bypass mode."""
-    #     regdesc = self.regmap[Reg.BYPASS_MODE]
-    #     result = await self.client.get_register(regdesc, self.slave_id)
-    #     try:
-    #         mode = VMDBypassMode(result.value)
-    #     except ValueError:
-    #         mode = VMDBypassMode.UNKNOWN
-    #     return Result(mode, result.status)
-
-    async def set_ventilation_mode(self, mode: VMDBypassMode) -> bool:
-        """Set the ventilation mode. 0=Off, 2=On, 3=Man1, 5=Man3, 8=Service"""
-        if mode == VMDVentilationMode.UNKNOWN:
-            raise AiriosInvalidArgumentException(f"Invalid ventilation mode {mode}")
-        return await self.client.set_register(
-            self.regmap[Reg.VENTILATION_MODE], mode, self.slave_id
-        )
-
     async def system_ventilation_configuration(self) -> Result[int]:
         """Get the system ventilation configuration status."""
         return await self.client.get_register(self.regmap[Reg.SYSTEM_VENT_CONFIG], self.slave_id)
 
     async def ventilation_mode(self) -> Result[int]:
-        """Get the ventilation mode status."""
+        """Get the ventilation mode status. 0=Off, 2=On, 3=Man1, 5=Man3, 8=Service"""
         return await self.client.get_register(self.regmap[Reg.VENTILATION_MODE], self.slave_id)
 
+    async def set_ventilation_mode(self, mode: VMDVentilationMode) -> bool:
+        """Set the ventilation mode. 0=Off, 2=On, 3=Man1, 5=Man3, 8=Service"""
+        if mode == VMDVentilationMode.UNKNOWN:
+            raise AiriosInvalidArgumentException(f"Invalid ventilation mode {mode}")
+        return await self.client.set_register(
+            self.regmap[Reg.REQ_VENTILATION_MODE], mode, self.slave_id
+        )
+
     async def ventilation_sub_mode(self) -> Result[int]:
-        """Get the ventilation mode status."""
+        """Get the ventilation sub mode status."""
+        # seen: 48
         return await self.client.get_register(self.regmap[Reg.VENTILATION_SUB_MODE], self.slave_id)
 
+    # async def ventilation_sub_mode_exh(self) -> Result[int]:  # error
+    #     """Get the ventilation sub mode exhaust status."""
+    #     return await self.client.get_register(self.regmap[Reg.VENTILATION_SUB_MODE_EXH], self.slave_id)
+
     async def temp_ventilation_mode(self) -> Result[int]:
-        """Get the ventilation mode status."""
+        """Get the temporary ventilation mode status."""
         return await self.client.get_register(self.regmap[Reg.TEMP_VENTILATION_MODE], self.slave_id)
 
     async def temp_ventilation_sub_mode(self) -> Result[int]:
-        """Get the ventilation mode status."""
+        """Get the temporary ventilation sub mode status."""
         return await self.client.get_register(
             self.regmap[Reg.TEMP_VENTILATION_SUB_MODE], self.slave_id
         )
+
+    # async def temp_ventilation_sub_mode_exh(self) -> Result[int]:  # error
+    #     """Get the temporary ventilation sub mode exhaust status."""
+    #     return await self.client.get_register(
+    #         self.regmap[Reg.TEMP_VENTILATION_SUB_MODE_EXH], self.slave_id
+    #     )
 
     async def bypass_position(self) -> Result[VMDBypassPosition]:
         """Get the bypass position."""
@@ -259,6 +289,11 @@ class VmdNode(VmdBase):
         regdesc = self.regmap[Reg.PRODUCT_VARIANT]
         return await self.client.get_register(regdesc, self.slave_id)
 
+    async def co2_level(self) -> Result[int]:
+        """Get the CO2 level (in ppm)."""
+        regdesc = self.regmap[Reg.CO2_LEVEL]
+        return await self.client.get_register(regdesc, self.slave_id)
+
     async def co2_setpoint(self) -> Result[int]:
         """Get the CO2 control setpoint (in ppm)."""
         regdesc = self.regmap[Reg.CO2_CONTROL_SETPOINT]
@@ -268,9 +303,9 @@ class VmdNode(VmdBase):
         """Get the filter duration (in days)."""
         return await self.client.get_register(self.regmap[Reg.FILTER_DURATION], self.slave_id)
 
-    # async def filter_remaining_days(self) -> Result[int]:
-    #     """Get the filter remaining lifetime (in days)."""
-    #     return await self.client.get_register(self.regmap[Reg.FILTER_REMAINING_DAYS], self.slave_id)
+    async def filter_remaining_days(self) -> Result[int]:
+        """Get the filter remaining lifetime (in days)."""
+        return await self.client.get_register(self.regmap[Reg.FILTER_REMAINING_DAYS], self.slave_id)
 
     async def filter_remaining(self) -> Result[int]:
         """Get the filter remaining lifetime (in %)."""
@@ -351,7 +386,7 @@ class VmdNode(VmdBase):
             status = VMDSensorStatus.ERROR
         else:
             status = VMDSensorStatus.OK
-        return Result(VMDTemperature(result.value, status), result.status)
+        return Result(VMDTemperature(round(result.value, 2), status), result.status)
 
     async def supply_air_temperature(self) -> Result[VMDTemperature]:
         """Get the supply air temperature.
@@ -366,7 +401,7 @@ class VmdNode(VmdBase):
             status = VMDSensorStatus.ERROR
         else:
             status = VMDSensorStatus.OK
-        return Result(VMDTemperature(result.value, status), result.status)
+        return Result(VMDTemperature(round(result.value, 2), status), result.status)
 
     async def postheater(self) -> Result[VMDHeater]:
         """Get the postheater level."""
@@ -378,7 +413,7 @@ class VmdNode(VmdBase):
     async def fetch_vmd_data(self) -> VMD07RPS13Data:  # pylint: disable=duplicate-code
         """Fetch all controller data at once."""
 
-        return VMD07RPS13Data(  # some 130/0 errors in CLI
+        return VMD07RPS13Data(
             slave_id=self.slave_id,
             # node data from pyairios node
             rf_address=await _safe_fetch(self.node_rf_address),
@@ -397,19 +432,22 @@ class VmdNode(VmdBase):
             system_ventilation_config=await _safe_fetch(self.system_ventilation_configuration),
             ventilation_mode=await _safe_fetch(self.ventilation_mode),
             ventilation_sub_mode=await _safe_fetch(self.ventilation_sub_mode),
+            # ventilation_sub_mode_exh=await _safe_fetch(self.ventilation_sub_mode_exh),  # failed
             temp_ventilation_mode=await _safe_fetch(self.temp_ventilation_mode),
             temp_ventilation_sub_mode=await _safe_fetch(self.temp_ventilation_sub_mode),
-            exhaust_fan_speed=await _safe_fetch(self.exhaust_fan_speed),  # error 103?
+            # temp_ventilation_sub_mode_exh=await _safe_fetch(self.temp_ventilation_sub_mode_exh),  # failed
+            exhaust_fan_speed=await _safe_fetch(self.exhaust_fan_speed),
             supply_fan_speed=await _safe_fetch(self.supply_fan_speed),
             indoor_air_temperature=await _safe_fetch(self.indoor_air_temperature),
             outdoor_air_temperature=await _safe_fetch(self.outdoor_air_temperature),
             exhaust_air_temperature=await _safe_fetch(self.exhaust_air_temperature),
             supply_air_temperature=await _safe_fetch(self.supply_air_temperature),
-            filter_dirty=None,  # await _safe_fetch(self.filter_dirty),
-            filter_remaining_percent=await _safe_fetch(self.filter_remaining),
-            filter_duration=await _safe_fetch(self.filter_duration),
+            filter_dirty=await _safe_fetch(self.filter_dirty),
+            filter_remaining_days=await _safe_fetch(self.filter_remaining_days),
             bypass_position=await _safe_fetch(self.bypass_position),
+            basic_ventilation_enable=await _safe_fetch(self.basic_ventilation_enable),
             # postheater=await _safe_fetch(self.postheater),
+            co2_level=await _safe_fetch(self.co2_level),
             co2_control_setpoint=await _safe_fetch(self.co2_setpoint),
             # free_ventilation_cooling_offset=await _safe_fetch(self.free_ventilation_cooling_offset),
             # frost_protection_preheater_setpoint=await _safe_fetch(
@@ -438,11 +476,13 @@ class VmdNode(VmdBase):
 
         print("VMD-07RPS13 data")
         print("----------------")
+        print(f"    {'Product Variant:': <25}{res['product_variant']}")
         print(f"    {'Error code:': <25}{res['error_code']}")
-        #
+        print("")
         print(f"    {'Ventilation mode:': <25}{res['ventilation_mode']}")
         print(f"    {'Ventilation sub mode:': <25}{res['ventilation_sub_mode']}")
-        # # print(f"    {'Override remaining time:': <25}{res['override_remaining_time']}")
+        print(f"    {'Temp. Ventil. mode:': <25}{res['temp_ventilation_mode']}")
+        print(f"    {'Temp. Ventil. sub mode:': <25}{res['temp_ventilation_sub_mode']}")
         #
         print(
             f"    {'Supply fan speed:': <25}{res['supply_fan_speed']}% "
@@ -458,20 +498,16 @@ class VmdNode(VmdBase):
         print(f"    {'Exhaust temperature:': <25}{res['exhaust_air_temperature']}")
         print(f"    {'Supply temperature:': <25}{res['supply_air_temperature']}")
 
-        # print(f"    {'Filter dirty:': <25}{res['filter_dirty']}")
-        # print(f"    {'Filter remaining days:': <25}{res['filter_remaining_days']} %")  # error?
-        print(f"    {'Filter remaining:': <25}{res['filter_remaining_percent']} %")  # 0%?
-        print(f"    {'Filter duration:': <25}{res['filter_duration']} days")
+        print(f"    {'CO2 level:':<40}{res['co2_level']} ppm")
 
-        print(f"    {'Bypass position:': <25}{VMDBypassMode(res['bypass_position'])}")  # test soon
+        print(f"    {'Filter dirty:': <25}{res['filter_dirty']}")
+        print(f"    {'Filter remaining days:': <25}{res['filter_remaining_days']} days")
 
-        print(f"    {'Ventilation mode:': <25}{res['ventilation_mode']}")
-        print(f"    {'Ventilation sub mode:': <25}{res['ventilation_sub_mode']}")
-        print(f"    {'Temp. Ventil. mode:': <25}{res['temp_ventilation_mode']}")
-        print(f"    {'Temp. Ventil. sub mode:': <25}{res['temp_ventilation_sub_mode']}")
+        print(f"    {'Bypass position:': <25}{res['bypass_position']}")
+        print(f"    {'Base ventil. enabled:': <25}{res['basic_ventilation_enable']}")
 
         # print(f"    {'Postheater:': <25}{res['postheater']}")
-        print("")
+        # print("")
 
         # print(f"    {'Preset speeds':<25}{'Supply':<10}{'Exhaust':<10}")
         # print(f"    {'-------------':<25}")
