@@ -36,6 +36,7 @@ from pyairios.constants import (
     ResetMode,
     StopBits,
     VMDBypassMode,
+    VMDBypassPosition,
     VMDRequestedVentilationSpeed,
     # VMDVentilationMode,
     VMDVentilationSpeed,
@@ -313,7 +314,10 @@ class AiriosVMD07RPS13CLI(aiocmd.PromptToolkitCmd):
     async def do_capabilities(self) -> None:
         """Print the device RF capabilities."""
         res = await self.vmd.capabilities()
-        print(f"{res.value} ({res.status})")
+        if res is not None:
+            print(f"{res.value} ({res.status})")
+        else:
+            print("N/A")
 
     async def do_status(self) -> None:  # pylint: disable=too-many-statements
         """Print the device status."""
@@ -343,11 +347,6 @@ class AiriosVMD07RPS13CLI(aiocmd.PromptToolkitCmd):
         print(f"{res}")
 
     async def do_ventilation_mode(self) -> None:
-        """Print the ventilation mode."""
-        res = await self.vmd.ventilation_mode()
-        print(f"{'Supply fan speed:': <25}{res.ventilation_mode}")
-
-    async def do_ventilation_speed(self) -> None:
         """Print the current ventilation mode."""
         res = await self.vmd.ventilation_mode()
         print(f"{res}")
@@ -383,33 +382,11 @@ class AiriosVMD07RPS13CLI(aiocmd.PromptToolkitCmd):
         res = await self.vmd.bypass_position()
         print(f"{res}")
 
-    async def do_bypass_status(self):
-        """Print the bypass status."""
-        res = await self.vmd.bypass_status()
-        print(f"{res}")
-
-    async def do_bypass_mode(self):
-        """Print the bypass mode."""
-        res = await self.vmd.bypass_mode()
-        print(f"{res}")
-
-    async def do_set_bypass_mode(self, mode: str):
-        """Change the bypass mode."""
-        v = VMDBypassMode.parse(mode)
-        await self.vmd.set_bypass_mode(v)
-
-    async def do_filter_duration(self):
-        """Print the filter duration."""
-        res = await self.vmd.filter_duration()
-        print(f"{res}")
-
     async def do_filter_remaining(self):
-        """Print the filter remaining percentage."""
-        r1 = await self.vmd.filter_remaining()
+        """Print the filter remaining days."""
         r2 = await self.vmd.filter_remaining_days()
-        r3 = await self.vmd.filter_duration()
-        print(f"{r1.value} % ({r2.value} of {r3.value} days)")
-
+        print(f"{r2.value} days")
+      
     async def do_filter_reset(self):
         """Reset the filter change timer."""
         await self.vmd.filter_reset()

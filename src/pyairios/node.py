@@ -163,7 +163,7 @@ class AiriosNode:
         """Get the received product ID.
 
         This is the value received from the bound node. If it does not match register
-        NODE_PRODUCT_ID a wrong product is bound.
+        NODE_PRODUCT_ID, a wrong product is bound.
         """
         result = await self.client.get_register(self.regmap[Reg.RECEIVED_PRODUCT_ID], self.slave_id)
         return Result(ProductId(result.value), result.status)

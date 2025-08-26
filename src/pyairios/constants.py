@@ -401,7 +401,7 @@ class VMDFaultStatus(IntEnum):
 
 
 class VMDVentilationMode(IntEnum):
-    """Ventilation unit mode preset."""
+    """Ventilation unit (Ventura) mode preset."""
 
     OFF = 0
     PAUSE = 1
@@ -413,6 +413,7 @@ class VMDVentilationMode(IntEnum):
     OVERRIDE_5 = 7
     SERVICE = 8
     RETYPE = 9
+    UNKNOWN = 10  # not in specs
 
     def __str__(self) -> str:  # pylint: disable=too-many-return-statements
         if self.value == self.OFF:
@@ -634,6 +635,6 @@ class VMDBypassMode(IntEnum):
 @dataclass
 class VMDBypassPosition:
     """VMD bypass position sample."""
-
-    position: float
+    # Ventura bp_position: 0 = closed, 100 = open
+    position: int
     error: bool
