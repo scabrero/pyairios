@@ -158,7 +158,7 @@ class BRDG02R13(AiriosNode):
         """Initialize the BRDG-02R13 RF bridge instance."""
 
         super().__init__(slave_id, client)
-        LOGGER.debug("Init Bridge")
+        LOGGER.debug("Init RF Bridge")
         brdg_registers: List[RegisterBase] = [
             U16Register(Reg.CUSTOMER_PRODUCT_ID, RegisterAccess.READ | RegisterAccess.WRITE),
             DateTimeRegister(Reg.UTC_TIME, RegisterAccess.READ | RegisterAccess.WRITE),
@@ -264,10 +264,17 @@ class BRDG02R13(AiriosNode):
 
     def get_product_ids(self) -> dict[str, str]:
         """
-        Handy util to pick up a list of all supported models with their productId.
+        Util to pick up all supported models with their productId.
         :return: dict of all controller and accessory definitions installed
         """
         return self.product_ids
+
+    def get_models(self) -> dict[str, ModuleType]:
+        """
+        Util to fetch all supported models with their imported module class.
+        :return: dict of all controller and accessory modules by key
+        """
+        return self.modules
 
     async def bind_controller(
         self,
