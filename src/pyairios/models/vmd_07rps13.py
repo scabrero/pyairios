@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import logging
 import math
-# import re
 
+# import re
 # from dataclasses import dataclass, field
 from typing import List
 
@@ -17,7 +17,8 @@ from pyairios.constants import (
     VMDHeater,
     VMDHeaterStatus,
     VMDSensorStatus,
-    VMDTemperature, VMDVentilationMode,
+    VMDTemperature,
+    VMDVentilationMode,
 )
 from pyairios.data_model import AiriosDeviceData
 from pyairios.exceptions import AiriosInvalidArgumentException
