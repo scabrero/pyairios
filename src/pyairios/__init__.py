@@ -104,7 +104,7 @@ class Airios:
                         vmn = self.bridge.modules[key].VmnNode(_node.slave_id, self.bridge.client)
                         vmn_data = await vmn.fetch_vmn_data()
                         data[_node.slave_id] = vmn_data
-                    # new Airios 'families' would be added to this filter
+                    # add new Airios 'families' to this filter
 
         return AiriosData(bridge_rf_address=bridge_rf_address, nodes=data)
 
