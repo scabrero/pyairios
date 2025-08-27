@@ -1,6 +1,8 @@
 """The Airios RF bridge API entrypoint."""
 
 import logging
+from types import ModuleType
+from typing import Any, Coroutine
 
 from pyairios.models.brdg_02r13 import BRDG02R13
 from pyairios.models.brdg_02r13 import DEFAULT_SLAVE_ID as BRDG02R13_DEFAULT_SLAVE_ID
@@ -107,6 +109,18 @@ class Airios:
                     # add new Airios 'families' to this filter
 
         return AiriosData(bridge_rf_address=bridge_rf_address, nodes=data)
+
+    def get_models(self) -> dict[str, ModuleType]:
+        """Receive a dict of all model modules, imported, from bridge."""
+        return self.bridge.get_models()
+
+    def get_device_ids(self) -> dict[str, str]:
+        """Receive a dict of all model device_ids, imported, from bridge."""
+        return self.bridge.get_product_ids()
+
+    def get_model_descriptions(self) -> dict[str, str]:
+        """Receive a dict of all model descriptive names for use in UI, imported, from bridge."""
+        return self.bridge.get_product_ids()
 
     async def connect(self) -> bool:
         """Establish underlying Modbus connection."""

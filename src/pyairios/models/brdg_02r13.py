@@ -143,6 +143,11 @@ def product_id() -> int:
     return 0x0001C849
 
 
+def product_description() -> str:
+    # for key BRDG-02R13
+    return "Airios RS485 RF Gateway"
+
+
 class BRDG02R13(AiriosNode):
     """Represents a BRDG-02R13 RF bridge."""
 
@@ -153,6 +158,8 @@ class BRDG02R13(AiriosNode):
     # a dict with ids by class name (replaces enum in const.py)
     modules: dict[str, ModuleType] = {}
     # a dict with imported modules by class name
+    model_descriptions: dict[str, str] = {}
+    # a dict with label description for use in UI
 
     def __init__(self, slave_id: int, client: AsyncAiriosModbusClient) -> None:
         """Initialize the BRDG-02R13 RF bridge instance."""
@@ -255,11 +262,14 @@ class BRDG02R13(AiriosNode):
 
             # check loading by fetching the product_id, the int te check against
             self.product_ids[model_key] = self.modules[model_key].product_id()
+            self.model_descriptions[model_key] = self.modules[model_key].product_description()
 
         LOGGER.debug("Loaded modules:")
         LOGGER.debug(self.modules)  # dict
         LOGGER.info("Loaded product_id's:")
         LOGGER.info(self.product_ids)  # dict
+        LOGGER.info("Loaded products:")
+        LOGGER.info(self.model_descriptions)  # dict
         # all loaded up
 
     def get_product_ids(self) -> dict[str, str]:
@@ -275,6 +285,14 @@ class BRDG02R13(AiriosNode):
         :return: dict of all controller and accessory modules by key
         """
         return self.modules
+
+    def get_model_descriptions(self) -> dict[str, str]:
+        """
+        Util to fetch all supported model labels.
+
+        :return: dict of all controller and accessory module labels by key
+        """
+        return self.descriptions
 
     async def bind_controller(
         self,

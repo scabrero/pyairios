@@ -39,6 +39,11 @@ def product_id() -> int:
     return 0x0001C83E
 
 
+def product_description() -> str:
+    # for key VMN_05LM02
+    return "Siber 4 button Remote"
+
+
 class VmnNode(AiriosDevice):
     """Represents a VMN-05LM02 Siber 4 button remote node."""
 
