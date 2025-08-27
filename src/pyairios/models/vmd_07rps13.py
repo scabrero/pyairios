@@ -131,6 +131,11 @@ def product_id() -> int:
     return 0x0001C883
 
 
+def product_description() -> str:
+    # for key VMD_07RPS13
+    return "ClimaRad Ventura V1"
+
+
 class VmdNode(VmdBase):
     """Represents a VMD-07RPS13 Ventura V1 controller node."""
 

@@ -132,6 +132,11 @@ def product_id() -> int:
     return 0x0001C892
 
 
+def product_description() -> str:
+    # for key VMD_02RPS78
+    return "Siber DF Optima 2"
+
+
 class VmdNode(VmdBase):
     """Represents a VMD-02RPS78 controller node."""
 
