@@ -47,6 +47,14 @@ class Airios:
         """Get the dict of installed product_ids."""
         return self.bridge.product_ids()
 
+    def models(self) -> dict[str, ModuleType]:
+        """Receive a dict of all model modules, imported, from bridge."""
+        return self.bridge.models()
+
+    def model_descriptions(self) -> dict[str, str]:
+        """Receive a dict of all model descriptive names for use in UI, imported, from bridge."""
+        return self.bridge.product_ids()
+
     async def nodes(self) -> list[AiriosBoundNodeInfo]:
         """Get the list of bound nodes."""
         return await self.bridge.nodes()
@@ -109,18 +117,6 @@ class Airios:
                     # add new Airios 'families' to this filter
 
         return AiriosData(bridge_rf_address=bridge_rf_address, nodes=data)
-
-    def models(self) -> dict[str, ModuleType]:
-        """Receive a dict of all model modules, imported, from bridge."""
-        return self.bridge.models()
-
-    def device_ids(self) -> dict[str, str]:
-        """Receive a dict of all model device_ids, imported, from bridge."""
-        return self.bridge.product_ids()
-
-    def model_descriptions(self) -> dict[str, str]:
-        """Receive a dict of all model descriptive names for use in UI, imported, from bridge."""
-        return self.bridge.product_ids()
 
     async def connect(self) -> bool:
         """Establish underlying Modbus connection."""
