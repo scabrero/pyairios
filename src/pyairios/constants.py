@@ -12,16 +12,16 @@ class ProductId(IntEnum):
     """
 
     # this info was moved to the models/ class files as product_id()
-    # get the dict from bridge by calling bridge.get_product_ids()
+    # get the dict from bridge by calling bridge.product_ids()
     # they will be unique as long as all files are in flat models/ dir
     # new definitions will be picked up automatically
     # will remain in use for type hints
 
     BRDG_02R13 = 0x0001C849  # RF Bridge
-    VMD_02RPS78 = 0x0001C892  # Siber DF Optima 2 controller v copied to model file get_product_id()
-    VMN_05LM02 = 0x0001C83E  # Siber 4 button remote v copied to model file get_product_id()
+    VMD_02RPS78 = 0x0001C892  # Siber DF Optima 2 controller v copied to model file product_id()
+    VMN_05LM02 = 0x0001C83E  # Siber 4 button remote v copied to model file product_id()
     VMN_02LM11 = 0x0001C852
-    VMD_07RPS13 = 0x0001C883  # ClimaRad VenturaV1X v copied to model file get_product_id()
+    VMD_07RPS13 = 0x0001C883  # ClimaRad VenturaV1X v copied to model file product_id()
 
     def __str__(self) -> str:
         # for k:v in name_by_key:
@@ -56,6 +56,26 @@ class BoundStatus(IntEnum):
         if self.value == self.NEW_BOUND:
             return "new_bound"
         raise ValueError(f"Unknown bound status value {self.value}")
+
+
+class ImportStatus(IntEnum):
+    """RF devices import status."""
+
+    NO_CHANGE = 0
+    """No change in import status."""
+    REIMPORT = 1
+    """Device re-imported to the same controller."""
+    NEW_IMPORT = 2
+    """Device imported for the first time to the controller."""
+
+    def __str__(self) -> str:
+        if self.value == self.NO_CHANGE:
+            return "no_change"
+        if self.value == self.REIMPORT:
+            return "reimport"
+        if self.value == self.NEW_IMPORT:
+            return "new_import"
+        raise ValueError(f"Unknown import status value {self.value}")
 
 
 class RFCommStatus(IntEnum):
@@ -635,6 +655,7 @@ class VMDBypassMode(IntEnum):
 @dataclass
 class VMDBypassPosition:
     """VMD bypass position sample."""
+
     # Ventura bp_position: 0 = closed, 100 = open
     position: int
     error: bool
