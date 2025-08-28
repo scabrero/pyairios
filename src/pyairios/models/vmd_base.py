@@ -153,7 +153,7 @@ class VmdBase(AiriosDevice):
         return f"{prompt}@{self.slave_id}"
 
     async def capabilities(self) -> Result[VMDCapabilities] | None:
-        return None
+        return Result(VMDCapabilities(), None)
 
     def print_data(self, result) -> None:
         print("----------------")

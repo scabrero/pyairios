@@ -59,7 +59,7 @@ class BoundStatus(IntEnum):
 
 
 class ImportStatus(IntEnum):
-    """RF devices import status."""
+    """RF nodes import status."""
 
     NO_CHANGE = 0
     """No change in import status."""

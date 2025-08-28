@@ -196,12 +196,16 @@ class VmdNode(VmdBase):
     # getters and setters
 
     async def capabilities(self) -> Result[VMDCapabilities] | None:
-        """Get the ventilation unit capabilities."""
-        # regdesc = self.regmap[Reg.CAPABILITIES]
-        # result = await self.client.get_register(regdesc, self.slave_id)
-        # return Result(VMDCapabilities(result.value), result.status)
-        # TODO create some other set of capabilities: mode, bypass, ...
-        return None
+        """Get the ventilation unit capabilities.
+        Register not supported on VMD-07RPS13 so must simulate"""
+        # our set of capabilities:
+        return Result(
+            VMDCapabilities(
+                VMDCapabilities.OFF_CAPABLE,
+                VMDCapabilities.AUTO_MODE_CAPABLE,
+            ),
+            None,
+        )
 
     async def basic_ventilation_enable(self) -> Result[int]:
         """Get base ventilation enabled."""
