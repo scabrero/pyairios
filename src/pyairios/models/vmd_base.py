@@ -153,6 +153,7 @@ class VmdBase(AiriosDevice):
         return f"{prompt}@{self.slave_id}"
 
     async def capabilities(self) -> Result[VMDCapabilities] | None:
+        # not all fans support capabilities register call, must return basics
         return Result(VMDCapabilities(), None)
 
     def print_data(self, result) -> None:
