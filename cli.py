@@ -386,7 +386,7 @@ class AiriosVMD07RPS13CLI(aiocmd.PromptToolkitCmd):
         """Print the filter remaining days."""
         r2 = await self.vmd.filter_remaining_days()
         print(f"{r2.value} days")
-      
+
     async def do_filter_reset(self):
         """Reset the filter change timer."""
         await self.vmd.filter_reset()

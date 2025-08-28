@@ -44,7 +44,7 @@ class AiriosDeviceData(AiriosNodeData):
     value_error_status: Result[ValueErrorStatus] | None
 
 
-##### special devices only, 'normal' node data_models are in their respective module file ######
+##### special devices only, 'normal' node data_models are in their respective models/module file ######
 
 
 class BRDG02R13Data(AiriosNodeData):

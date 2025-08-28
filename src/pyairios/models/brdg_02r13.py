@@ -272,21 +272,21 @@ class BRDG02R13(AiriosNode):
         LOGGER.info(self.model_descriptions)  # dict
         # all loaded up
 
-    def get_product_ids(self) -> dict[str, str]:
+    def product_ids(self) -> dict[str, str]:
         """
         Util to pick up all supported models with their productId.
         :return: dict of all controller and accessory definitions installed
         """
         return self.product_ids
 
-    def get_models(self) -> dict[str, ModuleType]:
+    def models(self) -> dict[str, ModuleType]:
         """
         Util to fetch all supported models with their imported module class.
         :return: dict of all controller and accessory modules by key
         """
         return self.modules
 
-    def get_model_descriptions(self) -> dict[str, str]:
+    def model_descriptions(self) -> dict[str, str]:
         """
         Util to fetch all supported model labels.
 
