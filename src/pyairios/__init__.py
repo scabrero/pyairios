@@ -2,7 +2,6 @@
 
 import logging
 from types import ModuleType
-from typing import Any, Coroutine
 
 from pyairios.models.brdg_02r13 import BRDG02R13
 from pyairios.models.brdg_02r13 import DEFAULT_SLAVE_ID as BRDG02R13_DEFAULT_SLAVE_ID
@@ -52,8 +51,8 @@ class Airios:
         return self.bridge.models()
 
     def model_descriptions(self) -> dict[str, str]:
-        """Receive a dict of all model descriptive names for use in UI, imported, from bridge."""
-        return self.bridge.product_ids()
+        """Receive a dict of all model descriptive names, for use in UI, from bridge."""
+        return self.bridge.model_descriptions()
 
     async def nodes(self) -> list[AiriosBoundNodeInfo]:
         """Get the list of bound nodes."""
@@ -104,13 +103,13 @@ class Airios:
             for key, _id in self.bridge.product_ids():  # index of ids by model_key (names)
                 if _node.product_id == _id:
                     LOGGER.debug(f"Start matching init for: {key}")
-                    if key.startswith("VMD"):
+                    if key.startswith("VMD-"):
                         # this is only necessary because every "family" has a different node class name
-                        # TODO refactor by renaming every node class the same?
+                        # refactor by renaming every node class the same?
                         vmd = self.bridge.modules[key].VmdNode(_node.slave_id, self.bridge.client)
                         vmd_data = await vmd.fetch_vmd_data()
                         data[_node.slave_id] = vmd_data
-                    if key.startswith("VMN"):
+                    if key.startswith("VMN-"):
                         vmn = self.bridge.modules[key].VmnNode(_node.slave_id, self.bridge.client)
                         vmn_data = await vmn.fetch_vmn_data()
                         data[_node.slave_id] = vmn_data
