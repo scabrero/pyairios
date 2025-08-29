@@ -137,13 +137,13 @@ def product_description() -> str | tuple[str, ...]:
     return "Siber DF Evo", "Siber DF Optima 2"
 
 
-class VmdNode(VmdBase):
+class Node(VmdBase):
     """Represents a VMD-02RPS78 controller node."""
 
     def __init__(self, slave_id: int, client: AsyncAiriosModbusClient) -> None:
         """Initialize the VMD-02RPS78 controller node instance."""
         super().__init__(slave_id, client)
-        LOGGER.debug(f"Starting Siber VmdNode({slave_id})")
+        LOGGER.debug(f"Starting Siber Node({slave_id})")
         vmd_registers: List[RegisterBase] = [
             U16Register(Reg.CURRENT_VENTILATION_SPEED, RegisterAccess.READ | RegisterAccess.STATUS),
             U16Register(Reg.FAN_SPEED_EXHAUST, RegisterAccess.READ | RegisterAccess.STATUS),
@@ -645,7 +645,7 @@ class VmdNode(VmdBase):
             self.regmap[Reg.FAN_SPEED_AWAY_EXHAUST], value, self.slave_id
         )
 
-    async def fetch_vmd_data(self) -> VMD02RPS78Data:  # pylint: disable=duplicate-code
+    async def fetch_node_data(self) -> VMD02RPS78Data:  # pylint: disable=duplicate-code
         """Fetch all controller data at once."""
 
         return VMD02RPS78Data(
@@ -701,7 +701,7 @@ class VmdNode(VmdBase):
         """
         Print labels + states for this particular model, including VMD base fields
 
-        :param res: the result retrieved earlier by CLI using fetch_vmd_data()
+        :param res: the result retrieved earlier by CLI using fetch_node_data()
         :return: no confirmation, outputs to serial monitor
         """
         super().print_data(res)
