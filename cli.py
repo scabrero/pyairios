@@ -36,7 +36,7 @@ from pyairios.constants import (
     ResetMode,
     StopBits,
     VMDBypassMode,
-    VMDBypassPosition,
+    # VMDBypassPosition,
     VMDRequestedVentilationSpeed,
     # VMDVentilationMode,
     VMDVentilationSpeed,
@@ -63,7 +63,7 @@ modules_list = glob.glob(os.path.join(os.path.dirname(__file__), "src/pyairios/m
 
 # all (usable) models found are stored in 3 dicts:
 prids: dict[str, str] = {}
-# a dict with product_ids by class name (replaces enum in const.py)
+# a dict with product_id's by class name (replaces ProductId enum in const.py)
 modules: dict[str, ModuleType] = {}
 # a dict with imported modules by class name
 descriptions: dict[str, str] = {}
@@ -168,7 +168,7 @@ class AiriosVMD02RPS78CLI(aiocmd.PromptToolkitCmd):
 
     async def do_status(self) -> None:  # pylint: disable=too-many-statements
         """Print the device status."""
-        res = await self.vmd.fetch_vmd_data()
+        res = await self.vmd.fetch_node_data()
         print("Node data")
         print("---------")
         print(f"    {'Product ID:': <25}{res['product_id']}")
@@ -317,7 +317,7 @@ class AiriosVMD07RPS13CLI(aiocmd.PromptToolkitCmd):
 
     async def do_status(self) -> None:  # pylint: disable=too-many-statements
         """Print the device status."""
-        res = await self.vmd.fetch_vmd_data()  # customised in model file
+        res = await self.vmd.fetch_node_data()  # customised in model file
         print("Node data")
         print("---------")
         print(f"    {'Product ID:': <25}{res['product_id']}")
@@ -358,20 +358,35 @@ class AiriosVMD07RPS13CLI(aiocmd.PromptToolkitCmd):
         if res.status is not None:
             print(f"{res.status}")
 
+    async def do_rq_vent_mode(self) -> None:
+        """Print the requested ventilation mode."""
+        res = await self.vmd.rq_vent_mode()
+        print(f"{res}")
+
+    async def do_rq_vent_sub_mode(self) -> None:
+        """Print the requested ventilation sub mode."""
+        res = await self.vmd.rq_vent_sub_mode()
+        print(f"{res}")
+
     async def do_set_ventilation_mode(self, preset: int) -> None:
-        """Change the ventilation mode. 0=Off, 2=On, 3=Man1, 5=Man3, 8=Service"""
+        """Change the ventilation mode. 0=Off, 1=Pause, 2=On, 3=Man1, 5=Man3, 8=Service"""
+        # s = VMDRequestedVentilationSpeed.parse(preset)
+        await self.vmd.set_ventilation_mode(preset)  # (s) lookup?
+
+    async def do_set_temp_vent_mode(self, preset: int) -> None:
+        """Change the ventilation mode. 0=Off, 1=Pause, 2=On, 3=Man1, 5=Man3, 8=Service"""
         # s = VMDRequestedVentilationSpeed.parse(preset)
         await self.vmd.set_ventilation_mode(preset)  # (s) lookup?
 
     async def do_indoor_humidity(self):
         """Print the indoor humidity level in %."""
         res = await self.vmd.indoor_humidity()
-        print(f"{res}")
+        print(f"{res} %")
 
     async def do_outdoor_humidity(self):
         """Print the outdoor humidity level in %."""
         res = await self.vmd.outdoor_humidity()
-        print(f"{res}")
+        print(f"{res} %")
 
     async def do_bypass_position(self):
         """Print the bypass position."""
@@ -382,6 +397,8 @@ class AiriosVMD07RPS13CLI(aiocmd.PromptToolkitCmd):
         """Print the filter remaining days."""
         r2 = await self.vmd.filter_remaining_days()
         print(f"{r2.value} days")
+
+    # actions
 
     async def do_filter_reset(self):
         """Reset the filter change timer."""
@@ -416,16 +433,16 @@ class AiriosBridgeCLI(aiocmd.PromptToolkitCmd):
 
         print()  # just a spacer
 
-        # find by product_ids: {'VMD-07RPS13': 116867, 'VMD-02RPS78': 116882, 'VMN-05LM02': 116798}
+        # find by product_id: {'VMD-07RPS13': 116867, 'VMD-02RPS78': 116882, 'VMN-05LM02': 116798}
         # compare to src/pyairios/_init_.py: fetch models from bridge
-        for key, value in product_ids.items():
+        for key, value in prids.items():
             LOGGER.debug(f"Looking up Key: {key}, Value: {value}")
             # DEBUG:__main__:Looking up Key: VMD-07RPS13, Value: 116867
             if value == node_info.product_id:
                 LOGGER.debug(f"Start matching CLI for: {key}")
-                if key == "VMD-02RPS78":  # CLI for each model
+                if key == "VMD-02RPS78":  # dedicated CLI for each model
                     LOGGER.debug("Start AiriosVMD07RPS13CLI")
-                    vmd = modules[key].VmdNode(  # use fixed class name in all VMD models
+                    vmd = modules[key].Node(  # use fixed class name in all VMD models
                         node_info.slave_id, self.bridge.client
                     )
                     LOGGER.debug(f"await AiriosVMD02RPS78CLI for: {key}")
@@ -434,7 +451,7 @@ class AiriosBridgeCLI(aiocmd.PromptToolkitCmd):
                     return
                 elif key == "VMD-07RPS13":  # ClimaRad Ventura
                     LOGGER.debug("Start AiriosVMD07RPS13CLI")
-                    vmd = modules[key].VmdNode(  # use fixed class name in all VMD models
+                    vmd = modules[key].Node(  # use fixed class name in all VMD models
                         node_info.slave_id, self.bridge.client
                     )
                     LOGGER.debug(f"await AiriosVMD07RPS13CLI for: {key}")
@@ -443,7 +460,7 @@ class AiriosBridgeCLI(aiocmd.PromptToolkitCmd):
                     return
                 elif key == "VMN-05LM02":  # Remote
                     LOGGER.debug("Start CLI")
-                    vmn = modules[key].VmnNode(node_info.slave_id, self.bridge.client)
+                    vmn = modules[key].Node(node_info.slave_id, self.bridge.client)
                     LOGGER.debug(f"await AiriosVMN05LM02CLI: {key}")
                     await AiriosVMN05LM02CLI(vmn).run()
                     LOGGER.debug("Loaded CLI for {key}")

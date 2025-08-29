@@ -103,17 +103,10 @@ class Airios:
             for key, _id in self.bridge.product_ids():  # index of ids by model_key (names)
                 if _node.product_id == _id:
                     LOGGER.debug(f"Start matching init for: {key}")
-                    if key.startswith("VMD-"):
-                        # this is only necessary because every "family" has a different node class name
-                        # refactor by renaming every node class the same?
-                        vmd = self.bridge.modules[key].VmdNode(_node.slave_id, self.bridge.client)
-                        vmd_data = await vmd.fetch_vmd_data()
-                        data[_node.slave_id] = vmd_data
-                    if key.startswith("VMN-"):
-                        vmn = self.bridge.modules[key].VmnNode(_node.slave_id, self.bridge.client)
-                        vmn_data = await vmn.fetch_vmn_data()
-                        data[_node.slave_id] = vmn_data
-                    # add new Airios 'families' to this filter
+                    # refactored by renaming every node class the same: Node
+                    node_mod = self.bridge.modules[key].Node(_node.slave_id, self.bridge.client)
+                    node_data = await node_mod.fetch_node_data()
+                    data[_node.slave_id] = node_data
 
         return AiriosData(bridge_rf_address=bridge_rf_address, nodes=data)
 

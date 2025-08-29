@@ -153,7 +153,7 @@ class BRDG02R13(AiriosNode):
 
     # a dict with module names by model, used to fill in CLI prompt model
     prids: dict[str, str] = {}
-    # a dict with product_ids by model (replaces enum in const.py)
+    # a dict with product_ids by model (replaces ProductId enum in const.py)
     modules: dict[str, ModuleType] = {}
     # a dict with imported modules by model
     descriptions: dict[str, str] = {}
@@ -492,12 +492,8 @@ class BRDG02R13(AiriosNode):
             # loop through the models
             for key, _id in self.prids:
                 if node.product_id == _id:
-                    LOGGER.debug(f"Start matching CLI for: {key}")
-                    if key.startswith("VMD-"):
-                        return self.modules[key].VmdNode(node.slave_id, self.client)
-                    if key.startswith("VMN-"):
-                        return self.modules[key].VmnNode(node.slave_id, self.client)
-                    # add new Airios 'families' to this filter
+                    LOGGER.debug(f"Fetch matching module for: {key}")
+                    return self.modules[key].Node(node.slave_id, self.client)
 
         raise AiriosException(f"Node {slave_id} not found")
 

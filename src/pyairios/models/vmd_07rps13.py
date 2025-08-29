@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import math
+from enum import IntEnum
 
 # import re
 # from dataclasses import dataclass, field
@@ -41,7 +42,7 @@ LOGGER = logging.getLogger(__name__)
 #       model set of RF Bridge register addresses, by named address keyword
 #   VMD07RPS13Data:
 #       model dict of register address + Result type by name (formerly in data_model.py)
-#   vmdNode.vmd_registers:
+#   Node.vmd_registers:
 #       instance list of register type (size) + name key from Reg + access R/W
 
 
@@ -57,13 +58,13 @@ class Reg(RegisterAddress):  # only override or add differences in VMD_BASE
 
     TEMP_VENTILATION_MODE = 41103  # 1,R, uint8, "Main Room Ventilation Mode"
     TEMP_VENTILATION_SUB_MODE = 41104  # 1, R, uint8, "Main Room Ventilation Sub Mode"
-    # TEMP_VENTILATION_SUB_MODE_EXH = 41105  # R, uint8, Main Room Vent. Sub Mode Cont. Exh.
+    # TEMP_VENTILATION_SUB_MODE_EXH = 41105  # R, uint8, "Main Room Vent. Sub Mode Cont. Exh."
 
     REQ_VENTILATION_MODE = 41120  # 1,RW, uint8, "Main Room Ventilation Mode"
     REQ_VENTILATION_SUB_MODE = 41121  # 1, RW, uint8, "Main Room Ventilation Sub Mode"
-    REQ_VENTILATION_SUB_MODE_EXH = 41122  # 1, R, uint8, "Main Room Ventilation Sub Mode"
+    # REQ_VENTILATION_SUB_MODE_EXH = 41122  # 1, R, uint8, "Main Room Vent. Sub Mode Cont. Exh."
     REQ_TEMP_VENTILATION_MODE = 41123  # 1,RW, uint8, "Main Room Temp.Ventilation Mode"
-    REQ_TEMP_VENTILATION_SUB_MODE = 41124  # 1, RW, uint8, "Main Room Temp.Ventilation Sub Mode"
+    REQ_TEMP_VENTILATION_SUB_MODE = 41124  # 1, RW, uint8, "Main Room Vent. Sub Mode"
     # REQ_TEMP_VENTILATION_SUB_MODE_EXH = (
     #     41125  # RW, uint8, Main Room Temp. Vent. Sub Mode Cont. Exh.
     # )
@@ -136,13 +137,13 @@ def product_description() -> str | tuple[str, ...]:
     return "ClimaRad Ventura V1"
 
 
-class VmdNode(VmdBase):
+class Node(VmdBase):
     """Represents a VMD-07RPS13 Ventura V1 controller node."""
 
     def __init__(self, slave_id: int, client: AsyncAiriosModbusClient) -> None:
         """Initialize the VMD-07RPS13 Ventura controller node instance."""
         super().__init__(slave_id, client)
-        LOGGER.debug(f"Starting Ventura VmdNode({slave_id})")
+        LOGGER.debug(f"Starting Ventura Node({slave_id})")
         vmd_registers: List[RegisterBase] = [
             U16Register(
                 Reg.SYSTEM_VENT_CONFIG,
@@ -253,8 +254,12 @@ class VmdNode(VmdBase):
         """Get the ventilation mode status. 0=Off, 2=On, 3=Man1, 5=Man3, 8=Service"""
         return await self.client.get_register(self.regmap[Reg.VENTILATION_MODE], self.slave_id)
 
-    async def set_ventilation_mode(self, mode: VMDVentilationMode) -> bool:
-        """Set the ventilation mode. 0=Off, 2=On, 3=Man1, 5=Man3, 8=Service"""
+    async def rq_vent_mode(self) -> Result[int]:
+        """Get the ventilation mode status. 0=Off, 2=On, 3=Man1, 5=Man3, 8=Service"""
+        return await self.client.get_register(self.regmap[Reg.REQ_VENTILATION_MODE], self.slave_id)
+
+    async def set_ventilation_mode(self, mode: int) -> bool:  # : VMDVentilationMode) -> bool:
+        """Set the ventilation mode. 0=Off, 1=Pause, 2=On, 3=Man1, 5=Man3, 8=Service"""
         if mode == VMDVentilationMode.UNKNOWN:
             raise AiriosInvalidArgumentException(f"Invalid ventilation mode {mode}")
         return await self.client.set_register(
@@ -265,6 +270,20 @@ class VmdNode(VmdBase):
         """Get the ventilation sub mode status."""
         # seen: 48
         return await self.client.get_register(self.regmap[Reg.VENTILATION_SUB_MODE], self.slave_id)
+
+    async def rq_vent_sub_mode(self) -> Result[int]:
+        """Get the ventilation mode status. 0=Off, 2=On, 3=Man1, 5=Man3, 8=Service"""
+        return await self.client.get_register(
+            self.regmap[Reg.REQ_VENTILATION_SUB_MODE], self.slave_id
+        )
+
+    # async def set_temp_vent_mode(self, mode: int) -> bool:
+    #     """Set the ventilation mode. 0=Off, 1=Pause, 2=On, 3=Man1, 5=Man3, 8=Service"""
+    #     # if mode == VMDVentilationMode.UNKNOWN:
+    #     #     raise AiriosInvalidArgumentException(f"Invalid ventilation mode {mode}")
+    #     return await self.client.set_register(
+    #         self.regmap[Reg.REQ_TEMP_VENTILATION_MODE], mode, self.slave_id
+    #     )
 
     # async def ventilation_sub_mode_exh(self) -> Result[int]:  # error
     #     """Get the ventilation sub mode exhaust status."""
@@ -419,7 +438,7 @@ class VmdNode(VmdBase):
         status = VMDHeaterStatus.UNAVAILABLE if result.value == 0xEF else VMDHeaterStatus.OK
         return Result(VMDHeater(result.value, status), result.status)
 
-    async def fetch_vmd_data(self) -> VMD07RPS13Data:  # pylint: disable=duplicate-code
+    async def fetch_node_data(self) -> VMD07RPS13Data:  # pylint: disable=duplicate-code
         """Fetch all controller data at once."""
 
         return VMD07RPS13Data(
@@ -478,7 +497,7 @@ class VmdNode(VmdBase):
         """
         Print labels + states for this particular model, including VMD base fields
 
-        :param res: the result retrieved earlier by CLI using fetch_vmd_data()
+        :param res: the result retrieved earlier by CLI using fetch_node_data()
         :return: no confirmation, outputs to serial monitor
         """
         super().print_data(res)

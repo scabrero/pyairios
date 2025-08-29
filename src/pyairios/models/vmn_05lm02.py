@@ -44,13 +44,13 @@ def product_description() -> str | tuple[str, ...]:
     return "Siber 4 button Remote"
 
 
-class VmnNode(AiriosDevice):
+class Node(AiriosDevice):
     """Represents a VMN-05LM02 Siber 4 button remote node."""
 
     def __init__(self, slave_id: int, client: AsyncAiriosModbusClient) -> None:
         """Initialize the VMN-05LM02 node instance."""
         super().__init__(slave_id, client)
-        LOGGER.debug(f"Starting Siber Remote VmnNode({slave_id})")
+        LOGGER.debug(f"Starting Siber Remote Node({slave_id})")
         vmn_registers: List[RegisterBase] = [
             U16Register(
                 Reg.REQUESTED_VENTILATION_SPEED, RegisterAccess.READ | RegisterAccess.STATUS
@@ -68,7 +68,7 @@ class VmnNode(AiriosDevice):
         result = await self.client.get_register(regdesc, self.slave_id)
         return Result(VMDRequestedVentilationSpeed(result.value), result.status)
 
-    async def fetch_vmn_data(self) -> VMN05LM02Data:  # pylint: disable=duplicate-code
+    async def fetch_node_data(self) -> VMN05LM02Data:  # pylint: disable=duplicate-code
         """Get the node device data at once."""
 
         return VMN05LM02Data(
@@ -89,7 +89,7 @@ class VmnNode(AiriosDevice):
         """
         Print labels + states for this particular model, including VMD base fields
 
-        :param res: the result retrieved earlier by CLI using fetch_vmn_data()
+        :param res: the result retrieved earlier by CLI using fetch_node_data()
         :return: no confirmation, outputs to serial monitor
         """
         # super().print_data(res)  # no superclass set up yet
