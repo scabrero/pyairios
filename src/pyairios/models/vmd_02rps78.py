@@ -132,9 +132,9 @@ def product_id() -> int:
     return 0x0001C892
 
 
-def product_description() -> str:
+def product_description() -> str | tuple[str, ...]:
     # for key VMD_02RPS78
-    return "Siber DF Optima 2"
+    return "Siber DF Evo", "Siber DF Optima 2"
 
 
 class VmdNode(VmdBase):

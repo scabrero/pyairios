@@ -39,7 +39,7 @@ def product_id() -> int:
     return 0x0001C83E
 
 
-def product_description() -> str:
+def product_description() -> str | tuple[str, ...]:
     # for key VMN_05LM02
     return "Siber 4 button Remote"
 

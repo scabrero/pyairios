@@ -14,7 +14,8 @@ class ProductId(IntEnum):
     # this info was moved to the models/ class files as product_id()
     # get the dict from bridge by calling bridge.product_ids()
     # they will be unique as long as all files are in flat models/ dir
-    # new definitions will be picked up automatically
+    # new definitions will be picked up automatically when dropped in the models/ folder
+    # enum keys are the (surrounding) module names, bridge.model_names()
     # will remain in use for type hints
 
     BRDG_02R13 = 0x0001C849  # RF Bridge

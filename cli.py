@@ -62,12 +62,12 @@ modules_list = glob.glob(os.path.join(os.path.dirname(__file__), "src/pyairios/m
 # A major benefit of the glob library is that it includes the path to the file in each item
 
 # all (usable) models found are stored in 3 dicts:
-module_names: dict[str, str] = {}
-# a dict with module names by class name, used to fill in CLI prompt model
-product_ids: dict[str, str] = {}
-# a dict with ids by class name (replaces enum in const.py)
+prids: dict[str, str] = {}
+# a dict with product_ids by class name (replaces enum in const.py)
 modules: dict[str, ModuleType] = {}
 # a dict with imported modules by class name
+descriptions: dict[str, str] = {}
+# a dict with label description model, for use in UI
 
 for file_path in modules_list:
     file_name = str(os.path.basename(file_path))
@@ -75,10 +75,9 @@ for file_path in modules_list:
         file_name == "__init__.py" or file_name == "brdg_02r13.py" or file_name.endswith("_base.py")
     ):  # skip BRDG and the base model definitions
         continue
-    module_name = file_name[:-3]  # drop '.py' file extension
-    model_key: str = str(re.sub(r"_", "", module_name).upper())  # drop '_'
+    module_name = file_name.removesuffix(".py")
+    model_key: str = str(re.sub(r"_", "-", module_name).upper())
     assert model_key is not None
-    module_names[model_key] = str(module_name.upper())  # convert to upper case, dict by class_name
 
     # using importlib, create a spec for each module:
     module_spec = importlib.util.spec_from_file_location(module_name, file_path)
@@ -90,22 +89,21 @@ for file_path in modules_list:
     modules[model_key] = mod
     # now we can use the module as if it were imported normally
 
-    # check loading by fetching the product_id, the int te check against
-    product_ids[model_key] = modules[model_key].product_id()
+    # check loading by fetching the product_id (the int te check binding against)
+    prids[model_key] = modules[model_key].product_id()
+    descriptions[model_key] = modules[model_key].product_description()
 
-print("module_names by key:")
-print(module_names)  # dict
+print("Model descriptions by key:")
+print(descriptions)  # dict
 print("Loaded modules:")
 print(modules)  # dict
 print("Loaded product_id's:")
-print(product_ids)  # dict
+print(prids)  # dict
 # all loaded up
 
 
 class AiriosVMN05LM02CLI(aiocmd.PromptToolkitCmd):
     """The VMN_ modules common CLI interface."""
-
-    class_pointer: str = "VMN"
 
     def __init__(self, vmn) -> None:  # TODO subclass aiocmd_type
         """
@@ -300,8 +298,6 @@ class AiriosVMD02RPS78CLI(aiocmd.PromptToolkitCmd):
 class AiriosVMD07RPS13CLI(aiocmd.PromptToolkitCmd):
     """The VMD07RPS13 ClimaRad Ventura V1 CLI interface."""
 
-    class_pointer: str = "VMD07RPS13"  # (how) is this used?
-
     def __init__(self, vmd) -> None:
         """
         :param vmd: contains all details of this model
@@ -420,14 +416,14 @@ class AiriosBridgeCLI(aiocmd.PromptToolkitCmd):
 
         print()  # just a spacer
 
-        # find by product_ids: {'VMD07RPS13': 116867, 'VMD02RPS78': 116882, 'VMN05LM02': 116798}
+        # find by product_ids: {'VMD-07RPS13': 116867, 'VMD-02RPS78': 116882, 'VMN-05LM02': 116798}
         # compare to src/pyairios/_init_.py: fetch models from bridge
         for key, value in product_ids.items():
             LOGGER.debug(f"Looking up Key: {key}, Value: {value}")
-            # DEBUG:__main__:Looking up Key: VMD07RPS13, Value: 116867
+            # DEBUG:__main__:Looking up Key: VMD-07RPS13, Value: 116867
             if value == node_info.product_id:
                 LOGGER.debug(f"Start matching CLI for: {key}")
-                if key == "VMD02RPS78":  # CLI for each model
+                if key == "VMD-02RPS78":  # CLI for each model
                     LOGGER.debug("Start AiriosVMD07RPS13CLI")
                     vmd = modules[key].VmdNode(  # use fixed class name in all VMD models
                         node_info.slave_id, self.bridge.client
@@ -436,7 +432,7 @@ class AiriosBridgeCLI(aiocmd.PromptToolkitCmd):
                     await AiriosVMD02RPS78CLI(vmd).run()
                     LOGGER.debug(f"Loaded CLI for {key}")
                     return
-                elif key == "VMD07RPS13":  # ClimaRad Ventura
+                elif key == "VMD-07RPS13":  # ClimaRad Ventura
                     LOGGER.debug("Start AiriosVMD07RPS13CLI")
                     vmd = modules[key].VmdNode(  # use fixed class name in all VMD models
                         node_info.slave_id, self.bridge.client
@@ -445,7 +441,7 @@ class AiriosBridgeCLI(aiocmd.PromptToolkitCmd):
                     await AiriosVMD07RPS13CLI(vmd).run()
                     LOGGER.debug(f"Loaded CLI for {key}")
                     return
-                elif key == "VMN05LM02":  # Remote
+                elif key == "VMN-05LM02":  # Remote
                     LOGGER.debug("Start CLI")
                     vmn = modules[key].VmnNode(node_info.slave_id, self.bridge.client)
                     LOGGER.debug(f"await AiriosVMN05LM02CLI: {key}")

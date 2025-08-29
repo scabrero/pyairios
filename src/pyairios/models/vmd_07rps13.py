@@ -131,7 +131,7 @@ def product_id() -> int:
     return 0x0001C883
 
 
-def product_description() -> str:
+def product_description() -> str | tuple[str, ...]:
     # for key VMD_07RPS13
     return "ClimaRad Ventura V1"
 

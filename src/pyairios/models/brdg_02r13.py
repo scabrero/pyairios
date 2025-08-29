@@ -143,7 +143,7 @@ def product_id() -> int:
     return 0x0001C849
 
 
-def product_description() -> str:
+def product_description() -> str | tuple[str, ...]:
     # for key BRDG-02R13
     return "Airios RS485 RF Gateway"
 
@@ -151,15 +151,13 @@ def product_description() -> str:
 class BRDG02R13(AiriosNode):
     """Represents a BRDG-02R13 RF bridge."""
 
-    # all (usable) models found are stored in 3 dicts:
-    module_names: dict[str, str] = {}
-    # a dict with module names by class name, used to fill in CLI prompt model
-    product_ids: dict[str, str] = {}
-    # a dict with ids by class name (replaces enum in const.py)
+    # a dict with module names by model, used to fill in CLI prompt model
+    prids: dict[str, str] = {}
+    # a dict with product_ids by model (replaces enum in const.py)
     modules: dict[str, ModuleType] = {}
-    # a dict with imported modules by class name
-    model_descriptions: dict[str, str] = {}
-    # a dict with label description for use in UI
+    # a dict with imported modules by model
+    descriptions: dict[str, str] = {}
+    # a dict with label description model, for use in UI
 
     def __init__(self, slave_id: int, client: AsyncAiriosModbusClient) -> None:
         """Initialize the BRDG-02R13 RF bridge instance."""
@@ -246,8 +244,8 @@ class BRDG02R13(AiriosNode):
                 or file_name.endswith("_base.py")
             ):  # skip BRDG and the base model definitions
                 continue
-            module_name = file_name[:-3]  # drop '.py' file extension
-            model_key: str = str(re.sub(r"_", "", module_name).upper())  # drop '_'
+            module_name = file_name.removesuffix(".py")
+            model_key: str = str(re.sub(r"_", "-", module_name).upper())
             assert model_key is not None
 
             # using importlib, create a spec for each module:
@@ -260,28 +258,22 @@ class BRDG02R13(AiriosNode):
             self.modules[model_key] = mod
             # now we can use the module as if it were imported normally
 
-            # check loading by fetching the product_id, the int te check against
-            self.product_ids[model_key] = self.modules[model_key].product_id()
-            self.model_descriptions[model_key] = self.modules[model_key].product_description()
+            # check loading by fetching the product_id (the int te check binding against)
+            self.prids[model_key] = self.modules[model_key].product_id()
+            self.descriptions[model_key] = self.modules[model_key].product_description()
 
         LOGGER.debug("Loaded modules:")
         LOGGER.debug(self.modules)  # dict
         LOGGER.info("Loaded product_id's:")
-        LOGGER.info(self.product_ids)  # dict
+        LOGGER.info(self.prids)  # dict
         LOGGER.info("Loaded products:")
-        LOGGER.info(self.model_descriptions)  # dict
+        LOGGER.info(self.descriptions)  # dict
         # all loaded up
-
-    def product_ids(self) -> dict[str, str]:
-        """
-        Util to pick up all supported models with their productId.
-        :return: dict of all controller and accessory definitions installed
-        """
-        return self.product_ids
 
     def models(self) -> dict[str, ModuleType]:
         """
         Util to fetch all supported models with their imported module class.
+
         :return: dict of all controller and accessory modules by key
         """
         return self.modules
@@ -294,10 +286,18 @@ class BRDG02R13(AiriosNode):
         """
         return self.descriptions
 
+    def product_ids(self) -> dict[str, str]:
+        """
+        Util to pick up all supported models with their productId.
+
+        :return: dict of all controller and accessory definitions installed
+        """
+        return self.prids
+
     async def bind_controller(
         self,
         slave_id: int,
-        product_id: ProductId,
+        _product_id: ProductId,
         product_serial: int | None = None,
     ) -> bool:
         """Bind a new controller to the bridge."""
@@ -327,7 +327,7 @@ class BRDG02R13(AiriosNode):
             mode = BindingMode.OUTGOING_SINGLE_PRODUCT_PLUS_SERIAL
 
         ok = await self.client.set_register(
-            self.regmap[Reg.BINDING_PRODUCT_ID], product_id, self.slave_id
+            self.regmap[Reg.BINDING_PRODUCT_ID], _product_id, self.slave_id
         )
         if not ok:
             raise AiriosBindingException("Failed to configure binding product ID")
@@ -365,7 +365,7 @@ class BRDG02R13(AiriosNode):
         self,
         controller_slave_id: int,
         slave_id: int,
-        product_id: ProductId,
+        _product_id: ProductId,
     ) -> bool:
         """Bind a new accessory to the bridge."""
         if controller_slave_id < 2 or controller_slave_id > 247:
@@ -395,7 +395,7 @@ class BRDG02R13(AiriosNode):
             raise AiriosBindingException(f"Bridge not ready for binding: {result.value}")
 
         ok = await self.client.set_register(
-            self.regmap[Reg.BINDING_PRODUCT_ID], product_id, self.slave_id
+            self.regmap[Reg.BINDING_PRODUCT_ID], _product_id, self.slave_id
         )
         if not ok:
             raise AiriosBindingException("Failed to configure binding product ID")
@@ -490,12 +490,12 @@ class BRDG02R13(AiriosNode):
                 continue
 
             # loop through the models
-            for key, id in self.product_ids:
-                if node.product_id == id:
+            for key, _id in self.prids:
+                if node.product_id == _id:
                     LOGGER.debug(f"Start matching CLI for: {key}")
-                    if key.startswith("VMD"):
+                    if key.startswith("VMD-"):
                         return self.modules[key].VmdNode(node.slave_id, self.client)
-                    if key.startswith("VMN"):
+                    if key.startswith("VMN-"):
                         return self.modules[key].VmnNode(node.slave_id, self.client)
                     # add new Airios 'families' to this filter
 

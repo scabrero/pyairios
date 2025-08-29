@@ -40,7 +40,7 @@ def product_id() -> int:
     return 0x0
 
 
-def product_description() -> str:
+def product_description() -> str | tuple[str, ...]:
     # base class, should not be called
     return "-"
 
