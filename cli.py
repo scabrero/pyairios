@@ -128,7 +128,7 @@ class AiriosVMN05LM02CLI(aiocmd.PromptToolkitCmd):
 
     async def do_status(self) -> None:
         """Print the device status."""
-        res = await self.vmn.fetch_vmn_data()
+        res = await self.vmn.fetch_node_data()
         print("Node data")
         print("---------")
         print(f"    {'Product ID:': <25}{res['product_id']}")
@@ -572,7 +572,7 @@ class AiriosBridgeCLI(aiocmd.PromptToolkitCmd):
 
     async def do_status(self) -> None:
         """Print the device status."""
-        res = await self.bridge.fetch_bridge()
+        res = await self.bridge.fetch_bridge_data()
         print("Node data")
         print("---------")
         print(f"    {'Product ID:': <25}{res['product_id']}")
