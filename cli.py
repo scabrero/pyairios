@@ -320,7 +320,7 @@ class AiriosVMD07RPS13CLI(aiocmd.PromptToolkitCmd):
         res = await self.vmd.fetch_node_data()  # customised in model file
         print("Node data")
         print("---------")
-        print(f"    {'Product ID:': <25}{res['product_id']}")
+        print(f"    {'Product ID:': <25}{res['product_id']}")  # same as product_name
         print(f"    {'Product Name:': <25}{res['product_name']}")
         print(f"    {'Software version:': <25}{res['sw_version']}")
         print(f"    {'RF address:': <25}{res['rf_address']}")
@@ -373,10 +373,10 @@ class AiriosVMD07RPS13CLI(aiocmd.PromptToolkitCmd):
         # s = VMDRequestedVentilationSpeed.parse(preset)
         await self.vmd.set_ventilation_mode(preset)  # (s) lookup?
 
-    async def do_set_temp_vent_mode(self, preset: int) -> None:
+    async def do_set_temp_vent_sub_mode(self, preset: int) -> None:
         """Change the ventilation mode. 0=Off, 1=Pause, 2=On, 3=Man1, 5=Man3, 8=Service"""
         # s = VMDRequestedVentilationSpeed.parse(preset)
-        await self.vmd.set_ventilation_mode(preset)  # (s) lookup?
+        await self.vmd.set_temp_ventilation_sub_mode(preset)  # (s) lookup?
 
     async def do_indoor_humidity(self):
         """Print the indoor humidity level in %."""
@@ -410,7 +410,7 @@ class AiriosBridgeCLI(aiocmd.PromptToolkitCmd):
 
     def __init__(self, bridge: BRDG02R13) -> None:
         super().__init__()
-        self.prompt = f"[BRDG-02R13@{bridge.slave_id}]>> "
+        self.prompt = f"[{str(bridge)}]>> "  # f"[BRDG-02R13@{bridge.slave_id}]>>
         self.bridge = bridge
 
     async def do_nodes(self) -> None:

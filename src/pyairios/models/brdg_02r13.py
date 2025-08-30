@@ -258,7 +258,7 @@ class BRDG02R13(AiriosNode):
             self.modules[model_key] = mod
             # now we can use the module as if it were imported normally
 
-            # check loading by fetching the product_id (the int te check binding against)
+            # check loading by fetching the product_id (the int to check binding against)
             self.prids[model_key] = self.modules[model_key].product_id()
             self.descriptions[model_key] = self.modules[model_key].product_description()
 
@@ -270,7 +270,7 @@ class BRDG02R13(AiriosNode):
         LOGGER.info(self.descriptions)  # dict
         # all loaded up
 
-    def models(self) -> dict[str, ModuleType]:
+    def models(self) -> dict[str, ModuleType] | None:
         """
         Util to fetch all supported models with their imported module class.
 
@@ -278,7 +278,7 @@ class BRDG02R13(AiriosNode):
         """
         return self.modules
 
-    def model_descriptions(self) -> dict[str, str]:
+    def model_descriptions(self) -> dict[str, str] | None:
         """
         Util to fetch all supported model labels.
 
@@ -286,7 +286,7 @@ class BRDG02R13(AiriosNode):
         """
         return self.descriptions
 
-    def product_ids(self) -> dict[str, str]:
+    def product_ids(self) -> dict[str, str] | None:
         """
         Util to pick up all supported models with their productId.
 
@@ -609,4 +609,8 @@ class BRDG02R13(AiriosNode):
             rf_load_last_hour=await _safe_fetch(self.rf_load_last_hour),
             rf_load_current_hour=await _safe_fetch(self.rf_load_current_hour),
             power_on_time=await _safe_fetch(self.power_on_time),
+            # additional info from models/
+            models=self.models,
+            model_descriptions=self.model_descriptions,
+            product_ids=self.product_ids,
         )

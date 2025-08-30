@@ -263,7 +263,18 @@ class Node(VmdBase):
         if mode == VMDVentilationMode.UNKNOWN:
             raise AiriosInvalidArgumentException(f"Invalid ventilation mode {mode}")
         return await self.client.set_register(
-            self.regmap[Reg.REQ_VENTILATION_MODE], mode, self.slave_id
+            self.regmap[Reg.VENTILATION_MODE], mode, self.slave_id
+        )  # [VMD-07RPS13@2]>> set_ventilation_mode 3
+        # Attempt to write not writable register <pyairios.registers.U16Register object at 0x10686f840>
+        # Command failed:  Trying to write not writable register <pyairios.registers.U16Register object at 0x10686f840>
+        # [VMD-07RPS13@2]>>
+
+    async def set_ventilation_sub_mode(self, mode: int) -> bool:  # : VMDVentilationMode) -> bool:
+        """Set the ventilation mode. 0=Off, 1=Pause, 2=On, 3=Man1, 5=Man3, 8=Service"""
+        if mode == VMDVentilationMode.UNKNOWN:
+            raise AiriosInvalidArgumentException(f"Invalid ventilation mode {mode}")
+        return await self.client.set_register(
+            self.regmap[Reg.VENTILATION_SUB_MODE], mode, self.slave_id
         )
 
     async def ventilation_sub_mode(self) -> Result[int]:
@@ -277,13 +288,13 @@ class Node(VmdBase):
             self.regmap[Reg.REQ_VENTILATION_SUB_MODE], self.slave_id
         )
 
-    # async def set_temp_vent_mode(self, mode: int) -> bool:
-    #     """Set the ventilation mode. 0=Off, 1=Pause, 2=On, 3=Man1, 5=Man3, 8=Service"""
-    #     # if mode == VMDVentilationMode.UNKNOWN:
-    #     #     raise AiriosInvalidArgumentException(f"Invalid ventilation mode {mode}")
-    #     return await self.client.set_register(
-    #         self.regmap[Reg.REQ_TEMP_VENTILATION_MODE], mode, self.slave_id
-    #     )
+    async def set_temp_ventilation_sub_mode(self, mode: int) -> bool:
+        """Set the ventilation mode. 0=Off, 1=Pause, 2=On, 3=Man1, 5=Man3, 8=Service"""
+        # if mode == VMDVentilationMode.UNKNOWN:
+        #     raise AiriosInvalidArgumentException(f"Invalid ventilation mode {mode}")
+        return await self.client.set_register(
+            self.regmap[Reg.TEMP_VENTILATION_SUB_MODE], mode, self.slave_id
+        )  # non-writable ERROR
 
     # async def ventilation_sub_mode_exh(self) -> Result[int]:  # error
     #     """Get the ventilation sub mode exhaust status."""
