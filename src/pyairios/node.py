@@ -123,7 +123,7 @@ class AiriosNode:
         """Get the node product ID.
 
         This is the value assigned to the virtual node instance created by the bridge when
-        a device is bound. The actual received product ID from the real RF node can is
+        a device is bound. The actual received product ID from the real RF node is
         available in the RECEIVED_PRODUCT_ID register.
         """
         result = await self.client.get_register(self.regmap[Reg.PRODUCT_ID], self.slave_id)

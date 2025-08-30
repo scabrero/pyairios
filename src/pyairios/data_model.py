@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 from datetime import timedelta
+from types import ModuleType
 from typing import TypedDict
 
 from pyairios.constants import (
@@ -98,6 +99,10 @@ class BRDG02R13Data(AiriosNodeData):
     rf_load_last_hour: Result[float] | None
     rf_load_current_hour: Result[float] | None
     power_on_time: Result[timedelta] | None
+    # info collected from models/ definition at startup:
+    models: dict[str, ModuleType] | None
+    model_descriptions: dict[str, str] | None
+    product_ids: dict[str, str] | None
 
 
 @dataclass
