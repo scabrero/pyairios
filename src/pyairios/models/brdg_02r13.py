@@ -610,7 +610,7 @@ class BRDG02R13(AiriosNode):
             rf_load_current_hour=await _safe_fetch(self.rf_load_current_hour),
             power_on_time=await _safe_fetch(self.power_on_time),
             # additional info from models/
-            models=self.models,
-            model_descriptions=self.model_descriptions,
-            product_ids=self.product_ids,
+            models=await _safe_fetch(self.models),
+            model_descriptions=await _safe_fetch(self.model_descriptions),
+            product_ids=await _safe_fetch(self.product_ids),
         )
