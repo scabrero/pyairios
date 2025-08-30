@@ -1,23 +1,31 @@
 """Constants and data types used by this library."""
 
+import datetime
 from dataclasses import dataclass
 from enum import Flag, IntEnum, auto
-import datetime
 
 
 class ProductId(IntEnum):
-    """The product ID is a unique product identifier.
-
-    The value is composed by three fields, product type + sub ID + manufacturer ID.
+    """
+    The product ID is a unique product identifier.
+    The value is composed of three fields: product type + sub ID + manufacturer ID.
     """
 
-    BRDG_02R13 = 0x0001C849
-    VMD_02RPS78 = 0x0001C892
-    VMN_05LM02 = 0x0001C83E
+    # this info was moved to the models/ class files as product_id()
+    # get the dict from bridge by calling bridge.product_ids()
+    # they will be unique as long as all files are in flat models/ dir
+    # new definitions will be picked up automatically when dropped in the models/ folder
+    # enum keys are the (surrounding) module names, bridge.model_names()
+    # will remain in use for type hints
+
+    BRDG_02R13 = 0x0001C849  # RF Bridge
+    VMD_02RPS78 = 0x0001C892  # Siber DF Optima 2 controller v copied to model file product_id()
+    VMN_05LM02 = 0x0001C83E  # Siber 4 button remote v copied to model file product_id()
     VMN_02LM11 = 0x0001C852
-    VMD_07RPS13 = 0x0001C883  # ClimaRad VenturaV1X
+    VMD_07RPS13 = 0x0001C883  # ClimaRad VenturaV1X v copied to model file product_id()
 
     def __str__(self) -> str:
+        # for k:v in name_by_key:
         if self.value == self.BRDG_02R13:
             return "BRDG-02R13"
         if self.value == self.VMD_02RPS78:
@@ -49,6 +57,26 @@ class BoundStatus(IntEnum):
         if self.value == self.NEW_BOUND:
             return "new_bound"
         raise ValueError(f"Unknown bound status value {self.value}")
+
+
+class ImportStatus(IntEnum):
+    """RF nodes import status."""
+
+    NO_CHANGE = 0
+    """No change in import status."""
+    REIMPORT = 1
+    """Device re-imported to the same controller."""
+    NEW_IMPORT = 2
+    """Device imported for the first time to the controller."""
+
+    def __str__(self) -> str:
+        if self.value == self.NO_CHANGE:
+            return "no_change"
+        if self.value == self.REIMPORT:
+            return "reimport"
+        if self.value == self.NEW_IMPORT:
+            return "new_import"
+        raise ValueError(f"Unknown import status value {self.value}")
 
 
 class RFCommStatus(IntEnum):
@@ -393,6 +421,45 @@ class VMDFaultStatus(IntEnum):
     FAN_FAILURE = 1
 
 
+class VMDVentilationMode(IntEnum):
+    """Ventilation unit (Ventura) mode preset."""
+
+    OFF = 0
+    PAUSE = 1
+    ON = 2
+    OVERRIDE_1 = 3
+    OVERRIDE_2 = 4
+    OVERRIDE_3 = 5
+    OVERRIDE_4 = 6
+    OVERRIDE_5 = 7
+    SERVICE = 8
+    RETYPE = 9
+    UNKNOWN = 10  # not in specs
+
+    def __str__(self) -> str:  # pylint: disable=too-many-return-statements
+        if self.value == self.OFF:
+            return "Off"
+        if self.value == self.PAUSE:
+            return "Pause"
+        if self.value == self.ON:
+            return "On/Auto"
+        if self.value == self.OVERRIDE_1:
+            return "I (temporary override)"
+        if self.value == self.OVERRIDE_2:
+            return "II (temporary override)"
+        if self.value == self.OVERRIDE_3:
+            return "III (temporary override)"
+        if self.value == self.OVERRIDE_4:
+            return "IV (temporary override)"
+        if self.value == self.OVERRIDE_5:
+            return "V (temporary override)"
+        if self.value == self.SERVICE:
+            return "Service Mode"
+        if self.value == self.RETYPE:
+            return "Retype (see manual)"
+        raise ValueError(f"Unknown ventilation mode value {self.value}")
+
+
 class VMDVentilationSpeed(IntEnum):
     """Ventilation unit speed preset."""
 
@@ -590,5 +657,6 @@ class VMDBypassMode(IntEnum):
 class VMDBypassPosition:
     """VMD bypass position sample."""
 
+    # Ventura bp_position: 0 = closed, 100 = open
     position: int
     error: bool

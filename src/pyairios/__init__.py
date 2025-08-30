@@ -1,21 +1,25 @@
 """The Airios RF bridge API entrypoint."""
 
-from .brdg_02r13 import BRDG02R13
-from .brdg_02r13 import DEFAULT_SLAVE_ID as BRDG02R13_DEFAULT_SLAVE_ID
+import logging
+from types import ModuleType
+
+from pyairios.models.brdg_02r13 import BRDG02R13
+from pyairios.models.brdg_02r13 import DEFAULT_SLAVE_ID as BRDG02R13_DEFAULT_SLAVE_ID
+
 from .client import (
     AiriosBaseTransport,
+    AiriosRtuTransport,
+    AiriosTcpTransport,
     AsyncAiriosModbusClient,
     AsyncAiriosModbusRtuClient,
     AsyncAiriosModbusTcpClient,
-    AiriosRtuTransport,
-    AiriosTcpTransport,
 )
 from .constants import BindingStatus, ProductId
 from .data_model import AiriosBoundNodeInfo, AiriosData, AiriosNodeData
 from .exceptions import AiriosException
 from .node import AiriosNode
-from .vmd_02rps78 import VMD02RPS78
-from .vmn_05lm02 import VMN05LM02
+
+LOGGER = logging.getLogger(__name__)
 
 
 class Airios:
@@ -35,15 +39,27 @@ class Airios:
             transport.__class__ = AiriosRtuTransport
             self._client = AsyncAiriosModbusRtuClient(transport)
         else:
-            raise AiriosException(f"Unknown trasport {transport}")
+            raise AiriosException(f"Unknown transport {transport}")
         self.bridge = BRDG02R13(slave_id, self._client)
+
+    def product_ids(self) -> dict[str, str]:
+        """Get the dict of installed product_ids."""
+        return self.bridge.product_ids()
+
+    def models(self) -> dict[str, ModuleType]:
+        """Receive a dict of all model modules, imported, from bridge."""
+        return self.bridge.models()
+
+    def model_descriptions(self) -> dict[str, str]:
+        """Receive a dict of all model descriptive names, for use in UI, from bridge."""
+        return self.bridge.model_descriptions()
 
     async def nodes(self) -> list[AiriosBoundNodeInfo]:
         """Get the list of bound nodes."""
         return await self.bridge.nodes()
 
     async def node(self, slave_id: int) -> AiriosNode:
-        """Get a node intance by its Modbus slave ID."""
+        """Get a node instance by its Modbus slave ID."""
         return await self.bridge.node(slave_id)
 
     async def bind_status(self) -> BindingStatus:
@@ -76,28 +92,28 @@ class Airios:
         """Get the data from all nodes at once."""
         data: dict[int, AiriosNodeData] = {}
 
-        brdg_data = await self.bridge.fetch_bridge()
+        brdg_data = await self.bridge.fetch_bridge_data()
         if brdg_data["rf_address"] is None:
             raise AiriosException("Failed to fetch node RF address")
         bridge_rf_address = brdg_data["rf_address"].value
         data[self.bridge.slave_id] = brdg_data
 
-        for node in await self.bridge.nodes():
-            if node.product_id == ProductId.VMD_02RPS78:
-                vmd = VMD02RPS78(node.slave_id, self.bridge.client)
-                vmd_data = await vmd.fetch_vmd_data()
-                data[node.slave_id] = vmd_data
-            if node.product_id == ProductId.VMN_05LM02:
-                vmn = VMN05LM02(node.slave_id, self.bridge.client)
-                vmn_data = await vmn.fetch_vmn_data()
-                data[node.slave_id] = vmn_data
+        for _node in await self.bridge.nodes():  # this info is in the model class files
+            # lookup node model family by key # compare to cli.py
+            for key, _id in self.bridge.product_ids():  # index of ids by model_key (names)
+                if _node.product_id == _id:
+                    LOGGER.debug(f"Start matching init for: {key}")
+                    # refactored by renaming every node class the same: Node
+                    node_mod = self.bridge.modules[key].Node(_node.slave_id, self.bridge.client)
+                    node_data = await node_mod.fetch_node_data()
+                    data[_node.slave_id] = node_data
 
         return AiriosData(bridge_rf_address=bridge_rf_address, nodes=data)
 
     async def connect(self) -> bool:
-        """Establish underlaying Modbus connection."""
+        """Establish underlying Modbus connection."""
         return await self._client.connect()
 
     def close(self) -> None:
-        """Close underlaying Modbus connection."""
+        """Close underlying Modbus connection."""
         return self._client.close()
