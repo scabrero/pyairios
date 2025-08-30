@@ -592,7 +592,7 @@ class BRDG02R13(AiriosNode):
         """
         return await self.client.set_register(self.regmap[Reg.OEM_CODE], code, self.slave_id)
 
-    async def fetch_bridge(self) -> BRDG02R13Data:  # pylint: disable=duplicate-code
+    async def fetch_bridge_data(self) -> BRDG02R13Data:  # pylint: disable=duplicate-code
         """Fetch all bridge data at once."""
 
         return BRDG02R13Data(

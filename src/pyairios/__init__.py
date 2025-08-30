@@ -92,7 +92,7 @@ class Airios:
         """Get the data from all nodes at once."""
         data: dict[int, AiriosNodeData] = {}
 
-        brdg_data = await self.bridge.fetch_bridge()
+        brdg_data = await self.bridge.fetch_bridge_data()
         if brdg_data["rf_address"] is None:
             raise AiriosException("Failed to fetch node RF address")
         bridge_rf_address = brdg_data["rf_address"].value
