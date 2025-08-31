@@ -491,7 +491,7 @@ class BRDG02R13(AiriosNode):
 
             # loop through the models
             for key, _id in self.prids:
-                if node.product_id == _id:
+                if node.product_id == _id:  # TODO get directly by node_product_name
                     LOGGER.debug(f"Fetch matching module for: {key}")
                     return self.modules[key].Node(node.slave_id, self.client)
 
@@ -610,7 +610,7 @@ class BRDG02R13(AiriosNode):
             rf_load_current_hour=await _safe_fetch(self.rf_load_current_hour),
             power_on_time=await _safe_fetch(self.power_on_time),
             # additional info from models/
-            models=await _safe_fetch(self.models),
-            model_descriptions=await _safe_fetch(self.model_descriptions),
-            product_ids=await _safe_fetch(self.product_ids),
+            models=self.models(),
+            model_descriptions=self.model_descriptions(),
+            product_ids=self.product_ids(),
         )

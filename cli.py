@@ -595,6 +595,11 @@ class AiriosBridgeCLI(aiocmd.PromptToolkitCmd):
         print(f"    {'RF load last hour:': <40}{res['rf_load_last_hour']}")
         print(f"    {'RF load current hour:': <40}{res['rf_load_current_hour']}")
         print(f"    {'Uptime:': <40}{res['power_on_time']}")
+        print("")
+
+        print("Installed models")
+        print(f"    {'Descriptions:': <40}{res['model_descriptions']}")
+        print(f"    {'ProductIDs:': <40}{res['product_ids']}")
 
 
 class AiriosClientCLI(aiocmd.PromptToolkitCmd):  # pylint: disable=too-few-public-methods
