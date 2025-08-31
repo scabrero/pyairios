@@ -486,6 +486,7 @@ class BRDG02R13(AiriosNode):
             return self  # the bridge as node
 
         for node in await self.nodes():
+            LOGGER.debug(f"Trying node.slave_id: {node.slave_id}. Looking for {slave_id}")
             if node.slave_id != slave_id:
                 continue
 
