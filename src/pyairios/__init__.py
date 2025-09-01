@@ -98,15 +98,12 @@ class Airios:
         bridge_rf_address = brdg_data["rf_address"].value
         data[self.bridge.slave_id] = brdg_data
 
-        for _node in await self.bridge.nodes():  # this info is in the model class files
-            # lookup node model family by key # compare to cli.py
-            for key, _id in self.bridge.product_ids():  # index of ids by model_key (names)
-                if _node.product_id == _id:
-                    LOGGER.debug(f"Start matching init for: {key}")
-                    # refactored by renaming every node class the same: Node
-                    node_mod = self.bridge.modules[key].Node(_node.slave_id, self.bridge.client)
-                    node_data = await node_mod.fetch_node_data()
-                    data[_node.slave_id] = node_data
+        for _node in await self.bridge.nodes():  # all info is in the model class files
+            key = str(_node.product_id)  # compare to cli.py
+            LOGGER.debug(f"Fetch_node_data for key: {key}")
+            node_module = self.bridge.modules[key].Node(_node.slave_id, self.bridge.client)
+            node_data = await node_module.fetch_node_data()
+            data[_node.slave_id] = node_data
 
         return AiriosData(bridge_rf_address=bridge_rf_address, nodes=data)
 
