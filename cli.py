@@ -387,40 +387,20 @@ class AiriosBridgeCLI(aiocmd.PromptToolkitCmd):
         if node_info is None:
             raise AiriosIOException(f"Node with address {slave_id} not bound")
 
-        print()  # just a spacer
-
         # find by product_id: {'VMD-07RPS13': 116867, 'VMD-02RPS78': 116882, 'VMN-05LM02': 116798}
         # compare to src/pyairios/_init_.py: fetch models from bridge
-        for key, value in prids.items():
-            LOGGER.debug(f"Looking up Key: {key}, Value: {value}")
-            # DEBUG:__main__:Looking up Key: VMD-07RPS13, Value: 116867
-            if value == node_info.product_id:
-                LOGGER.debug(f"Start matching CLI for: {key}")
-                if key == "VMD-02RPS78":  # dedicated CLI for each model
-                    LOGGER.debug("Start AiriosVMD07RPS13CLI")
-                    vmd = modules[key].Node(  # use fixed class name in all VMD models
-                        node_info.slave_id, self.bridge.client
-                    )
-                    LOGGER.debug(f"await AiriosVMD02RPS78CLI for: {key}")
-                    await AiriosVMD02RPS78CLI(vmd).run()
-                    LOGGER.debug(f"Loaded CLI for {key}")
-                    return
-                elif key == "VMD-07RPS13":  # ClimaRad Ventura
-                    LOGGER.debug("Start AiriosVMD07RPS13CLI")
-                    vmd = modules[key].Node(  # use fixed class name in all VMD models
-                        node_info.slave_id, self.bridge.client
-                    )
-                    LOGGER.debug(f"await AiriosVMD07RPS13CLI for: {key}")
-                    await AiriosVMD07RPS13CLI(vmd).run()
-                    LOGGER.debug(f"Loaded CLI for {key}")
-                    return
-                elif key == "VMN-05LM02":  # Remote
-                    LOGGER.debug("Start CLI")
-                    vmn = modules[key].Node(node_info.slave_id, self.bridge.client)
-                    LOGGER.debug(f"await AiriosVMN05LM02CLI: {key}")
-                    await AiriosVMN05LM02CLI(vmn).run()
-                    LOGGER.debug("Loaded CLI for {key}")
-                    return
+        key = str(node_info.product_id)
+        _node = modules[key].Node(node_info.slave_id, self.bridge.client)
+        if key == "VMD-02RPS78":  # dedicated CLI for each model
+            await AiriosVMD02RPS78CLI(_node).run()
+            return
+        elif key == "VMD-07RPS13":  # ClimaRad Ventura
+            await AiriosVMD07RPS13CLI(_node).run()
+            return
+        elif key == "VMN-05LM02":  # Remote accessory
+            await AiriosVMN05LM02CLI(_node).run()
+            return
+        # add new models AiriosXXXXXXXXXCLI here to use them in CLI
 
         raise AiriosNotImplemented(
             f"{node_info.product_id} not implemented. Drop new definitions in models/"
