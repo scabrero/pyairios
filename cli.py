@@ -128,25 +128,7 @@ class AiriosVMN05LM02CLI(aiocmd.PromptToolkitCmd):
 
     async def do_status(self) -> None:
         """Print the device status."""
-        res = await self.vmn.fetch_node_data()
-        print("Node data")
-        print("---------")
-        print(f"    {'Product ID:': <25}{res['product_id']}")
-        print(f"    {'Product Name:': <25}{res['product_name']}")
-        print(f"    {'Software version:': <25}{res['sw_version']}")
-        print(f"    {'RF address:': <25}{res['rf_address']}")
-        print("")
-
-        print("Device data")
-        print("---------")
-        print(f"    {'RF comm status:': <25}{res['rf_comm_status']}")
-        print(f"    {'Battery status:': <25}{res['battery_status']}")
-        print(f"    {'Fault status:': <25}{res['fault_status']}")
-        print(f"    {'Bound status:': <25}{res['bound_status']}")
-        print(f"    {'Value error status:': <25}{res['value_error_status']}")
-        print("")
-
-        self.vmn.print_data(res)
+        await self.vmn.print_data()
 
 
 class AiriosVMD02RPS78CLI(aiocmd.PromptToolkitCmd):
@@ -161,6 +143,11 @@ class AiriosVMD02RPS78CLI(aiocmd.PromptToolkitCmd):
         self.class_pointer = str(vmd)
         self.prompt = f"[{str(vmd)}]>> "
 
+    async def do_received_product_id(self) -> None:
+        """Print the received product ID from the device."""
+        res = await self.vmd.node_received_product_id()
+        print(f"0x{res.value:08X}")
+
     async def do_capabilities(self) -> None:
         """Print the device RF capabilities."""
         res = await self.vmd.capabilities()
@@ -168,25 +155,7 @@ class AiriosVMD02RPS78CLI(aiocmd.PromptToolkitCmd):
 
     async def do_status(self) -> None:  # pylint: disable=too-many-statements
         """Print the device status."""
-        res = await self.vmd.fetch_node_data()
-        print("Node data")
-        print("---------")
-        print(f"    {'Product ID:': <25}{res['product_id']}")
-        print(f"    {'Product Name:': <25}{res['product_name']}")
-        print(f"    {'Software version:': <25}{res['sw_version']}")
-        print(f"    {'RF address:': <25}{res['rf_address']}")
-        print("")
-
-        print("Device data")
-        print("---------")
-        print(f"    {'RF comm status:': <25}{res['rf_comm_status']}")
-        print(f"    {'Battery status:': <25}{res['battery_status']}")
-        print(f"    {'Fault status:': <25}{res['fault_status']}")
-        print(f"    {'Bound status:': <25}{res['bound_status']}")
-        print(f"    {'Value error status:': <25}{res['value_error_status']}")
-        print("")
-
-        self.vmd.print_data(res)
+        await self.vmd.print_data()
 
     async def do_error_code(self) -> None:
         """Print the current error code."""
@@ -307,6 +276,11 @@ class AiriosVMD07RPS13CLI(aiocmd.PromptToolkitCmd):
         self.class_pointer = str(vmd)
         self.prompt = f"[{str(vmd)}]>> "
 
+    async def do_received_product_id(self) -> None:
+        """Print the received product ID from the device."""
+        res = await self.vmd.node_received_product_id()
+        print(f"0x{res.value:08X}")
+
     async def do_capabilities(self) -> None:
         """Print the device RF capabilities."""
         res = await self.vmd.capabilities()
@@ -317,25 +291,7 @@ class AiriosVMD07RPS13CLI(aiocmd.PromptToolkitCmd):
 
     async def do_status(self) -> None:  # pylint: disable=too-many-statements
         """Print the device status."""
-        res = await self.vmd.fetch_node_data()  # customised in model file
-        print("Node data")
-        print("---------")
-        print(f"    {'Product ID:': <25}{res['product_id']}")  # same as product_name
-        print(f"    {'Product Name:': <25}{res['product_name']}")
-        print(f"    {'Software version:': <25}{res['sw_version']}")
-        print(f"    {'RF address:': <25}{res['rf_address']}")
-        print("")
-
-        print("Device data")
-        print("---------")
-        print(f"    {'RF comm status:': <25}{res['rf_comm_status']}")
-        print(f"    {'Battery status:': <25}{res['battery_status']}")
-        print(f"    {'Fault status:': <25}{res['fault_status']}")
-        print(f"    {'Bound status:': <25}{res['bound_status']}")
-        print(f"    {'Value error status:': <25}{res['value_error_status']}")
-        print("")
-
-        self.vmd.print_data(res)
+        await self.vmd.print_data()
 
     async def do_error_code(self) -> None:
         """Print the current error code."""
@@ -572,34 +528,7 @@ class AiriosBridgeCLI(aiocmd.PromptToolkitCmd):
 
     async def do_status(self) -> None:
         """Print the device status."""
-        res = await self.bridge.fetch_bridge_data()
-        print("Node data")
-        print("---------")
-        print(f"    {'Product ID:': <25}{res['product_id']}")
-        print(f"    {'Product Name:': <25}{res['product_name']}")
-        print(f"    {'Software version:': <25}{res['sw_version']}")
-        print(f"    {'RF address:': <25}{res['rf_address']}")
-        print("")
-
-        print("Device data")
-        print("---------")
-        print(f"    {'RF comm status:': <25}{res['rf_comm_status']}")
-        print(f"    {'Battery status:': <25}{res['battery_status']}")
-        print(f"    {'Fault status:': <25}{res['fault_status']}")
-        print("")
-
-        print("BRDG-02R13 data")
-        print("----------------")
-        print(f"    {'RF sent messages last hour': <40}{res['rf_sent_messages_last_hour']}")
-        print(f"    {'RF sent messages current hour:': <40}{res['rf_sent_messages_current_hour']}")
-        print(f"    {'RF load last hour:': <40}{res['rf_load_last_hour']}")
-        print(f"    {'RF load current hour:': <40}{res['rf_load_current_hour']}")
-        print(f"    {'Uptime:': <40}{res['power_on_time']}")
-        print("")
-
-        print("Installed models")
-        print(f"    {'Descriptions:': <40}{res['model_descriptions']}")
-        print(f"    {'ProductIDs:': <40}{res['product_ids']}")
+        await self.bridge.print_data()
 
 
 class AiriosClientCLI(aiocmd.PromptToolkitCmd):  # pylint: disable=too-few-public-methods

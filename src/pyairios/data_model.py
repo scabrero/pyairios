@@ -45,7 +45,8 @@ class AiriosDeviceData(AiriosNodeData):
     value_error_status: Result[ValueErrorStatus] | None
 
 
-##### special devices only, 'normal' node data_models are in their respective models/module file ######
+# Here only data_models for special devices. To simplify adding new models,
+# 'normal' node data_models are in their respective models/module file
 
 
 class VMD07RPS13Data(AiriosDeviceData):
@@ -99,7 +100,7 @@ class BRDG02R13Data(AiriosNodeData):
     rf_load_last_hour: Result[float] | None
     rf_load_current_hour: Result[float] | None
     power_on_time: Result[timedelta] | None
-    # info collected from models/ definition at startup:
+    # Bridge holds info collected from models/ definition at startup:
     models: dict[str, ModuleType] | None
     model_descriptions: dict[str, str] | None
     product_ids: dict[str, str] | None

@@ -504,13 +504,16 @@ class Node(VmdBase):
             # ),
         )
 
-    def print_data(self, res) -> None:
+    async def print_data(self) -> None:
         """
         Print labels + states for this particular model, including VMD base fields
 
         :param res: the result retrieved earlier by CLI using fetch_node_data()
         :return: no confirmation, outputs to serial monitor
         """
+
+        res = await self.fetch_node_data()  # customised in model file
+
         super().print_data(res)
 
         print("VMD-07RPS13 data")
@@ -529,7 +532,7 @@ class Node(VmdBase):
         )
         print(
             f"    {'Exhaust fan speed:': <25}{res['exhaust_fan_speed']}% "
-            #    f"({res['exhaust_fan_rpm']} RPM)"
+            # f"({res['exhaust_fan_rpm']} RPM)"
         )
 
         print(f"    {'Indoor temperature:': <25}{res['indoor_air_temperature']}")

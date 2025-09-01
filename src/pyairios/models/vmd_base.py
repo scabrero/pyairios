@@ -156,5 +156,22 @@ class VmdBase(AiriosDevice):
         # not all fans support capabilities register call, must return basics
         return Result(VMDCapabilities(), None)
 
-    def print_data(self, result) -> None:
+    def print_data(self, res) -> None:
+        print("Node data")
+        print("---------")
+        print(f"    {'Product ID:': <25}{res['product_id']}")
+        print(f"    {'Product Name:': <25}{res['product_name']}")
+        print(f"    {'Software version:': <25}{res['sw_version']}")
+        print(f"    {'RF address:': <25}{res['rf_address']}")
+        print("")
+
+        print("Device data")
+        print("---------")
+        print(f"    {'RF comm status:': <25}{res['rf_comm_status']}")
+        print(f"    {'Battery status:': <25}{res['battery_status']}")
+        print(f"    {'Fault status:': <25}{res['fault_status']}")
+        print(f"    {'Bound status:': <25}{res['bound_status']}")
+        print(f"    {'Value error status:': <25}{res['value_error_status']}")
+        print("")
+
         print("----------------")
