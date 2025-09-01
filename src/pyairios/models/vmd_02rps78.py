@@ -697,13 +697,16 @@ class Node(VmdBase):
             ),
         )
 
-    def print_data(self, res) -> None:
+    async def print_data(self) -> None:
         """
-        Print labels + states for this particular model, including VMD base fields
+        Print labels + states for this particular model, including VMD base fields, in CLI.
 
         :param res: the result retrieved earlier by CLI using fetch_node_data()
         :return: no confirmation, outputs to serial monitor
         """
+
+        res = await self.fetch_node_data()
+
         super().print_data(res)
 
         print("VMD-02RPS78 data")

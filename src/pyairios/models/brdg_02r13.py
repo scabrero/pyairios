@@ -615,3 +615,42 @@ class BRDG02R13(AiriosNode):
             model_descriptions=self.model_descriptions(),
             product_ids=self.product_ids(),
         )
+
+    async def print_data(self) -> None:
+        """
+        Print labels + states for this Bridge.
+
+        :param res: the result retrieved earlier by CLI using fetch_node_data()
+        :return: no confirmation, outputs to serial monitor
+        """
+
+        res = await self.fetch_bridge_data()
+
+        print("Node data")
+        print("---------")
+        print(f"    {'Product ID:': <25}{res['product_id']}")
+        # bug? displays the key (same as pr_name), not the int value
+        print(f"    {'Product Name:': <25}{res['product_name']}")
+        print(f"    {'Software version:': <25}{res['sw_version']}")
+        print(f"    {'RF address:': <25}{res['rf_address']}")
+        print("")
+
+        print("Device data")
+        print("---------")
+        print(f"    {'RF comm status:': <25}{res['rf_comm_status']}")
+        print(f"    {'Battery status:': <25}{res['battery_status']}")
+        print(f"    {'Fault status:': <25}{res['fault_status']}")
+        print("")
+
+        print("BRDG-02R13 data")
+        print("----------------")
+        print(f"    {'RF sent messages last hour': <40}{res['rf_sent_messages_last_hour']}")
+        print(f"    {'RF sent messages current hour:': <40}{res['rf_sent_messages_current_hour']}")
+        print(f"    {'RF load last hour:': <40}{res['rf_load_last_hour']}")
+        print(f"    {'RF load current hour:': <40}{res['rf_load_current_hour']}")
+        print(f"    {'Uptime:': <40}{res['power_on_time']}")
+        print("")
+
+        print("Installed model files")
+        print(f"    {'Descriptions:': <40}{res['model_descriptions']}")
+        print(f"    {'ProductIDs:': <40}{res['product_ids']}")
