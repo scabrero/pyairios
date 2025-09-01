@@ -486,15 +486,11 @@ class BRDG02R13(AiriosNode):
             return self  # the bridge as node
 
         for node in await self.nodes():
-            LOGGER.debug(f"Trying node.slave_id: {node.slave_id}. Looking for {slave_id}")
             if node.slave_id != slave_id:
                 continue
-
-            # loop through the models
-            for key, _id in self.prids:
-                if node.product_id == _id:  # TODO get directly by node_product_name
-                    LOGGER.debug(f"Fetch matching module for: {key}")
-                    return self.modules[key].Node(node.slave_id, self.client)
+            key = str(node.product_id)  # compare to cli.py and _init_.py
+            LOGGER.debug(f"Fetch matching module for: {key}")
+            return self.modules[key].Node(node.slave_id, self.client)
 
         raise AiriosException(f"Node {slave_id} not found")
 

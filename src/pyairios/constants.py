@@ -11,12 +11,12 @@ class ProductId(IntEnum):
     The value is composed of three fields: product type + sub ID + manufacturer ID.
     """
 
-    # this info was moved to the models/ class files as product_id()
+    # this info was copied to the models/ class files as product_id()
     # get the dict from bridge by calling bridge.product_ids()
     # they will be unique as long as all files are in flat models/ dir
     # new definitions will be picked up automatically when dropped in the models/ folder
     # enum keys are the (surrounding) module names, bridge.model_names()
-    # will remain in use for type hints
+    # ProductId will remain in use for type hints, so must add new models here too
 
     BRDG_02R13 = 0x0001C849  # RF Bridge
     VMD_02RPS78 = 0x0001C892  # Siber DF Optima 2 controller v copied to model file product_id()
@@ -25,7 +25,7 @@ class ProductId(IntEnum):
     VMD_07RPS13 = 0x0001C883  # ClimaRad VenturaV1X v copied to model file product_id()
 
     def __str__(self) -> str:
-        # for k:v in name_by_key:
+        # TODO for k:v in name_by_key:
         if self.value == self.BRDG_02R13:
             return "BRDG-02R13"
         if self.value == self.VMD_02RPS78:

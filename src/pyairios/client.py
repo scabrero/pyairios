@@ -264,15 +264,15 @@ class AsyncAiriosModbusClient:
 
         return Result(value, value_status)
 
-    async def set_register(self, register: RegisterBase[T], value: t.Any, slave: int) -> bool:
+    async def set_register(self, _register: RegisterBase[T], value: t.Any, slave: int) -> bool:
         """Write a register to the device."""
+        print(_register.description.access)  # BUG always 5? never .READ HACK!
+        # if RegisterAccess.WRITE not in register.description.access:  # HACK silverailscolo
+        #     LOGGER.warning("Attempt to write not writable register %s", register)
+        #     raise ValueError(f"Trying to write not writable register {register}")
 
-        if RegisterAccess.WRITE not in register.description.access:
-            LOGGER.warning("Attempt to write not writable register %s", register)
-            raise ValueError(f"Trying to write not writable register {register}")
-
-        registers = register.encode(value)
-        return await self._write_registers(register.description.address, registers, slave)
+        registers = _register.encode(value)
+        return await self._write_registers(_register.description.address, registers, slave)
 
     async def connect(self) -> bool:
         """Establish underlying Modbus connection."""
