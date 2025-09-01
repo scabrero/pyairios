@@ -112,7 +112,12 @@ class NumberRegister(RegisterBase[T]):
 
     def encode(self, value: T) -> list[int]:
         """Encode value to register bytes."""
-        if isinstance(value, int):
+        if isinstance(value, str):  # all CLI entries are passed in as str, despite casting in method
+            try:
+                int_value = int(value)
+            except AiriosInvalidArgumentException:
+                raise AiriosInvalidArgumentException(f"Entered str {value} not a number")
+        elif isinstance(value, int):
             int_value = value
         elif isinstance(value, float):
             int_value = int(value)

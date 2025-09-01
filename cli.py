@@ -93,12 +93,9 @@ for file_path in modules_list:
     prids[model_key] = modules[model_key].product_id()
     descriptions[model_key] = modules[model_key].product_description()
 
-print("Model descriptions by key:")
-print(descriptions)  # dict
-print("Loaded modules:")
-print(modules)  # dict
-print("Loaded product_id's:")
-print(prids)  # dict
+print(f"Supported models by key: {descriptions}")
+# print(f"Loaded modules: {modules}")
+print(f"Loaded product_id's: {prids}")
 # all loaded up
 
 
@@ -353,6 +350,15 @@ class AiriosVMD07RPS13CLI(aiocmd.PromptToolkitCmd):
         """Print the filter remaining days."""
         r2 = await self.vmd.filter_remaining_days()
         print(f"{r2.value} days")
+
+    async def do_co2_setpoint(self):
+        """Print the CO2 setpoint in ppm."""
+        r2 = await self.vmd.co2_setpoint()
+        print(f"{r2.value} ppm")
+
+    async def do_set_co2_setpoint(self, setp: int) -> None:
+        """Change the CO2 setpoint in ppm. Default = 1000"""
+        await self.vmd.set_temp_ventilation_sub_mode(setp)
 
     # actions
 

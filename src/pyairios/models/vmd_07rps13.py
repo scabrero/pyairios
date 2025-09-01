@@ -94,8 +94,7 @@ class Reg(RegisterAddress):  # only override or add differences in VMD_BASE
     BASIC_VENTILATION_ENABLE = 42000
     BASIC_VENTILATION_LEVEL = 42001
     PRODUCT_VARIANT = 42010  # 1,RW, uint8, "Product Variant"
-    OVERRIDE_TIME_MANUAL = 42009  # 115 # "Temporary Override Duration"
-
+    OVERRIDE_TIME_MANUAL = 42009  # 115 # RW, uint16 "Temporary Override Duration"
 
 class VMD07RPS13Data(AiriosDeviceData):
     """
@@ -138,7 +137,7 @@ def product_description() -> str | tuple[str, ...]:
 
 
 class Node(VmdBase):
-    """Represents a VMD-07RPS13 Ventura V1 controller node."""
+    """Represents a VMD-07RPS13 Ventura V1 controller node. HACK in client to access WRITE"""
 
     def __init__(self, slave_id: int, client: AsyncAiriosModbusClient) -> None:
         """Initialize the VMD-07RPS13 Ventura controller node instance."""
@@ -175,21 +174,21 @@ class Node(VmdBase):
             # U16Register(Reg.FAN_RPM_SUPPLY, RegisterAccess.READ | RegisterAccess.STATUS),
             U16Register(
                 Reg.PRODUCT_VARIANT,
-                RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS,
+                RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS
             ),  # UINT8?
             U16Register(
                 Reg.BASIC_VENTILATION_ENABLE,
-                RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS,
+                RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS
             ),  # UINT8?
             U16Register(
                 Reg.BASIC_VENTILATION_LEVEL,
-                RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS,
+                RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS
             ),
             U16Register(Reg.OVERRIDE_TIME_MANUAL, RegisterAccess.READ | RegisterAccess.WRITE),
             U16Register(Reg.FILTER_RESET, RegisterAccess.WRITE | RegisterAccess.STATUS),
             U16Register(
                 Reg.CO2_CONTROL_SETPOINT,
-                RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS,
+                RegisterAccess.READ | RegisterAccess.WRITE  # BUG not added correctly, always 5? HACK in client
             ),
         ]
         self._add_registers(vmd_registers)
@@ -198,7 +197,7 @@ class Node(VmdBase):
 
     async def capabilities(self) -> Result[VMDCapabilities] | None:
         """Get the ventilation unit capabilities.
-        Register not supported on VMD-07RPS13 so must simulate"""
+        Capabilities register not supported on VMD-07RPS13, so must simulate"""
         # our set of capabilities:
         return Result(
             VMDCapabilities(
@@ -337,6 +336,12 @@ class Node(VmdBase):
         """Get the CO2 control setpoint (in ppm)."""
         regdesc = self.regmap[Reg.CO2_CONTROL_SETPOINT]
         return await self.client.get_register(regdesc, self.slave_id)
+
+    async def set_co2_setpoint(self, setpnt: int) -> bool:
+        """Set the CO2 control setpoint (in ppm)."""
+        return await self.client.set_register(
+            self.regmap[Reg.CO2_CONTROL_SETPOINT], setpnt, self.slave_id
+        )
 
     async def filter_duration(self) -> Result[int]:
         """Get the filter duration (in days)."""
