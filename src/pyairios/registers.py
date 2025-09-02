@@ -1,15 +1,18 @@
 """Register definitions."""
 
 import datetime
+import logging
 import struct
 import typing as t
 from dataclasses import dataclass
-from enum import Flag, IntEnum, auto
+from enum import auto, IntEnum
 
 from pymodbus.client.mixin import ModbusClientMixin
 
 from .constants import ValueStatusFlags, ValueStatusSource
 from .exceptions import AiriosDecodeError, AiriosInvalidArgumentException
+
+LOGGER = logging.getLogger(__name__)
 
 T = t.TypeVar("T")
 
@@ -18,8 +21,9 @@ class RegisterAddress(IntEnum):
     """The register address base class."""
 
 
-class RegisterAccess(Flag):
-    """Register access flags."""
+class RegisterAccess(IntEnum):
+    """Register access flags.
+    Extra Util notations in device.AiriosDevice."""
 
     READ = auto()
     WRITE = auto()
@@ -112,7 +116,9 @@ class NumberRegister(RegisterBase[T]):
 
     def encode(self, value: T) -> list[int]:
         """Encode value to register bytes."""
-        if isinstance(value, str):  # all CLI entries are passed in as str, despite casting in method
+        if isinstance(
+            value, str
+        ):  # all CLI entries are passed in as str, despite casting in method
             try:
                 int_value = int(value)
                 return ModbusClientMixin.convert_to_registers(int_value, self.datatype, word_order="little")

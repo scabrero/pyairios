@@ -164,30 +164,31 @@ class BRDG02R13(AiriosNode):
 
         super().__init__(slave_id, client)
         LOGGER.debug("Init RF Bridge")
+
         brdg_registers: List[RegisterBase] = [
-            U16Register(Reg.CUSTOMER_PRODUCT_ID, RegisterAccess.READ | RegisterAccess.WRITE),
-            DateTimeRegister(Reg.UTC_TIME, RegisterAccess.READ | RegisterAccess.WRITE),
+            U16Register(Reg.CUSTOMER_PRODUCT_ID, self.read_write),
+            DateTimeRegister(Reg.UTC_TIME, self.read_write),
             DateTimeRegister(Reg.LOCAL_TIME, RegisterAccess.READ),
             U32Register(Reg.UPTIME, RegisterAccess.READ),
-            U16Register(Reg.DAYLIGHT_SAVING_TYPE, RegisterAccess.READ | RegisterAccess.WRITE),
-            U16Register(Reg.TIMEZONE_OFFSET, RegisterAccess.READ | RegisterAccess.WRITE),
-            U16Register(Reg.OEM_CODE, RegisterAccess.READ | RegisterAccess.WRITE),
-            U16Register(Reg.MODBUS_EVENTS, RegisterAccess.READ | RegisterAccess.WRITE),
+            U16Register(Reg.DAYLIGHT_SAVING_TYPE, self.read_write),
+            U16Register(Reg.TIMEZONE_OFFSET, self.read_write),
+            U16Register(Reg.OEM_CODE, self.read_write),
+            U16Register(Reg.MODBUS_EVENTS, self.read_write),
             U16Register(Reg.RESET_DEVICE, RegisterAccess.WRITE),
             StringRegister(Reg.CUSTOMER_SPECIFIC_NODE_ID, 10, RegisterAccess.WRITE),
-            U16Register(Reg.SERIAL_PARITY, RegisterAccess.READ | RegisterAccess.WRITE),
-            U16Register(Reg.SERIAL_STOP_BITS, RegisterAccess.READ | RegisterAccess.WRITE),
-            U16Register(Reg.SERIAL_BAUDRATE, RegisterAccess.READ | RegisterAccess.WRITE),
-            U16Register(Reg.SLAVE_ADDRESS, RegisterAccess.READ | RegisterAccess.WRITE),
+            U16Register(Reg.SERIAL_PARITY, self.read_write),
+            U16Register(Reg.SERIAL_STOP_BITS, self.read_write),
+            U16Register(Reg.SERIAL_BAUDRATE, self.read_write),
+            U16Register(Reg.SLAVE_ADDRESS, self.read_write),
             U16Register(Reg.MESSAGES_SEND_CURRENT_HOUR, RegisterAccess.READ),
             U16Register(Reg.MESSAGES_SEND_LAST_HOUR, RegisterAccess.READ),
             FloatRegister(Reg.RF_LOAD_CURRENT_HOUR, RegisterAccess.READ),
             FloatRegister(Reg.RF_LOAD_LAST_HOUR, RegisterAccess.READ),
-            U32Register(Reg.BINDING_PRODUCT_ID, RegisterAccess.READ | RegisterAccess.WRITE),
-            U32Register(Reg.BINDING_PRODUCT_SERIAL, RegisterAccess.READ | RegisterAccess.WRITE),
+            U32Register(Reg.BINDING_PRODUCT_ID, self.read_write),
+            U32Register(Reg.BINDING_PRODUCT_SERIAL, self.read_write),
             U16Register(Reg.BINDING_COMMAND, RegisterAccess.WRITE),
             U16Register(Reg.CREATE_NODE, RegisterAccess.WRITE),
-            U16Register(Reg.FIRST_ADDRESS_TO_ASSIGN, RegisterAccess.READ | RegisterAccess.WRITE),
+            U16Register(Reg.FIRST_ADDRESS_TO_ASSIGN, self.read_write),
             U16Register(Reg.REMOVE_NODE, RegisterAccess.WRITE),
             U16Register(Reg.ACTUAL_BINDING_STATUS, RegisterAccess.READ),
             U16Register(Reg.NUMBER_OF_NODES, RegisterAccess.READ),
@@ -229,6 +230,7 @@ class BRDG02R13(AiriosNode):
 
     def __str__(self) -> str:
         return f"BRDG-02R13@{self.slave_id}"
+        # node method doesn't work for Bridge module in CLI
 
     def _load_models(self) -> None:
         # analyse and import all VMx.py files from the models/ folder
@@ -447,16 +449,18 @@ class BRDG02R13(AiriosNode):
             self.regmap[Reg.ADDRESS_NODE_31],
             self.regmap[Reg.ADDRESS_NODE_32],
         ]
-
+        LOGGER.debug("Starting Bridge.nodes()")
         nodes: List[AiriosBoundNodeInfo] = []
         for item in reg_descs:
+            LOGGER.debug(f"Starting item node({self.slave_id})")
             result = await self.client.get_register(item, self.slave_id)
+            LOGGER.debug("got result")
             if result is None or result.value is None:
                 continue
             slave_id = result.value
             if slave_id == 0:
                 continue
-
+            LOGGER.debug("Starting self.client.get_register")
             result = await self.client.get_register(self.regmap[NodeReg.PRODUCT_ID], slave_id)
             if result is None or result.value is None:
                 continue
@@ -616,7 +620,6 @@ class BRDG02R13(AiriosNode):
         """
         Print labels + states for this Bridge.
 
-        :param res: the result retrieved earlier by CLI using fetch_node_data()
         :return: no confirmation, outputs to serial monitor
         """
 

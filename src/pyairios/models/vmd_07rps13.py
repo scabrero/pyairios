@@ -4,10 +4,7 @@ from __future__ import annotations
 
 import logging
 import math
-from enum import IntEnum
 
-# import re
-# from dataclasses import dataclass, field
 from typing import List
 
 from pyairios.client import AsyncAiriosModbusClient
@@ -96,6 +93,7 @@ class Reg(RegisterAddress):  # only override or add differences in VMD_BASE
     PRODUCT_VARIANT = 42010  # 1,RW, uint8, "Product Variant"
     OVERRIDE_TIME_MANUAL = 42009  # 115 # RW, uint16 "Temporary Override Duration"
 
+
 class VMD07RPS13Data(AiriosDeviceData):
     """
     VMD-07RPS13 ClimaRad Ventura V1C/V1D/V1X node data.
@@ -143,53 +141,39 @@ class Node(VmdBase):
         """Initialize the VMD-07RPS13 Ventura controller node instance."""
         super().__init__(slave_id, client)
         LOGGER.debug(f"Starting Ventura Node({slave_id})")
+
         vmd_registers: List[RegisterBase] = [
-            U16Register(
-                Reg.SYSTEM_VENT_CONFIG,
-                RegisterAccess.WRITE | RegisterAccess.READ | RegisterAccess.STATUS,
-            ),
-            U16Register(Reg.VENTILATION_MODE, RegisterAccess.READ | RegisterAccess.STATUS),
-            U16Register(Reg.VENTILATION_SUB_MODE, RegisterAccess.READ | RegisterAccess.STATUS),
-            U16Register(Reg.TEMP_VENTILATION_MODE, RegisterAccess.READ | RegisterAccess.STATUS),
-            U16Register(Reg.TEMP_VENTILATION_SUB_MODE, RegisterAccess.READ | RegisterAccess.STATUS),
-            U16Register(Reg.FAN_SPEED_EXHAUST, RegisterAccess.READ | RegisterAccess.STATUS),
-            U16Register(Reg.FAN_SPEED_SUPPLY, RegisterAccess.READ | RegisterAccess.STATUS),
-            U16Register(Reg.ERROR_CODE, RegisterAccess.READ | RegisterAccess.STATUS),
-            FloatRegister(Reg.TEMPERATURE_INDOOR, RegisterAccess.READ | RegisterAccess.STATUS),
-            FloatRegister(Reg.TEMPERATURE_OUTDOOR, RegisterAccess.READ | RegisterAccess.STATUS),
-            FloatRegister(Reg.TEMPERATURE_EXHAUST, RegisterAccess.READ | RegisterAccess.STATUS),
-            FloatRegister(Reg.TEMPERATURE_SUPPLY, RegisterAccess.READ | RegisterAccess.STATUS),
-            U16Register(Reg.FILTER_DIRTY, RegisterAccess.READ | RegisterAccess.STATUS),
-            U16Register(Reg.BYPASS_POSITION, RegisterAccess.READ | RegisterAccess.STATUS),
-            U16Register(Reg.HUMIDITY_INDOOR, RegisterAccess.READ | RegisterAccess.STATUS),
-            U16Register(Reg.HUMIDITY_OUTDOOR, RegisterAccess.READ | RegisterAccess.STATUS),
-            # FloatRegister(Reg.FLOW_INLET, RegisterAccess.READ | RegisterAccess.STATUS),
-            # FloatRegister(Reg.FLOW_OUTLET, RegisterAccess.READ | RegisterAccess.STATUS),
-            U16Register(Reg.CO2_LEVEL, RegisterAccess.READ | RegisterAccess.STATUS),
-            U16Register(Reg.POST_HEATER_DEMAND, RegisterAccess.READ | RegisterAccess.STATUS),
-            U16Register(Reg.FILTER_REMAINING_DAYS, RegisterAccess.READ | RegisterAccess.STATUS),
-            # U16Register(Reg.FILTER_DURATION, RegisterAccess.READ | RegisterAccess.STATUS),
-            # U16Register(Reg.FILTER_REMAINING_PERCENT, RegisterAccess.READ | RegisterAccess.STATUS),
-            # U16Register(Reg.FAN_RPM_EXHAUST, RegisterAccess.READ | RegisterAccess.STATUS),
-            # U16Register(Reg.FAN_RPM_SUPPLY, RegisterAccess.READ | RegisterAccess.STATUS),
-            U16Register(
-                Reg.PRODUCT_VARIANT,
-                RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS
-            ),  # UINT8?
-            U16Register(
-                Reg.BASIC_VENTILATION_ENABLE,
-                RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS
-            ),  # UINT8?
-            U16Register(
-                Reg.BASIC_VENTILATION_LEVEL,
-                RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS
-            ),
-            U16Register(Reg.OVERRIDE_TIME_MANUAL, RegisterAccess.READ | RegisterAccess.WRITE),
-            U16Register(Reg.FILTER_RESET, RegisterAccess.WRITE | RegisterAccess.STATUS),
-            U16Register(
-                Reg.CO2_CONTROL_SETPOINT,
-                RegisterAccess.READ | RegisterAccess.WRITE  # BUG not added correctly, always 5? HACK in client
-            ),
+            U16Register(Reg.SYSTEM_VENT_CONFIG, self.read_write_status),
+            U16Register(Reg.VENTILATION_MODE, self.read_status),
+            U16Register(Reg.VENTILATION_SUB_MODE, self.read_status),
+            U16Register(Reg.TEMP_VENTILATION_MODE, self.read_status),
+            U16Register(Reg.TEMP_VENTILATION_SUB_MODE, self.read_status),
+            U16Register(Reg.FAN_SPEED_EXHAUST, self.read_status),
+            U16Register(Reg.FAN_SPEED_SUPPLY, self.read_status),
+            U16Register(Reg.ERROR_CODE, self.read_status),
+            FloatRegister(Reg.TEMPERATURE_INDOOR, self.read_status),
+            FloatRegister(Reg.TEMPERATURE_OUTDOOR, self.read_status),
+            FloatRegister(Reg.TEMPERATURE_EXHAUST, self.read_status),
+            FloatRegister(Reg.TEMPERATURE_SUPPLY, self.read_status),
+            U16Register(Reg.FILTER_DIRTY, self.read_status),
+            U16Register(Reg.BYPASS_POSITION, self.read_status),
+            U16Register(Reg.HUMIDITY_INDOOR, self.read_status),
+            U16Register(Reg.HUMIDITY_OUTDOOR, self.read_status),
+            # FloatRegister(Reg.FLOW_INLET, self.read_status),
+            # FloatRegister(Reg.FLOW_OUTLET, self.read_status),
+            U16Register(Reg.CO2_LEVEL, self.read_status),
+            U16Register(Reg.POST_HEATER_DEMAND, self.read_status),
+            U16Register(Reg.FILTER_REMAINING_DAYS, self.read_status),
+            # U16Register(Reg.FILTER_DURATION, self.read_status),
+            # U16Register(Reg.FILTER_REMAINING_PERCENT, self.read_status),
+            # U16Register(Reg.FAN_RPM_EXHAUST, self.read_status),
+            # U16Register(Reg.FAN_RPM_SUPPLY, self.read_status),
+            U16Register(Reg.PRODUCT_VARIANT, self.read_write_status),  # UINT8?
+            U16Register(Reg.BASIC_VENTILATION_ENABLE, self.read_write_status),  # UINT8?
+            U16Register(Reg.BASIC_VENTILATION_LEVEL, self.read_write_status),
+            U16Register(Reg.OVERRIDE_TIME_MANUAL, self.read_write),
+            U16Register(Reg.FILTER_RESET, self.write_status),
+            U16Register(Reg.CO2_CONTROL_SETPOINT, self.read_write),
         ]
         self._add_registers(vmd_registers)
 
@@ -513,7 +497,6 @@ class Node(VmdBase):
         """
         Print labels + states for this particular model, including VMD base fields
 
-        :param res: the result retrieved earlier by CLI using fetch_node_data()
         :return: no confirmation, outputs to serial monitor
         """
 
