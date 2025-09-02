@@ -377,19 +377,23 @@ class AiriosBridgeCLI(aiocmd.PromptToolkitCmd):
 
     async def do_nodes(self) -> None:
         """Print the list of bound nodes."""
+        LOGGER.debug("do_node starting")
         res = await self.bridge.nodes()
         for n in res:
             print(f"{n}")
 
     async def do_node(self, slave_id: str) -> None:
         """Manage a bound node."""
+        LOGGER.debug("do_node fetch nodes")
         nodes = await self.bridge.nodes()
+        LOGGER.debug("do_node starting")
         node_info = None
         for n in nodes:
+            LOGGER.debug("do_node match slave_id")
             if int(slave_id) == int(n.slave_id):
                 node_info = n
                 break
-
+        LOGGER.debug("node_info starting")
         if node_info is None:
             raise AiriosIOException(f"Node with address {slave_id} not bound")
 
@@ -401,6 +405,7 @@ class AiriosBridgeCLI(aiocmd.PromptToolkitCmd):
             await AiriosVMD02RPS78CLI(_node).run()
             return
         elif key == "VMD-07RPS13":  # ClimaRad Ventura
+            LOGGER.debug("Node Ventura starts")
             await AiriosVMD07RPS13CLI(_node).run()
             return
         elif key == "VMN-05LM02":  # Remote accessory

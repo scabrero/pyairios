@@ -52,9 +52,7 @@ class Node(AiriosDevice):
         super().__init__(slave_id, client)
         LOGGER.debug(f"Starting Siber Remote Node({slave_id})")
         vmn_registers: List[RegisterBase] = [
-            U16Register(
-                Reg.REQUESTED_VENTILATION_SPEED, RegisterAccess.READ | RegisterAccess.STATUS
-            ),
+            U16Register(Reg.REQUESTED_VENTILATION_SPEED, self.read_status),
         ]
         self._add_registers(vmn_registers)
 
@@ -89,7 +87,6 @@ class Node(AiriosDevice):
         """
         Print labels + states for this particular model in CLI.
 
-        :param res: the result retrieved earlier by CLI using fetch_node_data()
         :return: no confirmation, outputs to serial monitor
         """
         res = await self.fetch_node_data()

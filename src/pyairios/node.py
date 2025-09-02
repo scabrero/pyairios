@@ -72,9 +72,16 @@ class AiriosNode:
     slave_id: int
     registers: List[RegisterBase] = []
     regmap: Dict[RegisterAddress, RegisterBase] = {}
+    # util enums for Register access
+    read_write = RegisterAccess.READ | RegisterAccess.WRITE
+    read_status = RegisterAccess.READ | RegisterAccess.STATUS
+    write_status = RegisterAccess.WRITE | RegisterAccess.STATUS
+    read_write_status = read_write | RegisterAccess.STATUS
 
     def __init__(self, slave_id: int, client: AsyncAiriosModbusClient) -> None:
         """Initialize the node class instance."""
+        LOGGER.debug("Init AiriosNode")
+
         self.client = client
         self.slave_id = int(slave_id)
         node_registers: List[RegisterBase] = [
@@ -90,7 +97,7 @@ class AiriosNode:
             U16Register(Reg.RF_COMM_STATUS, RegisterAccess.READ),
             U16Register(Reg.BATTERY_STATUS, RegisterAccess.READ),
             U16Register(Reg.FAULT_STATUS, RegisterAccess.READ),
-            U16Register(Reg.RF_STATS_INDEX, RegisterAccess.READ | RegisterAccess.WRITE),
+            U16Register(Reg.RF_STATS_INDEX, self.read_write),
             U16Register(Reg.RF_STATS_LENGTH, RegisterAccess.READ),
             U32Register(Reg.RF_STATS_DEVICE, RegisterAccess.READ),
             U16Register(Reg.RF_STATS_AVERAGE, RegisterAccess.READ),
@@ -100,13 +107,14 @@ class AiriosNode:
             U16Register(Reg.RF_STATS_MISSED, RegisterAccess.READ),
             U16Register(Reg.RF_STATS_RECEIVED, RegisterAccess.READ),
             U16Register(Reg.RF_STATS_AGE, RegisterAccess.READ),
-            U16Register(Reg.FAULT_HISTORY_INDEX, RegisterAccess.READ | RegisterAccess.WRITE),
-            U16Register(Reg.FAULT_HISTORY_LENGTH, RegisterAccess.READ | RegisterAccess.WRITE),
+            U16Register(Reg.FAULT_HISTORY_INDEX, self.read_write),
+            U16Register(Reg.FAULT_HISTORY_LENGTH, self.read_write),
             DateTimeRegister(Reg.FAULT_HISTORY_TIMESTAMP, RegisterAccess.READ),
             U16Register(Reg.FAULT_HISTORY_FAULTCODE, RegisterAccess.READ),
             U32Register(Reg.FAULT_HISTORY_STATUS_INFO, RegisterAccess.READ),
             U16Register(Reg.FAULT_HISTORY_COMM_STATUS, RegisterAccess.READ),
         ]
+        LOGGER.debug("Add node_registers")
         self._add_registers(node_registers)
 
     def _add_registers(self, reglist: List[RegisterBase]):

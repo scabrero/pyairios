@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from typing import List
 
 from .client import AsyncAiriosModbusClient
@@ -40,6 +41,10 @@ class AiriosDevice(AiriosNode):
             U16Register(Reg.BOUND_STATUS, RegisterAccess.READ),
         ]
         self._add_registers(dev_registers)
+
+    def __str__(self) -> str:
+        prompt = str(re.sub(r"_", "-", self.__module__.upper()))
+        return f"{prompt}@{self.slave_id}"
 
     async def device_bound_status(self) -> Result[BoundStatus]:
         """Get the device bound status."""
