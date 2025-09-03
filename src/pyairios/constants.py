@@ -19,10 +19,10 @@ class ProductId(IntEnum):
     # ProductId will remain in use for type hints, so must add new models here too
 
     BRDG_02R13 = 0x0001C849  # RF Bridge
-    VMD_02RPS78 = 0x0001C892  # Siber DF Optima 2 controller v copied to model file product_id()
-    VMN_05LM02 = 0x0001C83E  # Siber 4 button remote v copied to model file product_id()
+    VMD_02RPS78 = 0x0001C892  # Siber DF Optima 2 controller, copy in model file product_id()
+    VMD_07RPS13 = 0x0001C883  # ClimaRad VenturaV1X, copy in model file product_id()
     VMN_02LM11 = 0x0001C852
-    VMD_07RPS13 = 0x0001C883  # ClimaRad VenturaV1X v copied to model file product_id()
+    VMN_05LM02 = 0x0001C83E  # Siber 4 button remote, copy ino model file product_id()
 
     def __str__(self) -> str:
         # TODO for k:v in name_by_key:
@@ -30,12 +30,12 @@ class ProductId(IntEnum):
             return "BRDG-02R13"
         if self.value == self.VMD_02RPS78:
             return "VMD-02RPS78"
-        if self.value == self.VMN_05LM02:
-            return "VMN-05LM02"
-        if self.value == self.VMN_02LM11:
-            return "VMN-02LM11"
         if self.value == self.VMD_07RPS13:
             return "VMD-07RPS13"
+        if self.value == self.VMN_02LM11:
+            return "VMN-02LM11"
+        if self.value == self.VMN_05LM02:
+            return "VMN-05LM02"
         raise ValueError(f"Unknown product ID value {self.value}")
 
 

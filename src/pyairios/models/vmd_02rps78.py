@@ -723,16 +723,16 @@ class Node(VmdBase):
             f"({res['exhaust_fan_rpm']} RPM)"
         )
 
-        print(f"    {'Indoor temperature:': <25}{res['indoor_air_temperature']}")  # test soon
+        print(f"    {'Indoor temperature:': <25}{res['indoor_air_temperature']}")
         print(f"    {'Outdoor temperature:': <25}{res['outdoor_air_temperature']}")
         print(f"    {'Exhaust temperature:': <25}{res['exhaust_air_temperature']}")
         print(f"    {'Supply temperature:': <25}{res['supply_air_temperature']}")
 
         print(f"    {'Filter dirty:': <25}{res['filter_dirty']}")
-        print(f"    {'Filter remaining:': <25}{res['filter_remaining_percent']} %")  # test soon
+        print(f"    {'Filter remaining:': <25}{res['filter_remaining_percent']} %")
         print(f"    {'Filter duration:': <25}{res['filter_duration_days']} days")
 
-        print(f"    {'Bypass position:': <25}{res['bypass_position']}")  # test soon
+        print(f"    {'Bypass position:': <25}{res['bypass_position']}")
         print(f"    {'Bypass status:': <25}{res['bypass_status']}")
         print(f"    {'Bypass mode:': <25}{res['bypass_mode']}")
 
