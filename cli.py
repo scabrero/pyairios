@@ -124,7 +124,7 @@ class AiriosVMN05LM02CLI(aiocmd.PromptToolkitCmd):
             print(f"\t{res.status}")
 
     async def do_status(self) -> None:
-        """Print the device status."""
+        """Print the complete device status."""
         await self.vmn.print_data()
 
 
@@ -151,7 +151,7 @@ class AiriosVMD02RPS78CLI(aiocmd.PromptToolkitCmd):
         print(f"{res.value} ({res.status})")
 
     async def do_status(self) -> None:  # pylint: disable=too-many-statements
-        """Print the device status."""
+        """Print the complete device status."""
         await self.vmd.print_data()
 
     async def do_error_code(self) -> None:
@@ -287,7 +287,7 @@ class AiriosVMD07RPS13CLI(aiocmd.PromptToolkitCmd):
             print("N/A")
 
     async def do_status(self) -> None:  # pylint: disable=too-many-statements
-        """Print the device status."""
+        """Print the complete device status."""
         await self.vmd.print_data()
 
     async def do_error_code(self) -> None:
@@ -295,70 +295,126 @@ class AiriosVMD07RPS13CLI(aiocmd.PromptToolkitCmd):
         res = await self.vmd.error_code()
         print(f"{res}")
 
-    async def do_ventilation_mode(self) -> None:
+    async def do_vent_mode(self) -> None:
         """Print the current ventilation mode."""
-        res = await self.vmd.ventilation_mode()
+        res = await self.vmd.vent_mode()
         print(f"{res}")
-        # if res.value in [
-        #     VMDVentilationMode.ON,
-        #     VMDVentilationMode.OVERRIDE_MID,
-        #     VMDVentilationMode.OVERRIDE_HIGH,
-        # ]:
-        #     rem = await self.vmd.override_remaining_time()
-        #     print(f"{res.value} ({rem.value} min. remaining)")
-        # else:
-        #     print(f"{res}")
         if res.status is not None:
             print(f"{res.status}")
 
-    async def do_rq_vent_mode(self) -> None:
-        """Print the requested ventilation mode."""
+    async def do_rq_vent_mode(self) -> None:  # failed
+        """Print the current requested ventilation mode."""
         res = await self.vmd.rq_vent_mode()
         print(f"{res}")
 
-    async def do_rq_vent_sub_mode(self) -> None:
-        """Print the requested ventilation sub mode."""
+    async def do_rq_vent_sub_mode(self) -> None:  # works!
+        """Print the current requested ventilation sub mode."""
         res = await self.vmd.rq_vent_sub_mode()
         print(f"{res}")
 
-    async def do_set_ventilation_mode(self, preset: int) -> None:
-        """Change the ventilation mode. 0=Off, 1=Pause, 2=On, 3=Man1, 5=Man3, 8=Service"""
-        # s = VMDRequestedVentilationSpeed.parse(preset)
-        await self.vmd.set_ventilation_mode(preset)  # (s) lookup?
+    async def do_rq_temp_vent_mode(self) -> None:
+        """Print the requested temp. ventilation mode."""
+        res = await self.vmd.rq_temp_vent_mode()
+        print(f"{res}")
 
-    async def do_set_temp_vent_sub_mode(self, preset: int) -> None:
-        """Change the ventilation mode. 0=Off, 1=Pause, 2=On, 3=Man1, 5=Man3, 8=Service"""
+    async def do_rq_temp_vent_mode_set(self, preset: int) -> None:
+        """Change the requested ventilation mode. 0=Off, 1=Pause, 2=On, 3=Man1, 5=Man3, 8=Service"""
         # s = VMDRequestedVentilationSpeed.parse(preset)
-        await self.vmd.set_temp_ventilation_sub_mode(preset)  # (s) lookup?
+        res = await self.vmd.set_rq_temp_vent_mode(preset)  # (s) lookup?
+        print(f"{res}")
 
-    async def do_indoor_humidity(self):
+    async def do_rq_temp_vent_sub_mode(self) -> None:
+        """Print the requested temp. ventilation sub mode."""
+        res = await self.vmd.rq_temp_vent_sub_mode()
+        print(f"{res}")
+
+    async def do_rq_vent_mode_set(self, preset: int) -> None:
+        """Change the requested ventilation mode. 0=Off, 1=Pause, 2=On, 3=Man1, 5=Man3, 8=Service"""
+        # s = VMDRequestedVentilationSpeed.parse(preset)
+        res = await self.vmd.set_rq_vent_mode(preset)  # (s) lookup?
+        print(f"{res}")
+
+    async def do_rq_vent_sub_mode_set(self, preset: int) -> None:
+        """Change the requested ventilation sub mode. 0=Off, 201 - 205"""
+        # s = VMDRequestedVentilationSpeed.parse(preset)
+        res = await self.vmd.set_rq_vent_sub_mode(preset)  # (s) lookup?
+        print(f"{res}")
+
+    async def do_temp_vent_sub_mode(self) -> None:
+        """Print the current temp. ventilation sub mode"""
+        # s = VMDRequestedVentilationSpeed.parse(preset)
+        res = await self.vmd.temp_vent_sub_mode()  # (s) lookup?
+        print(f"{res}")
+
+    async def do_rq_temp_vent_sub_mode_set(self, preset: int) -> None:
+        """Change the requested ventilation sub mode. 0=Off, 201 - 205"""
+        # s = VMDRequestedVentilationSpeed.parse(preset)
+        res = await self.vmd.set_rq_temp_vent_sub_mode(preset)  # (s) lookup?
+        print(f"{res}")
+
+    async def do_indoor_hum(self):
         """Print the indoor humidity level in %."""
         res = await self.vmd.indoor_humidity()
         print(f"{res} %")
 
-    async def do_outdoor_humidity(self):
+    async def do_outdoor_hum(self):
         """Print the outdoor humidity level in %."""
         res = await self.vmd.outdoor_humidity()
         print(f"{res} %")
 
-    async def do_bypass_position(self):
+    async def do_bypass_pos(self):
         """Print the bypass position."""
         res = await self.vmd.bypass_position()
-        print(f"{res}")
+        print(f"{res} {'Open' if res == 1 else 'Closed'}")
+
+    async def do_base_vent_enabled(self):
+        """Print the base ventilation enabled: On/Off = 1/0."""
+        res = await self.vmd.basic_vent_enable()
+        print(f"{res} {'On' if res.value == 1 else 'Off'}")
+
+    async def do_base_vent_enabled_set(self, state: bool) -> None:
+        """Set the base ventilation enabled: on/off = 1/0."""
+        if await self.vmd.set_basic_vent_enable(state):
+            await self.do_basic_vent_enable()
+        else:
+            print(f"Error setting basic_vent_enabled")
+
+    async def do_base_vent_level(self):
+        """Print the base ventilation level."""
+        res = await self.vmd.basic_vent_level()
+        print(f"basic_vent_level: {res}")
+
+    async def do_base_vent_level_set(self, lvl: int) -> None:
+        """Set the base ventilation level."""
+        if await self.vmd.set_basic_vent_level(lvl):
+            res = await self.vmd.basic_vent_level()
+            print(f"basic_vent_level set to: {res.value}")
+        else:
+            print(f"Error setting basic_vent_level")
 
     async def do_filter_remaining(self):
         """Print the filter remaining days."""
+        res = await self.vmd.filter_remaining_days()
+        print(f"{res.value} days")
+
+    async def do_filter_remaining(self):
+        """Print the filter remaining."""
+        r1 = await self.vmd.filter_remaining_percent()
         r2 = await self.vmd.filter_remaining_days()
-        print(f"{r2.value} days")
+        print(f"{r1.value} % ({r2.value} days)")
 
     async def do_co2_setpoint(self):
         """Print the CO2 setpoint in ppm."""
-        r2 = await self.vmd.co2_setpoint()
-        print(f"{r2.value} ppm")
+        res = await self.vmd.co2_setpoint()
+        print(f"{res.value} ppm")
 
-    async def do_set_co2_setpoint(self, setp: int) -> None:
-        """Change the CO2 setpoint in ppm. Default = 1000"""
-        await self.vmd.set_temp_ventilation_sub_mode(setp)
+    async def do_co2_setpoint_set(self, setp: int) -> None:
+        """Change the CO2 setpoint in ppm. Factory default = 1000."""
+        if await self.vmd.set_co2_setpoint(setp):
+            res = await self.vmd.co2_setpoint()
+            print(f"CO2 setpoint set to: {res.value} ppm")
+        else:
+            print(f"Error setting CO2 setpoint")
 
     # actions
 
@@ -518,7 +574,7 @@ class AiriosBridgeCLI(aiocmd.PromptToolkitCmd):
         await self.bridge.set_oem_code(int(number))
 
     async def do_status(self) -> None:
-        """Print the device status."""
+        """Print the complete device status."""
         await self.bridge.print_data()
 
 
