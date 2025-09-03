@@ -375,22 +375,22 @@ class AiriosVMD07RPS13CLI(aiocmd.PromptToolkitCmd):
     async def do_base_vent_enabled_set(self, state: bool) -> None:
         """Set the base ventilation enabled: on/off = 1/0."""
         if await self.vmd.set_basic_vent_enable(state):
-            await self.do_basic_vent_enable()
+            await self.do_base_vent_enable()
         else:
-            print(f"Error setting basic_vent_enabled")
+            print(f"Error setting base_vent_enabled")
 
     async def do_base_vent_level(self):
         """Print the base ventilation level."""
         res = await self.vmd.basic_vent_level()
-        print(f"basic_vent_level: {res}")
+        print(f"base_vent_level: {res}")
 
     async def do_base_vent_level_set(self, lvl: int) -> None:
         """Set the base ventilation level."""
         if await self.vmd.set_basic_vent_level(lvl):
             res = await self.vmd.basic_vent_level()
-            print(f"basic_vent_level set to: {res.value}")
+            print(f"base_vent_level set to: {res.value}")
         else:
-            print(f"Error setting basic_vent_level")
+            print(f"Error setting base_vent_level")
 
     async def do_filter_remaining(self):
         """Print the filter remaining."""
