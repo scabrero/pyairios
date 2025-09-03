@@ -393,11 +393,6 @@ class AiriosVMD07RPS13CLI(aiocmd.PromptToolkitCmd):
             print(f"Error setting basic_vent_level")
 
     async def do_filter_remaining(self):
-        """Print the filter remaining days."""
-        res = await self.vmd.filter_remaining_days()
-        print(f"{res.value} days")
-
-    async def do_filter_remaining(self):
         """Print the filter remaining."""
         r1 = await self.vmd.filter_remaining_percent()
         r2 = await self.vmd.filter_remaining_days()
