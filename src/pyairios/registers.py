@@ -133,6 +133,7 @@ class NumberRegister(RegisterBase[T]):
             raise AiriosInvalidArgumentException(f"Unsupported type {type(value)}")
         return ModbusClientMixin.convert_to_registers(int_value, self.datatype, word_order="little")
 
+
 class U8Register(NumberRegister[int]):
     """Unsigned 8-bit entry, sent to modbus as UINT16 register."""
 
@@ -146,7 +147,7 @@ class U8Register(NumberRegister[int]):
     def encode(self, value: T) -> list[int]:
         """Encode value to register bytes."""
         if isinstance(
-                value, str
+            value, str
         ):  # all CLI entries are passed in as str, despite casting in method call
             try:
                 int_value = int(value)
@@ -159,7 +160,9 @@ class U8Register(NumberRegister[int]):
         else:
             raise AiriosInvalidArgumentException(f"Unsupported type {type(value)}")
         if int_value != int_value & 255:  # int_value > 1 byte
-            raise AiriosInvalidArgumentException(f"Entered value {value} > 255 (too large for UINT8)")
+            raise AiriosInvalidArgumentException(
+                f"Entered value {value} > 255 (too large for UINT8)"
+            )
         return super().encode(int_value)
 
 

@@ -1,5 +1,6 @@
 """Airios BRDG-02R13 RF bridge implementation."""
 
+import asyncio
 import glob
 import importlib.util
 import logging
@@ -152,11 +153,11 @@ class BRDG02R13(AiriosNode):
     """Represents a BRDG-02R13 RF bridge."""
 
     # a dict with module names by model, used to fill in CLI prompt model
-    prids: dict[str, str] = {}
+    prids: dict[str, str]
     # a dict with product_ids by model (replaces ProductId enum in const.py)
-    modules: dict[str, ModuleType] = {}
+    modules: dict[str, ModuleType]
     # a dict with imported modules by model
-    descriptions: dict[str, str] = {}
+    descriptions: dict[str, str]
     # a dict with label description model, for use in UI
 
     def __init__(self, slave_id: int, client: AsyncAiriosModbusClient) -> None:
@@ -226,17 +227,22 @@ class BRDG02R13(AiriosNode):
             U16Register(Reg.ADDRESS_NODE_32, RegisterAccess.READ),
         ]
         self._add_registers(brdg_registers)
-        self._load_models()
+        # models are lazy loaded
 
     def __str__(self) -> str:
         return f"BRDG-02R13@{self.slave_id}"
         # node method doesn't work for Bridge module in CLI
 
-    def _load_models(self) -> None:
-        # analyse and import all VMx.py files from the models/ folder
-        modules_list = glob.glob(
-            os.path.join(os.path.dirname(__file__), "*.py")
-        )  # we are in models/
+    async def _load_models(self) -> None:
+        """
+        Analyse and import all VMx.py files from the models/ folder.
+        Must call this async run_in_executor to prevent HA blocking call during file I/O.
+        """
+        loop = asyncio.get_running_loop()
+        modules_list = await loop.run_in_executor(
+            None, glob.glob, os.path.join(os.path.dirname(__file__), "*.py")
+        )
+        # we are in models/
 
         for file_path in modules_list:
             file_name = str(os.path.basename(file_path))
@@ -278,6 +284,8 @@ class BRDG02R13(AiriosNode):
 
         :return: dict of all controller and accessory modules by key
         """
+        if self.modules is None:
+            self._load_models()
         return self.modules
 
     def model_descriptions(self) -> dict[str, str] | None:
@@ -286,6 +294,8 @@ class BRDG02R13(AiriosNode):
 
         :return: dict of all controller and accessory module labels by key
         """
+        if self.descriptions is None:
+            self._load_models()
         return self.descriptions
 
     def product_ids(self) -> dict[str, str] | None:
@@ -294,6 +304,8 @@ class BRDG02R13(AiriosNode):
 
         :return: dict of all controller and accessory definitions installed
         """
+        if self.prids is None:
+            self._load_models()
         return self.prids
 
     async def bind_controller(
