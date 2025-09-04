@@ -375,7 +375,7 @@ class AiriosVMD07RPS13CLI(aiocmd.PromptToolkitCmd):
     async def do_base_vent_enabled_set(self, state: bool) -> None:
         """Set the base ventilation enabled: on/off = 1/0."""
         if await self.vmd.set_basic_vent_enable(state):
-            await self.do_base_vent_enable()
+            await self.do_base_vent_enabled()
         else:
             print(f"Error setting base_vent_enabled")
 

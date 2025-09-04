@@ -42,17 +42,17 @@ class Airios:
             raise AiriosException(f"Unknown transport {transport}")
         self.bridge = BRDG02R13(slave_id, self._client)
 
-    def product_ids(self) -> dict[str, str]:
+    async def product_ids(self) -> dict[str, str]:
         """Get the dict of installed product_ids."""
-        return self.bridge.product_ids()
+        return await self.bridge.product_ids()
 
-    def models(self) -> dict[str, ModuleType]:
+    async def models(self) -> dict[str, ModuleType]:
         """Receive a dict of all model modules, imported, from bridge."""
-        return self.bridge.models()
+        return await self.bridge.models()
 
-    def model_descriptions(self) -> dict[str, str]:
+    async def model_descriptions(self) -> dict[str, str]:
         """Receive a dict of all model descriptive names, for use in UI, from bridge."""
-        return self.bridge.model_descriptions()
+        return await self.bridge.model_descriptions()
 
     async def nodes(self) -> list[AiriosBoundNodeInfo]:
         """Get the list of bound nodes."""
