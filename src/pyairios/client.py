@@ -116,7 +116,9 @@ class AsyncAiriosModbusClient:
                     await asyncio.sleep(delay)
 
                 response = await self.client.read_holding_registers(
-                    register, count=length, device_id=slave  # pymodbus keyword was renamed
+                    register,
+                    count=length,
+                    device_id=slave,  # pymodbus keyword was renamed
                 )
                 if isinstance(response, ExcCodes):
                     if response == ExcCodes.DEVICE_BUSY:
@@ -148,9 +150,7 @@ class AsyncAiriosModbusClient:
                         f"(length {length}) from slave {slave}: {response}"
                     )
                     LOGGER.warning(message)
-                    raise AiriosReadException(
-                        message, modbus_exception_code=response
-                    )
+                    raise AiriosReadException(message, modbus_exception_code=response)
 
                 if len(response.registers) != length:
                     message = (
@@ -201,13 +201,10 @@ class AsyncAiriosModbusClient:
                     )
                 if isinstance(response, ExcCodes):
                     message = (
-                        f"Failed to write value {value} to register {register}: "
-                        f"{response:02X}"
+                        f"Failed to write value {value} to register {register}: {response:02X}"
                     )
                     LOGGER.info(message)
-                    raise AiriosWriteException(
-                        message, modbus_exception_code=response
-                    )
+                    raise AiriosWriteException(message, modbus_exception_code=response)
             except ModbusIOException as err:
                 message = f"Could not write register, I/O exception: {err}"
                 LOGGER.error(message)
