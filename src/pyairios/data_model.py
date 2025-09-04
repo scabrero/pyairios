@@ -102,8 +102,8 @@ class BRDG02R13Data(AiriosNodeData):
     power_on_time: Result[timedelta] | None
     # Bridge holds info collected from models/ definition at startup:
     models: dict[str, ModuleType] | None
-    model_descriptions: dict[str, str] | None
-    product_ids: dict[str, str] | None
+    # model_descriptions: dict[str, str] | None
+    # product_ids: dict[str, str] | None
 
 
 @dataclass

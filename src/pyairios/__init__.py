@@ -42,17 +42,17 @@ class Airios:
             raise AiriosException(f"Unknown transport {transport}")
         self.bridge = BRDG02R13(slave_id, self._client)
 
-    async def product_ids(self) -> dict[str, str]:
-        """Get the dict of installed product_ids."""
-        return await self.bridge.product_ids()
+    # async def product_ids(self) -> dict[str, str]:
+    #     """Get the dict of installed product_ids."""
+    #     return await self.bridge.product_ids()
 
     async def models(self) -> dict[str, ModuleType]:
         """Receive a dict of all model modules, imported, from bridge."""
         return await self.bridge.models()
 
-    async def model_descriptions(self) -> dict[str, str]:
-        """Receive a dict of all model descriptive names, for use in UI, from bridge."""
-        return await self.bridge.model_descriptions()
+    # async def model_descriptions(self) -> dict[str, str]:
+    #     """Receive a dict of all model descriptive names, for use in UI, from bridge."""
+    #     return await self.bridge.model_descriptions()
 
     async def nodes(self) -> list[AiriosBoundNodeInfo]:
         """Get the list of bound nodes."""
@@ -98,7 +98,7 @@ class Airios:
         bridge_rf_address = brdg_data["rf_address"].value
         data[self.bridge.slave_id] = brdg_data
 
-        for _node in await self.bridge.nodes():  # all info is in the model class files
+        for _node in await self.bridge.nodes():  # all info for USED nodes is in the model class files
             key = str(_node.product_id)  # compare to cli.py
             LOGGER.debug(f"Fetch_node_data for key: {key}")
             node_module = self.bridge.modules[key].Node(_node.slave_id, self.bridge.client)

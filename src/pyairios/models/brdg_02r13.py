@@ -152,12 +152,11 @@ def product_description() -> str | tuple[str, ...]:
 class BRDG02R13(AiriosNode):
     """Represents a BRDG-02R13 RF bridge."""
 
-    # a dict with module names by model, used to fill in CLI prompt model
-    prids: dict[str, str]
-    # a dict with product_ids by model (replaces ProductId enum in const.py)
-    modules: dict[str, ModuleType]
+    modules: dict[str, ModuleType] = {}
     # a dict with imported modules by model
-    descriptions: dict[str, str]
+    prids: dict[str, str] = {}
+    # a dict with product_ids by model (replaces ProductId enum in const.py)
+    descriptions: dict[str, str] = {}
     # a dict with label description model, for use in UI
 
     def __init__(self, slave_id: int, client: AsyncAiriosModbusClient) -> None:
@@ -227,18 +226,18 @@ class BRDG02R13(AiriosNode):
             U16Register(Reg.ADDRESS_NODE_32, RegisterAccess.READ),
         ]
         self._add_registers(brdg_registers)
-        # models are lazy loaded
+        # models are lazy loaded or initiated by caller
 
     def __str__(self) -> str:
         return f"BRDG-02R13@{self.slave_id}"
         # node method doesn't work for Bridge module in CLI
 
-    async def _load_models(self) -> None:
+    async def load_models(self) -> int:
         """
         Analyse and import all VMx.py files from the models/ folder.
-        Must call this async run_in_executor to prevent HA blocking call during file I/O.
         """
         loop = asyncio.get_running_loop()
+        # must call this async run_in_executor to prevent HA blocking call during file I/O.
         modules_list = await loop.run_in_executor(
             None, glob.glob, os.path.join(os.path.dirname(__file__), "*.py")
         )
@@ -277,16 +276,21 @@ class BRDG02R13(AiriosNode):
         LOGGER.info("Loaded products:")
         LOGGER.info(self.descriptions)  # dict
         # all loaded up
+        return len(self.modules)
 
     async def models(self) -> dict[str, ModuleType] | None:
         """
         Util to fetch all supported models with their imported module class.
+        Must call this async run_in_executor to prevent HA blocking call during file I/O.
 
         :return: dict of all controller and accessory modules by key
         """
-        if self.modules is None:
-            await self._load_models()
-        return self.modules
+        if self.modules is {}:
+            task = asyncio.create_task(self.load_models())
+            await task
+            return self.modules
+        else:
+            return self.modules
 
     async def model_descriptions(self) -> dict[str, str] | None:
         """
@@ -294,9 +298,12 @@ class BRDG02R13(AiriosNode):
 
         :return: dict of all controller and accessory module labels by key
         """
-        if self.descriptions is None:
-            await self._load_models()
-        return self.descriptions
+        if self.descriptions is {}:
+            task = asyncio.create_task(self.load_models())
+            await task
+            return self.descriptions
+        else:
+            return self.descriptions
 
     async def product_ids(self) -> dict[str, str] | None:
         """
@@ -304,8 +311,8 @@ class BRDG02R13(AiriosNode):
 
         :return: dict of all controller and accessory definitions installed
         """
-        if self.prids is None:
-            await self._load_models()
+        if self.prids is {}:
+            await self.load_models()
         return self.prids
 
     async def bind_controller(
@@ -624,8 +631,8 @@ class BRDG02R13(AiriosNode):
             power_on_time=await _safe_fetch(self.power_on_time),
             # additional info from models/
             models=await self.models(),
-            model_descriptions=await self.model_descriptions(),
-            product_ids=await self.product_ids(),
+            # model_descriptions=await self.model_descriptions(),
+            # product_ids=await self.product_ids(),
         )
 
     async def print_data(self) -> None:
@@ -662,6 +669,7 @@ class BRDG02R13(AiriosNode):
         print(f"    {'Uptime:': <40}{res['power_on_time']}")
         print("")
 
-        print("Installed model files")
-        print(f"    {'Descriptions:': <40}{res['model_descriptions']}")
-        print(f"    {'ProductIDs:': <40}{res['product_ids']}")
+        print(f"{len(res['models'])} Installed model files")
+        for key, mod in res['models']:
+            print(f"    {key[3:]}{':': <40}{key} {str(mod)} {mod.product_description()}")
+        # print(f"    {'ProductIDs:': <40}{res['product_ids']}")
