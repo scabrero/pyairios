@@ -63,7 +63,7 @@ modules_list = glob.glob(os.path.join(os.path.dirname(__file__), "src/pyairios/m
 
 # all (usable) models found are stored in 3 dicts:
 prids: dict[str, str] = {}
-# a dict with product_id's by class name (replaces ProductId enum in const.py)
+# a dict with pr_id's (expected productid) by class name (eventually, replacing ProductId enum in const.py?)
 modules: dict[str, ModuleType] = {}
 # a dict with imported modules by class name
 descriptions: dict[str, str] = {}
@@ -90,8 +90,9 @@ for file_path in modules_list:
     # now we can use the module as if it were imported normally
 
     # check loading by fetching the product_id (the int te check binding against)
-    prids[model_key] = modules[model_key].product_id()
-    descriptions[model_key] = modules[model_key].product_description()
+    prids[model_key] = modules[model_key].pr_id
+    # can't be named product_id to discern from node.product_id
+    descriptions[model_key] = modules[model_key].product_descr
 
 print(f"Supported models by key: {descriptions}")
 # print(f"Loaded modules: {modules}")

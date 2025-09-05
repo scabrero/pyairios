@@ -34,12 +34,15 @@ class VMN05LM02Data(AiriosDeviceData):
     requested_ventilation_speed: Result[VMDRequestedVentilationSpeed] | None
 
 
-def product_id() -> int:
+@property
+def pr_id() -> int:
+    # can't be named product_id to discern from node.product_id
     # for key VMN_05LM02
     return 0x0001C83E
 
 
-def product_description() -> str | tuple[str, ...]:
+@property
+def product_descr() -> str | tuple[str, ...]:
     # for key VMN_05LM02
     return "Siber 4 button Remote"
 
@@ -72,7 +75,9 @@ class Node(AiriosDevice):
         return VMN05LM02Data(
             slave_id=self.slave_id,
             rf_address=await _safe_fetch(self.node_rf_address),
-            product_id=await _safe_fetch(self.node_product_id),
+            product_id=await _safe_fetch(
+                self.node_received_product_id
+            ),  # more informative than 2x product name
             sw_version=await _safe_fetch(self.node_software_version),
             product_name=await _safe_fetch(self.node_product_name),
             rf_comm_status=await _safe_fetch(self.node_rf_comm_status),

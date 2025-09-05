@@ -118,12 +118,14 @@ class VMD07RPS13Data(AiriosDeviceData):
     ventilation_sub_mode: Result[int] | None
 
 
-def product_id() -> int:
+@property
+def pr_id() -> int:
     # for key VMD_07RPS13
     return 0x0001C883
 
 
-def product_description() -> str | tuple[str, ...]:
+@property
+def product_descr() -> str | tuple[str, ...]:
     # for key VMD_07RPS13
     return "ClimaRad Ventura V1"
 
@@ -137,8 +139,6 @@ class Node(VmdBase):
         LOGGER.debug(f"Starting Ventura Node({slave_id})")
 
         vmd_registers: List[RegisterBase] = [
-            # FloatRegister(Reg.FLOW_INLET, self.read_status),
-            # FloatRegister(Reg.FLOW_OUTLET, self.read_status),
             FloatRegister(Reg.TEMPERATURE_EXHAUST, self.read_status),
             FloatRegister(Reg.TEMPERATURE_INLET, self.read_status),
             FloatRegister(Reg.TEMPERATURE_OUTLET, self.read_status),
@@ -421,7 +421,9 @@ class Node(VmdBase):
             slave_id=self.slave_id,
             # node data from pyairios node
             rf_address=await _safe_fetch(self.node_rf_address),
-            product_id=product_id(),  # await _safe_fetch(self.node_received_product_id),  # more informative than 2x product name
+            product_id=await _safe_fetch(
+                self.node_received_product_id
+            ),  # more informative than 2x product name
             sw_version=await _safe_fetch(self.node_software_version),
             product_name=await _safe_fetch(self.node_product_name),
             # device data
