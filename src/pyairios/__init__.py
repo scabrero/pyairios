@@ -46,9 +46,9 @@ class Airios:
     #     """Get the dict of installed product_ids."""
     #     return await self.bridge.product_ids()
 
-    async def models(self) -> dict[str, ModuleType]:
-        """Receive a dict of all model modules, imported, from bridge."""
-        return await self.bridge.models()
+    # async def models(self) -> dict[str, ModuleType]:
+    #     """Receive a dict of all model modules, imported, from bridge."""
+    #     return await self.bridge.models()
 
     # async def model_descriptions(self) -> dict[str, str]:
     #     """Receive a dict of all model descriptive names, for use in UI, from bridge."""
