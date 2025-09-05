@@ -125,13 +125,11 @@ class VMD02RPS78Data(AiriosDeviceData):
     preset_standby_fan_speed_exhaust: Result[int] | None
 
 
-@property
 def pr_id() -> int:
     # for key VMD_02RPS78
     return 0x0001C892
 
 
-@property
 def product_descr() -> str | tuple[str, ...]:
     # for key VMD_02RPS78
     return "Siber DF Evo", "Siber DF Optima 2"

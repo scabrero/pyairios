@@ -35,14 +35,12 @@ class Reg(RegisterAddress):
     """Register set for VMD-BASE controller node."""
 
 
-@property
 def pr_id() -> int:
     # can't be named product_id to discern from node.product_id
     # base class, should not be called
     return 0x0
 
 
-@property
 def product_descr() -> str | tuple[str, ...]:
     # base class, should not be called
     return "-"

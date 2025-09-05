@@ -34,14 +34,11 @@ class VMN05LM02Data(AiriosDeviceData):
     requested_ventilation_speed: Result[VMDRequestedVentilationSpeed] | None
 
 
-@property
 def pr_id() -> int:
     # can't be named product_id to discern from node.product_id
     # for key VMN_05LM02
     return 0x0001C83E
 
-
-@property
 def product_descr() -> str | tuple[str, ...]:
     # for key VMN_05LM02
     return "Siber 4 button Remote"
