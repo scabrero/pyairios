@@ -90,9 +90,9 @@ for file_path in modules_list:
     # now we can use the module as if it were imported normally
 
     # check loading by fetching the product_id (the int te check binding against)
-    prids[model_key] = modules[model_key].pr_id
+    prids[model_key] = modules[model_key].pr_id()
     # can't be named product_id to discern from node.product_id
-    descriptions[model_key] = modules[model_key].product_descr
+    descriptions[model_key] = modules[model_key].product_descr()
 
 print(f"Supported models by key: {descriptions}")
 # print(f"Loaded modules: {modules}")

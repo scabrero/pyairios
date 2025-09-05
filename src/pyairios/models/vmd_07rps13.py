@@ -118,13 +118,11 @@ class VMD07RPS13Data(AiriosDeviceData):
     ventilation_sub_mode: Result[int] | None
 
 
-@property
 def pr_id() -> int:
     # for key VMD_07RPS13
     return 0x0001C883
 
 
-@property
 def product_descr() -> str | tuple[str, ...]:
     # for key VMD_07RPS13
     return "ClimaRad Ventura V1"

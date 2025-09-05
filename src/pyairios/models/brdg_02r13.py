@@ -139,14 +139,12 @@ class Reg(RegisterAddress):
     ADDRESS_NODE_32 = 43933
 
 
-@property
 def pr_id() -> int:
     # can't be named product_id to discern from node.product_id
     # for key BRDG-02R13
     return 0x0001C849
 
 
-@property
 def product_descr() -> str | tuple[str, ...]:
     # for key BRDG-02R13
     return "Airios RS485 RF Gateway"
@@ -285,7 +283,6 @@ class BRDG02R13(AiriosNode):
             self.modules_loaded = True
         return len(self.modules)
 
-    @property
     @classmethod
     async def models(self) -> dict[str, ModuleType] | None:
         """
@@ -301,7 +298,6 @@ class BRDG02R13(AiriosNode):
         else:
             return self.modules
 
-    @property
     @classmethod
     async def model_descriptions(self) -> dict[str, str] | None:
         """
@@ -316,7 +312,6 @@ class BRDG02R13(AiriosNode):
         else:
             return self.descriptions
 
-    @property
     @classmethod
     async def product_ids(self) -> dict[str, str] | None:
         """
