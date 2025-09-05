@@ -158,6 +158,7 @@ class BRDG02R13(AiriosNode):
     # a dict with product_ids by model (replaces ProductId enum in const.py)
     descriptions: dict[str, str] = {}
     # a dict with label description model, for use in UI
+    modules_loaded = False
 
     def __init__(self, slave_id: int, client: AsyncAiriosModbusClient) -> None:
         """Initialize the BRDG-02R13 RF bridge instance."""
@@ -230,52 +231,54 @@ class BRDG02R13(AiriosNode):
 
     def __str__(self) -> str:
         return f"BRDG-02R13@{self.slave_id}"
-        # node method doesn't work for Bridge module in CLI
+        # node method doesn't work for Bridge module in CLI (has the path too)
 
     async def load_models(self) -> int:
         """
         Analyse and import all VMx.py files from the models/ folder.
         """
-        loop = asyncio.get_running_loop()
-        # must call this async run_in_executor to prevent HA blocking call during file I/O.
-        modules_list = await loop.run_in_executor(
-            None, glob.glob, os.path.join(os.path.dirname(__file__), "*.py")
-        )
-        # we are in models/
+        if not self.modules_loaded:
+            loop = asyncio.get_running_loop()
+            # must call this async run_in_executor to prevent HA blocking call during file I/O.
+            modules_list = await loop.run_in_executor(
+                None, glob.glob, os.path.join(os.path.dirname(__file__), "*.py")
+            )
+            # we are in models/
 
-        for file_path in modules_list:
-            file_name = str(os.path.basename(file_path))
-            if (
-                file_name == "__init__.py"
-                or file_name == "brdg_02r13.py"
-                or file_name.endswith("_base.py")
-            ):  # skip BRDG and the base model definitions
-                continue
-            module_name = file_name.removesuffix(".py")
-            model_key: str = str(re.sub(r"_", "-", module_name).upper())
-            assert model_key is not None
+            for file_path in modules_list:
+                file_name = str(os.path.basename(file_path))
+                if (
+                    file_name == "__init__.py"
+                    or file_name == "brdg_02r13.py"
+                    or file_name.endswith("_base.py")
+                ):  # skip BRDG and the base model definitions
+                    continue
+                module_name = file_name.removesuffix(".py")
+                model_key: str = str(re.sub(r"_", "-", module_name).upper())
+                assert model_key is not None
 
-            # using importlib, create a spec for each module:
-            module_spec = importlib.util.spec_from_file_location(module_name, file_path)
-            # store the spec in a dict by class name:
-            mod = importlib.util.module_from_spec(module_spec)
-            # load the module from the spec:
-            module_spec.loader.exec_module(mod)
-            # store the imported module in dict:
-            self.modules[model_key] = mod
-            # now we can use the module as if it were imported normally
+                # using importlib, create a spec for each module:
+                module_spec = importlib.util.spec_from_file_location(module_name, file_path)
+                # store the spec in a dict by class name:
+                mod = importlib.util.module_from_spec(module_spec)
+                # load the module from the spec:
+                module_spec.loader.exec_module(mod)
+                # store the imported module in dict:
+                self.modules[model_key] = mod
+                # now we can use the module as if it were imported normally
 
-            # check loading by fetching the product_id (the int to check binding against)
-            self.prids[model_key] = self.modules[model_key].product_id()
-            self.descriptions[model_key] = self.modules[model_key].product_description()
+                # check loading by fetching the product_id (the int to check binding against)
+                self.prids[model_key] = self.modules[model_key].product_id()
+                self.descriptions[model_key] = self.modules[model_key].product_description()
 
-        LOGGER.debug("Loaded modules:")
-        LOGGER.debug(self.modules)  # dict
-        LOGGER.info("Loaded product_id's:")
-        LOGGER.info(self.prids)  # dict
-        LOGGER.info("Loaded products:")
-        LOGGER.info(self.descriptions)  # dict
-        # all loaded up
+            LOGGER.debug("Loaded modules:")
+            LOGGER.debug(self.modules)  # dict
+            LOGGER.info("Loaded product_id's:")
+            LOGGER.info(self.prids)  # dict
+            LOGGER.info("Loaded products:")
+            LOGGER.info(self.descriptions)  # dict
+            # all loaded up
+            self.modules_loaded = True
         return len(self.modules)
 
     async def models(self) -> dict[str, ModuleType] | None:
@@ -285,7 +288,7 @@ class BRDG02R13(AiriosNode):
 
         :return: dict of all controller and accessory modules by key
         """
-        if self.modules is {}:
+        if not self.modules_loaded:
             task = asyncio.create_task(self.load_models())
             await task
             return self.modules
@@ -298,7 +301,7 @@ class BRDG02R13(AiriosNode):
 
         :return: dict of all controller and accessory module labels by key
         """
-        if self.descriptions is {}:
+        if not self.modules_loaded:
             task = asyncio.create_task(self.load_models())
             await task
             return self.descriptions
@@ -311,9 +314,12 @@ class BRDG02R13(AiriosNode):
 
         :return: dict of all controller and accessory definitions installed
         """
-        if self.prids is {}:
-            await self.load_models()
-        return self.prids
+        if not self.modules_loaded:
+            task = asyncio.create_task(self.load_models())
+            await task
+            return self.prids
+        else:
+            return self.prids
 
     async def bind_controller(
         self,
@@ -631,8 +637,8 @@ class BRDG02R13(AiriosNode):
             power_on_time=await _safe_fetch(self.power_on_time),
             # additional info from models/
             models=await self.models(),
-            # model_descriptions=await self.model_descriptions(),
-            # product_ids=await self.product_ids(),
+            model_descriptions=await self.model_descriptions(),
+            product_ids=await self.product_ids(),
         )
 
     async def print_data(self) -> None:
@@ -641,7 +647,7 @@ class BRDG02R13(AiriosNode):
 
         :return: no confirmation, outputs to serial monitor
         """
-
+        # items = await self.product_ids()  # make sure to load the modules, but just once
         res = await self.fetch_bridge_data()
 
         print("Node data")
@@ -670,6 +676,7 @@ class BRDG02R13(AiriosNode):
         print("")
 
         print(f"{len(res['models'])} Installed model files")
-        for key, mod in res['models']:
-            print(f"    {key[3:]}{':': <40}{key} {str(mod)} {mod.product_description()}")
+        # print(res['models'])
+        for key, mod in res['models'].items():
+            print(f"    {key[:3]}{':': <40}{key} {str(mod.Node)} {mod.product_description()} {mod.product_id()}")
         # print(f"    {'ProductIDs:': <40}{res['product_ids']}")
