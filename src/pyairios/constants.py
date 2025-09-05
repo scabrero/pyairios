@@ -11,11 +11,11 @@ class ProductId(IntEnum):
     The value is composed of three fields: product type + sub ID + manufacturer ID.
     """
 
-    # this info was copied to the models/ class files as product_id()
-    # get the dict from bridge by calling bridge.product_ids()
+    # this info was copied to the models/ class files as pr_id
+    # get the dict from bridge by calling bridge.product_ids
     # they will be unique as long as all files are in flat models/ dir
     # new definitions will be picked up automatically when dropped in the models/ folder
-    # enum keys are the (surrounding) module names, bridge.model_names()
+    # enum keys are the (surrounding) module names
     # ProductId will remain in use for type hints, so must add new models here too
 
     BRDG_02R13 = 0x0001C849  # RF Bridge

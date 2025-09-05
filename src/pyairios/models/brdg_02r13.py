@@ -139,12 +139,15 @@ class Reg(RegisterAddress):
     ADDRESS_NODE_32 = 43933
 
 
-def product_id() -> int:
+@property
+def pr_id() -> int:
+    # can't be named product_id to discern from node.product_id
     # for key BRDG-02R13
     return 0x0001C849
 
 
-def product_description() -> str | tuple[str, ...]:
+@property
+def product_descr() -> str | tuple[str, ...]:
     # for key BRDG-02R13
     return "Airios RS485 RF Gateway"
 
@@ -268,8 +271,8 @@ class BRDG02R13(AiriosNode):
                 # now we can use the module as if it were imported normally
 
                 # check loading by fetching the product_id (the int to check binding against)
-                self.prids[model_key] = self.modules[model_key].product_id()
-                self.descriptions[model_key] = self.modules[model_key].product_description()
+                self.prids[model_key] = self.modules[model_key].pr_id
+                self.descriptions[model_key] = self.modules[model_key].product_descr
 
             LOGGER.debug("Loaded modules:")
             LOGGER.debug(self.modules)  # dict
@@ -281,6 +284,7 @@ class BRDG02R13(AiriosNode):
             self.modules_loaded = True
         return len(self.modules)
 
+    @property
     async def models(self) -> dict[str, ModuleType] | None:
         """
         Util to fetch all supported models with their imported module class.
@@ -295,6 +299,7 @@ class BRDG02R13(AiriosNode):
         else:
             return self.modules
 
+    @property
     async def model_descriptions(self) -> dict[str, str] | None:
         """
         Util to fetch all supported model labels.
@@ -308,6 +313,7 @@ class BRDG02R13(AiriosNode):
         else:
             return self.descriptions
 
+    @property
     async def product_ids(self) -> dict[str, str] | None:
         """
         Util to pick up all supported models with their productId.
@@ -624,7 +630,9 @@ class BRDG02R13(AiriosNode):
         return BRDG02R13Data(
             slave_id=self.slave_id,
             rf_address=await _safe_fetch(self.node_rf_address),
-            product_id=await _safe_fetch(self.node_product_id),
+            product_id=await _safe_fetch(
+                self.node_received_product_id
+            ),  # more informative than 2x product name
             sw_version=await _safe_fetch(self.node_software_version),
             product_name=await _safe_fetch(self.node_product_name),
             rf_comm_status=await _safe_fetch(self.node_rf_comm_status),
@@ -636,9 +644,9 @@ class BRDG02R13(AiriosNode):
             rf_load_current_hour=await _safe_fetch(self.rf_load_current_hour),
             power_on_time=await _safe_fetch(self.power_on_time),
             # additional info from models/
-            models=await self.models(),
-            model_descriptions=await self.model_descriptions(),
-            product_ids=await self.product_ids(),
+            models=await self.models,
+            model_descriptions=await self.model_descriptions,
+            product_ids=await self.product_ids,
         )
 
     async def print_data(self) -> None:
@@ -677,6 +685,6 @@ class BRDG02R13(AiriosNode):
 
         print(f"{len(res['models'])} Installed model files")
         # print(res['models'])
-        for key, mod in res['models'].items():
-            print(f"    {key[:3]}{':': <40}{key} {str(mod.Node)} {mod.product_description()} {mod.product_id()}")
+        for key, mod in res["models"].items():
+            print(f"    {key[:3]}{':': <40}{key} {str(mod.Node)} {mod.product_descr} {mod.pr_id}")
         # print(f"    {'ProductIDs:': <40}{res['product_ids']}")
