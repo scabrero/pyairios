@@ -62,7 +62,7 @@ modules_list = glob.glob(os.path.join(os.path.dirname(__file__), "src/pyairios/m
 # A major benefit of the glob library is that it includes the path to the file in each item
 
 # all (usable) models found are stored in 3 dicts:
-prids: dict[str, str] = {}
+prids: dict[str, int] = {}
 # a dict with pr_id's (expected productid) by class name (eventually, replacing ProductId enum in const.py?)
 modules: dict[str, ModuleType] = {}
 # a dict with imported modules by class name
