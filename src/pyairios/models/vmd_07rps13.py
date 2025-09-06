@@ -419,9 +419,7 @@ class Node(VmdBase):
             slave_id=self.slave_id,
             # node data from pyairios node
             rf_address=await _safe_fetch(self.node_rf_address),
-            product_id=await _safe_fetch(
-                self.node_received_product_id
-            ),  # more informative than 2x product name
+            product_id=await _safe_fetch(self.node_product_id),
             sw_version=await _safe_fetch(self.node_software_version),
             product_name=await _safe_fetch(self.node_product_name),
             # device data

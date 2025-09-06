@@ -73,9 +73,10 @@ class Node(AiriosDevice):
         return VMN05LM02Data(
             slave_id=self.slave_id,
             rf_address=await _safe_fetch(self.node_rf_address),
-            product_id=await _safe_fetch(
-                self.node_received_product_id
-            ),  # more informative than 2x product name
+            product_id=await _safe_fetch(self.node_product_id),
+            # product_id=await _safe_fetch(
+            #     self.node_received_product_id
+            # ),  # more informative than 2x product name
             sw_version=await _safe_fetch(self.node_software_version),
             product_name=await _safe_fetch(self.node_product_name),
             rf_comm_status=await _safe_fetch(self.node_rf_comm_status),
@@ -96,7 +97,9 @@ class Node(AiriosDevice):
 
         print("Node data")
         print("---------")
-        print(f"    {'Product ID:': <25}{res['product_id']}")
+        print(
+            f"    {'Product ID:': <25}{res['product_id']} (0x{int(res['product_id'].value):08X} = {int(res['product_id'].value)})"
+        )
         print(f"    {'Product Name:': <25}{res['product_name']}")
         print(f"    {'Software version:': <25}{res['sw_version']}")
         print(f"    {'RF address:': <25}{res['rf_address']}")
