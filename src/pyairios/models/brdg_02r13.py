@@ -155,7 +155,7 @@ class BRDG02R13(AiriosNode):
 
     modules: dict[str, ModuleType] = {}
     # a dict with imported modules by model
-    prids: dict[str, str] = {}
+    prids: dict[str, int] = {}
     # a dict with product_ids by model (replaces ProductId enum in const.py)
     descriptions: dict[str, str] = {}
     # a dict with label description model, for use in UI
@@ -309,7 +309,7 @@ class BRDG02R13(AiriosNode):
         else:
             return self.descriptions
 
-    async def product_ids(self) -> dict[str, str] | None:
+    async def product_ids(self) -> dict[str, int] | None:
         """
         Util to pick up all supported models with their productId.
 
@@ -656,7 +656,6 @@ class BRDG02R13(AiriosNode):
         print("Node data")
         print("---------")
         print(f"    {'Product ID:': <25}{res['product_id']}")
-        # bug? displays the key (same as pr_name), not the int value
         print(f"    {'Product Name:': <25}{res['product_name']}")
         print(f"    {'Software version:': <25}{res['sw_version']}")
         print(f"    {'RF address:': <25}{res['rf_address']}")

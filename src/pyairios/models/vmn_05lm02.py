@@ -39,6 +39,7 @@ def pr_id() -> int:
     # for key VMN_05LM02
     return 0x0001C83E
 
+
 def product_descr() -> str | tuple[str, ...]:
     # for key VMN_05LM02
     return "Siber 4 button Remote"
