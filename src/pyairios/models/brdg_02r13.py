@@ -234,7 +234,6 @@ class BRDG02R13(AiriosNode):
         return f"BRDG-02R13@{self.slave_id}"
         # node method doesn't work for Bridge module in CLI (has the path too)
 
-    @classmethod
     async def load_models(self) -> int:
         """
         Analyse and import all VMx.py files from the models/ folder.
@@ -283,7 +282,6 @@ class BRDG02R13(AiriosNode):
             self.modules_loaded = True
         return len(self.modules)
 
-    @classmethod
     async def models(self) -> dict[str, ModuleType] | None:
         """
         Util to fetch all supported models with their imported module class.
@@ -298,7 +296,6 @@ class BRDG02R13(AiriosNode):
         else:
             return self.modules
 
-    @classmethod
     async def model_descriptions(self) -> dict[str, str] | None:
         """
         Util to fetch all supported model labels.
@@ -312,7 +309,6 @@ class BRDG02R13(AiriosNode):
         else:
             return self.descriptions
 
-    @classmethod
     async def product_ids(self) -> dict[str, str] | None:
         """
         Util to pick up all supported models with their productId.
@@ -642,10 +638,10 @@ class BRDG02R13(AiriosNode):
             rf_load_last_hour=await _safe_fetch(self.rf_load_last_hour),
             rf_load_current_hour=await _safe_fetch(self.rf_load_current_hour),
             power_on_time=await _safe_fetch(self.power_on_time),
-            # additional info from models/
-            models=await self.models,
-            model_descriptions=await self.model_descriptions,
-            product_ids=await self.product_ids,
+            # add info from ALL definitions in models/
+            models=await self.models(),
+            model_descriptions=await self.model_descriptions(),
+            product_ids=await self.product_ids(),
         )
 
     async def print_data(self) -> None:
