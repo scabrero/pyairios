@@ -9,7 +9,7 @@ import re
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from types import ModuleType
-from typing import List
+from typing import List, cast
 
 from pyairios.client import AsyncAiriosModbusClient
 from pyairios.constants import (
@@ -625,9 +625,8 @@ class BRDG02R13(AiriosNode):
         return BRDG02R13Data(
             slave_id=self.slave_id,
             rf_address=await _safe_fetch(self.node_rf_address),
-            product_id=await _safe_fetch(
-                self.node_received_product_id
-            ),  # more informative than 2x product name
+            product_id=cast(Result, pr_id()),
+            # product_id=await _safe_fetch(self.node_product_id),
             sw_version=await _safe_fetch(self.node_software_version),
             product_name=await _safe_fetch(self.node_product_name),
             rf_comm_status=await _safe_fetch(self.node_rf_comm_status),
@@ -650,12 +649,11 @@ class BRDG02R13(AiriosNode):
 
         :return: no confirmation, outputs to serial monitor
         """
-        # items = await self.product_ids()  # make sure to load the modules, but just once
         res = await self.fetch_bridge_data()
 
         print("Node data")
         print("---------")
-        print(f"    {'Product ID:': <25}{res['product_id']}")
+        print(f"    {'Product ID:': <25}{res['product_id']} (0x{res['product_id']:08X})")
         print(f"    {'Product Name:': <25}{res['product_name']}")
         print(f"    {'Software version:': <25}{res['sw_version']}")
         print(f"    {'RF address:': <25}{res['rf_address']}")
@@ -680,5 +678,5 @@ class BRDG02R13(AiriosNode):
         print(f"{len(res['models'])} Installed model files")
         # print(res['models'])
         for key, mod in res["models"].items():
-            print(f"    {key[:3]}{':': <40}{key} {str(mod.Node)} {mod.product_descr} {mod.pr_id}")
+            print(f"    {key[:3]}{':': <37}{key} {str(mod.Node)} {mod.product_descr} {mod.pr_id}")
         # print(f"    {'ProductIDs:': <40}{res['product_ids']}")

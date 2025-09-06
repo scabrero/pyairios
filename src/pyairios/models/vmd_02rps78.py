@@ -318,13 +318,13 @@ class Node(VmdBase):
         return r1 and r2
 
     # async def preset_mid_fans_speed(self) -> VMDPresetFansSpeeds:
-    #     """Get the mid ventilation speed preset fan speeds."""
+    #     """Get the medium ventilation speed preset fan speeds."""
     #     r1 = await self.client.get_register(self.regmap[Reg.FAN_SPEED_MID_SUPPLY], self.slave_id)
     #     r2 = await self.client.get_register(self.regmap[Reg.FAN_SPEED_MID_EXHAUST], self.slave_id)
     #     return VMDPresetFansSpeeds(supply_fan_speed=r1, exhaust_fan_speed=r2)
 
     async def set_preset_mid_fans_speed(self, supply: int, exhaust: int) -> bool:
-        """Set the mid ventilation speed preset fan speeds."""
+        """Set the medium ventilation speed preset fan speeds."""
         if supply < 0 or exhaust < 0:
             raise AiriosInvalidArgumentException("Speed must be in range 0-40 %")
         if supply > 100 or exhaust > 100:
@@ -650,9 +650,7 @@ class Node(VmdBase):
         return VMD02RPS78Data(
             slave_id=self.slave_id,
             rf_address=await _safe_fetch(self.node_rf_address),
-            product_id=await _safe_fetch(
-                self.node_received_product_id
-            ),  # more informative than 2x product name
+            product_id=await _safe_fetch(self.node_product_id),
             sw_version=await _safe_fetch(self.node_software_version),
             product_name=await _safe_fetch(self.node_product_name),
             rf_comm_status=await _safe_fetch(self.node_rf_comm_status),
