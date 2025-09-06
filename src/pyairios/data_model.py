@@ -103,7 +103,7 @@ class BRDG02R13Data(AiriosNodeData):
     # Bridge holds info collected from models/ definition at startup:
     models: dict[str, ModuleType] | None
     model_descriptions: dict[str, str] | None
-    product_ids: dict[str, str] | None
+    product_ids: dict[str, int] | None
 
 
 @dataclass
