@@ -46,7 +46,7 @@ class AiriosDeviceData(AiriosNodeData):
 
 
 # Here only data_models for special devices. To simplify adding new models,
-# 'normal' node data_models are in their respective models/module file
+# 'normal' node data_models, all named Data, are in their respective models/module file
 
 
 class BRDG02R13Data(AiriosNodeData):
