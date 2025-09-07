@@ -37,7 +37,7 @@ LOGGER = logging.getLogger(__name__)
 # Linking the registers:
 #   Reg:
 #       model set of RF Bridge register addresses, by named address keyword
-#   VMD07RPS13Data:
+#   Data:
 #       model dict of register address + Result type by name (formerly in data_model.py)
 #   Node.vmd_registers:
 #       instance list of register type (size) + name key from Reg + access R/W
@@ -90,7 +90,7 @@ class Reg(RegisterAddress):  # only override or add differences in VMD_BASE
     SYSTEM_VENT_CONFIG = 42021  # 1, RW, uint8, "System Ventilation Configuration"
 
 
-class VMD07RPS13Data(AiriosDeviceData):
+class NodeData(AiriosDeviceData):
     """
     VMD-07RPS13 ClimaRad Ventura V1C/V1D/V1X node data.
     source: ClimaRad Modbus Registers Specs 2024
@@ -412,10 +412,10 @@ class Node(VmdBase):
         status = VMDHeaterStatus.UNAVAILABLE if result.value == 0xEF else VMDHeaterStatus.OK
         return Result(VMDHeater(result.value, status), result.status)
 
-    async def fetch_node_data(self) -> VMD07RPS13Data:  # pylint: disable=duplicate-code
+    async def fetch_node_data(self) -> NodeData:  # pylint: disable=duplicate-code
         """Fetch all controller data at once."""
 
-        return VMD07RPS13Data(
+        return NodeData(
             slave_id=self.slave_id,
             # node data from pyairios node
             rf_address=await _safe_fetch(self.node_rf_address),

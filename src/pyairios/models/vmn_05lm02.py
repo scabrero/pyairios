@@ -28,7 +28,7 @@ class Reg(RegisterAddress):
     REQUESTED_VENTILATION_SPEED = 41000
 
 
-class VMN05LM02Data(AiriosDeviceData):
+class NodeData(AiriosDeviceData):
     """VMN-05LM02 remote node data."""
 
     requested_ventilation_speed: Result[VMDRequestedVentilationSpeed] | None
@@ -67,10 +67,10 @@ class Node(AiriosDevice):
         result = await self.client.get_register(regdesc, self.slave_id)
         return Result(VMDRequestedVentilationSpeed(result.value), result.status)
 
-    async def fetch_node_data(self) -> VMN05LM02Data:  # pylint: disable=duplicate-code
+    async def fetch_node_data(self) -> NodeData:  # pylint: disable=duplicate-code
         """Get the node device data at once."""
 
-        return VMN05LM02Data(
+        return NodeData(
             slave_id=self.slave_id,
             rf_address=await _safe_fetch(self.node_rf_address),
             product_id=await _safe_fetch(self.node_product_id),
