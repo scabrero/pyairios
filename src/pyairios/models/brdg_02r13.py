@@ -245,6 +245,7 @@ class BRDG02R13(AiriosNode):
                 None, glob.glob, os.path.join(os.path.dirname(__file__), "*.py")
             )
             # we are in models/
+            check_id = []
 
             for file_path in modules_list:
                 file_name = str(os.path.basename(file_path))
@@ -266,10 +267,18 @@ class BRDG02R13(AiriosNode):
                 module_spec.loader.exec_module(mod)
                 # store the imported module in dict:
                 self.modules[model_key] = mod
-                # now we can use the module as if it were imported normally
 
-                # check loading by fetching the product_id (the int to check binding against)
-                self.prids[model_key] = self.modules[model_key].pr_id
+                # now we can use the module as if it were imported normally
+                # check correct loading by fetching the product_id (the int to check binding against)
+                _id = self.modules[model_key].pr_id()
+                # verify no duplicate product_id's
+                if _id in check_id:  #  product_id not unique among models
+                    raise AiriosException(
+                        f"Found duplicate product_id while collecting models: id {model_key} used by {self.modules[model_key].__name__} and by {mod.__name__}"
+                    )
+                self.prids[model_key] = _id
+                check_id.append(_id)  # remember all added _id's to check for duplicates
+                print(check_id)
                 self.descriptions[model_key] = self.modules[model_key].product_descr
 
             LOGGER.debug("Loaded modules:")

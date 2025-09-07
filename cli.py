@@ -4,11 +4,7 @@
 
 import argparse
 import asyncio
-import glob
-import importlib.util
 import logging
-import os
-import re
 from types import ModuleType
 
 from aiocmd import aiocmd
@@ -36,9 +32,7 @@ from pyairios.constants import (
     ResetMode,
     StopBits,
     VMDBypassMode,
-    # VMDBypassPosition,
     VMDRequestedVentilationSpeed,
-    # VMDVentilationMode,
     VMDVentilationSpeed,
 )
 from pyairios.exceptions import (
@@ -57,47 +51,13 @@ from pyairios.models.brdg_02r13 import (
 
 LOGGER = logging.getLogger(__name__)
 
-# analyse and import all VMx.py files from the models/ folder
-modules_list = glob.glob(os.path.join(os.path.dirname(__file__), "src/pyairios/models/*.py"))
-# A major benefit of the glob library is that it includes the path to the file in each item
-
-# all (usable) models found are stored in 3 dicts:
-prids: dict[str, int] = {}
-# a dict with pr_id's (expected productid) by class name (eventually, replacing ProductId enum in const.py?)
+# all (usable) models found are stored in:
 modules: dict[str, ModuleType] = {}
-# a dict with imported modules by class name
-descriptions: dict[str, str] = {}
-# a dict with label description model, for use in UI
-
-for file_path in modules_list:
-    file_name = str(os.path.basename(file_path))
-    if (
-        file_name == "__init__.py" or file_name == "brdg_02r13.py" or file_name.endswith("_base.py")
-    ):  # skip BRDG and the base model definitions
-        continue
-    module_name = file_name.removesuffix(".py")
-    model_key: str = str(re.sub(r"_", "-", module_name).upper())
-    assert model_key is not None
-
-    # using importlib, create a spec for each module:
-    module_spec = importlib.util.spec_from_file_location(module_name, file_path)
-    # store the spec in a dict by class name:
-    mod = importlib.util.module_from_spec(module_spec)
-    # load the module from the spec:
-    module_spec.loader.exec_module(mod)
-    # store the imported module in dict:
-    modules[model_key] = mod
-    # now we can use the module as if it were imported normally
-
-    # check loading by fetching the product_id (the int te check binding against)
-    prids[model_key] = modules[model_key].pr_id()
-    # can't be named product_id to discern from node.product_id
-    descriptions[model_key] = modules[model_key].product_descr()
-
-print(f"Supported models by key: {descriptions}")
-# print(f"Loaded modules: {modules}")
-print(f"Loaded product_id's: {prids}")
-# all loaded up
+# dict with imported modules by class name
+# prids: dict[str, int] = {}
+# # dict with pr_id's (expected productid) by class name (eventually, replacing ProductId enum in const.py?)
+# descriptions: dict[str, str] = {}
+# # dict with label description model, for use in UI
 
 
 class AiriosVMN05LM02CLI(aiocmd.PromptToolkitCmd):
@@ -424,7 +384,7 @@ class AiriosBridgeCLI(aiocmd.PromptToolkitCmd):
 
     def __init__(self, bridge: BRDG02R13) -> None:
         super().__init__()
-        self.prompt = f"[{str(bridge)}]>> "  # f"[BRDG-02R13@{bridge.slave_id}]>>
+        self.prompt = f"[{str(bridge)}]>> "
         self.bridge = bridge
 
     async def do_nodes(self) -> None:
@@ -594,6 +554,16 @@ class AiriosClientCLI(aiocmd.PromptToolkitCmd):  # pylint: disable=too-few-publi
         else:
             _address = int(address)
         bridge = BRDG02R13(_address, self.client)
+
+        global modules  # , prids, descriptions
+        # bridge.load_models()  # is lazy loaded
+        modules = await bridge.models()
+        print(f"Loaded modules: {modules}")
+        # prids = bridge.product_ids()
+        # print(f"Loaded product_id's: {prids}")
+        # descriptions = bridge.model_descriptions()
+        # print(f"Supported models by key: {descriptions}")
+
         await AiriosBridgeCLI(bridge).run()
 
 
