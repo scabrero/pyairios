@@ -54,7 +54,7 @@ LOGGER = logging.getLogger(__name__)
 # all (usable) models found are stored in:
 modules: dict[str, ModuleType] = {}
 # dict with imported modules by class name
-# prids: dict[str, int] = {}
+prids: dict[str, int] = {}
 # # dict with pr_id's (expected productid) by class name (eventually, replacing ProductId enum in const.py?)
 # descriptions: dict[str, str] = {}
 # # dict with label description model, for use in UI
@@ -410,19 +410,22 @@ class AiriosBridgeCLI(aiocmd.PromptToolkitCmd):
             raise AiriosIOException(f"Node with address {slave_id} not bound")
 
         # find by product_id: {'VMD-07RPS13': 116867, 'VMD-02RPS78': 116882, 'VMN-05LM02': 116798}
-        # compare to src/pyairios/_init_.py: fetch models from bridge
-        key = str(node_info.product_id)
-        _node = modules[key].Node(node_info.slave_id, self.bridge.client)
-        if key == "VMD-02RPS78":  # dedicated CLI for each model
-            await AiriosVMD02RPS78CLI(_node).run()
-            return
-        elif key == "VMD-07RPS13":  # ClimaRad Ventura
-            LOGGER.debug("Node Ventura starts")
-            await AiriosVMD07RPS13CLI(_node).run()
-            return
-        elif key == "VMN-05LM02":  # Remote accessory
-            await AiriosVMN05LM02CLI(_node).run()
-            return
+        # fetch models etc. from bridge. compare to src/pyairios/_init_.py
+        for key, _id in prids.items():
+            LOGGER.debug(f"Fetch _id for item: {key}")
+            if node_info.product_id == _id:
+                # Can we use node["product_name"] as key?
+                _node = modules[key].Node(node_info.slave_id, self.bridge.client)
+                if key == "VMD-02RPS78":  # dedicated CLI for each model
+                    await AiriosVMD02RPS78CLI(_node).run()
+                    return
+                elif key == "VMD-07RPS13":  # ClimaRad Ventura
+                    LOGGER.debug("Node Ventura starts")
+                    await AiriosVMD07RPS13CLI(_node).run()
+                    return
+                elif key == "VMN-05LM02":  # Remote accessory
+                    await AiriosVMN05LM02CLI(_node).run()
+                    return
         # add new models AiriosXXXXXXXXXCLI here to use them in CLI
 
         raise AiriosNotImplemented(
@@ -561,13 +564,13 @@ class AiriosClientCLI(aiocmd.PromptToolkitCmd):  # pylint: disable=too-few-publi
             _address = int(address)
         bridge = BRDG02R13(_address, self.client)
 
-        global modules  # , prids, descriptions
+        global modules, prids  # , descriptions
         # bridge.load_models()  # is lazy loaded
         modules = await bridge.models()
         print(f"Loaded modules: {modules}")
-        # prids = bridge.product_ids()
-        # print(f"Loaded product_id's: {prids}")
-        # descriptions = bridge.model_descriptions()
+        prids = await bridge.product_ids()
+        print(f"Loaded product_id's: {prids}")
+        # descriptions = await bridge.model_descriptions()
         # print(f"Supported models by key: {descriptions}")
 
         await AiriosBridgeCLI(bridge).run()

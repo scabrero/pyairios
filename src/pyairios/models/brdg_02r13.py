@@ -501,7 +501,7 @@ class BRDG02R13(AiriosNode):
             for _id in self.prids.values():
                 if result.value == _id:
                     _product_id = _id
-            if _product_id is -1:
+            if _product_id == -1:
                 LOGGER.warning("Unknown product ID %s", result.value)
                 continue
 
@@ -522,12 +522,12 @@ class BRDG02R13(AiriosNode):
         if slave_id == self.slave_id:
             return self  # the bridge as node
 
-        for node in await self.nodes():
-            if node.slave_id != slave_id:
+        for nd in await self.nodes():
+            if nd.slave_id != slave_id:
                 continue
-            key = str(node.product_id)  # compare to cli.py and _init_.py
+            key = str(nd.product_id)  # compare to cli.py and _init_.py
             LOGGER.debug(f"Fetch matching module for: {key}")
-            return self.modules[key].Node(node.slave_id, self.client)
+            return self.modules[key].Node(slave_id, self.client)
 
         raise AiriosException(f"Node {slave_id} not found")
 
@@ -659,7 +659,7 @@ class BRDG02R13(AiriosNode):
 
         print("Node data")
         print("---------")
-        print(f"    {'Product ID:': <25}{res['product_id']} (0x{res['product_id']:08X})")
+        print(f"    {'Product ID:': <25}{res['product_id']} (0x{int(res['product_id'].value):08X})")
         print(f"    {'Product Name:': <25}{res['product_name']}")
         print(f"    {'Software version:': <25}{res['sw_version']}")
         print(f"    {'RF address:': <25}{res['rf_address']}")

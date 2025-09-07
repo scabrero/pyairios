@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import datetime
 import logging
 import math
 from typing import List
 
 from pyairios.client import AsyncAiriosModbusClient
 from pyairios.constants import (
+    ValueStatusFlags,
+    ValueStatusSource,
     VMDBypassPosition,
     VMDCapabilities,
     VMDErrorCode,
@@ -26,6 +29,7 @@ from pyairios.registers import (
     RegisterAddress,
     RegisterBase,
     Result,
+    ResultStatus,
     U8Register,
     U16Register,
 )
@@ -176,13 +180,14 @@ class Node(VmdBase):
     async def capabilities(self) -> Result[VMDCapabilities] | None:
         """Get the ventilation unit capabilities.
         Capabilities register not supported on VMD-07RPS13, so must simulate"""
-        # our set of capabilities:
+        # Ventura capabilities:
         return Result(
             VMDCapabilities(
-                VMDCapabilities.OFF_CAPABLE,
-                VMDCapabilities.AUTO_MODE_CAPABLE,
+                VMDCapabilities.OFF_CAPABLE | VMDCapabilities.AUTO_MODE_CAPABLE,
             ),
-            None,
+            ResultStatus(
+                datetime.timedelta(1000), ValueStatusSource.UNKNOWN, ValueStatusFlags.VALID
+            ),
         )
 
     async def system_ventilation_configuration(self) -> Result[int]:
