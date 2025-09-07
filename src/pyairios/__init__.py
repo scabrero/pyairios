@@ -14,7 +14,7 @@ from .client import (
     AsyncAiriosModbusRtuClient,
     AsyncAiriosModbusTcpClient,
 )
-from .constants import BindingStatus, ProductId
+from .constants import BindingStatus
 from .data_model import AiriosBoundNodeInfo, AiriosData, AiriosNodeData
 from .exceptions import AiriosException
 from .node import AiriosNode
@@ -57,7 +57,7 @@ class Airios:
     async def bind_controller(
         self,
         slave_id: int,
-        product_id: ProductId,
+        product_id: int,
         product_serial: int | None = None,
     ) -> bool:
         """Bind a new controller to the bridge."""
@@ -67,7 +67,7 @@ class Airios:
         self,
         controller_slave_id: int,
         slave_id: int,
-        product_id: ProductId,
+        product_id: int,
     ) -> bool:
         """Bind a new accessory to the bridge."""
         return await self.bridge.bind_accessory(controller_slave_id, slave_id, product_id)

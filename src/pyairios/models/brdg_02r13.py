@@ -9,7 +9,7 @@ import re
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from types import ModuleType
-from typing import List, cast
+from typing import List
 
 from pyairios.client import AsyncAiriosModbusClient
 from pyairios.constants import (
@@ -18,7 +18,6 @@ from pyairios.constants import (
     BindingStatus,
     ModbusEvents,
     Parity,
-    ProductId,
     ResetMode,
     StopBits,
 )
@@ -278,7 +277,6 @@ class BRDG02R13(AiriosNode):
                     )
                 self.prids[model_key] = _id
                 check_id.append(_id)  # remember all added _id's to check for duplicates
-                print(check_id)
                 self.descriptions[model_key] = self.modules[model_key].product_descr
 
             LOGGER.debug("Loaded modules:")
@@ -334,7 +332,7 @@ class BRDG02R13(AiriosNode):
     async def bind_controller(
         self,
         slave_id: int,
-        _product_id: ProductId,
+        _product_id: int,
         product_serial: int | None = None,
     ) -> bool:
         """Bind a new controller to the bridge."""
@@ -402,7 +400,7 @@ class BRDG02R13(AiriosNode):
         self,
         controller_slave_id: int,
         slave_id: int,
-        _product_id: ProductId,
+        _product_id: int,
     ) -> bool:
         """Bind a new accessory to the bridge."""
         if controller_slave_id < 2 or controller_slave_id > 247:
@@ -499,13 +497,13 @@ class BRDG02R13(AiriosNode):
             result = await self.client.get_register(self.regmap[NodeReg.PRODUCT_ID], slave_id)
             if result is None or result.value is None:
                 continue
-            try:
-                _product_id = ProductId(result.value)
-            except ValueError:
+            _product_id: int = -1
+            for _id in self.prids.values():
+                if result.value == _id:
+                    _product_id = _id
+            if _product_id is -1:
                 LOGGER.warning("Unknown product ID %s", result.value)
                 continue
-            else:
-                _product_id = ProductId(result.value)
 
             result = await self.client.get_register(self.regmap[NodeReg.RF_ADDRESS], slave_id)
             if result is None or result.value is None:
@@ -634,8 +632,7 @@ class BRDG02R13(AiriosNode):
         return BRDG02R13Data(
             slave_id=self.slave_id,
             rf_address=await _safe_fetch(self.node_rf_address),
-            product_id=cast(Result, pr_id()),
-            # product_id=await _safe_fetch(self.node_product_id),
+            product_id=await _safe_fetch(self.node_product_id),
             sw_version=await _safe_fetch(self.node_software_version),
             product_name=await _safe_fetch(self.node_product_name),
             rf_comm_status=await _safe_fetch(self.node_rf_comm_status),

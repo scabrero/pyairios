@@ -29,7 +29,6 @@ from pyairios.constants import (
     Baudrate,
     ModbusEvents,
     Parity,
-    ProductId,
     ResetMode,
     StopBits,
     VMDBypassMode,
@@ -495,7 +494,7 @@ class AiriosBridgeCLI(aiocmd.PromptToolkitCmd):
         slave_id = int(slave_id)
         if product_id.startswith("0X") and len(product_id) > 2:
             product_id = str(re.sub(r"0X", "0x", product_id))
-        pid = ProductId(int(product_id))  # should recognize HEX 0x123
+        pid = int(product_id)  # should recognize HEX 0x123
         psn = None
         if product_serial is not None:
             if product_serial.startswith("0X") and len(product_serial) > 2:
@@ -509,7 +508,7 @@ class AiriosBridgeCLI(aiocmd.PromptToolkitCmd):
         slave_id = int(slave_id)
         if product_id.startswith("0X") and len(product_id) > 2:
             product_id = str(re.sub(r"0X", "0x", product_id))
-        pid = ProductId(int(product_id))  # should recognize HEX 0x123
+        pid = int(product_id)  # should recognize HEX 0x123
         await self.bridge.bind_accessory(ctrl_slave_id, slave_id, pid)
 
     async def do_software_build_date(self) -> None:

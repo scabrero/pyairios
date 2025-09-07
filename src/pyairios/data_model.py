@@ -9,7 +9,6 @@ from pyairios.constants import (
     BatteryStatus,
     BoundStatus,
     FaultStatus,
-    ProductId,
     RFCommStatus,
     ValueErrorStatus,
 )
@@ -21,7 +20,7 @@ class AiriosBoundNodeInfo:
     """Bridge bound node information."""
 
     slave_id: int
-    product_id: ProductId
+    product_id: int
     rf_address: int
 
 
@@ -30,7 +29,7 @@ class AiriosNodeData(TypedDict):
 
     slave_id: int
     rf_address: Result[int] | None
-    product_id: Result[ProductId] | None
+    product_id: Result[int] | None
     product_name: Result[str] | None
     sw_version: Result[int] | None
     rf_comm_status: Result[RFCommStatus] | None
