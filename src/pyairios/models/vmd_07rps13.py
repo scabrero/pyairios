@@ -4,19 +4,18 @@ from __future__ import annotations
 
 import logging
 import math
-
 from typing import List
 
 from pyairios.client import AsyncAiriosModbusClient
 from pyairios.constants import (
     VMDBypassPosition,
+    VMDCapabilities,
     VMDErrorCode,
     VMDHeater,
     VMDHeaterStatus,
     VMDSensorStatus,
     VMDTemperature,
     VMDVentilationMode,
-    VMDCapabilities,
 )
 from pyairios.data_model import AiriosDeviceData
 from pyairios.exceptions import AiriosInvalidArgumentException

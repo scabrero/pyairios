@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import logging
 import math
-
 from typing import List
 
 from pyairios.client import AsyncAiriosModbusClient

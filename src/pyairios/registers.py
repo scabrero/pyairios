@@ -5,7 +5,7 @@ import logging
 import struct
 import typing as t
 from dataclasses import dataclass
-from enum import auto, IntEnum
+from enum import IntEnum, auto
 
 from pymodbus.client.mixin import ModbusClientMixin
 
