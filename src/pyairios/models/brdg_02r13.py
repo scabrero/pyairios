@@ -250,7 +250,7 @@ class BRDG02R13(AiriosNode):
                 file_name = str(os.path.basename(file_path))
                 if (
                     file_name == "__init__.py"
-                    or file_name == "brdg_02r13.py"
+                    # or file_name == "brdg_02r13.py"  # bridge also has sensors that need this info
                     or file_name.endswith("_base.py")
                 ):  # skip BRDG and the base model definitions
                     continue
