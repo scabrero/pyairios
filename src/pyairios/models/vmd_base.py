@@ -160,9 +160,7 @@ class VmdBase(AiriosDevice):
     def print_data(self, res) -> None:
         print("Node data")
         print("---------")
-        print(
-            f"    {'Product ID:': <25}{res['product_id']} (0x{int(res['product_id'].value):08X} = {int(res['product_id'].value)})"
-        )
+        print(f"    {'Product ID:': <25}{res['product_id']} (0x{int(res['product_id'].value):08X})")
         print(f"    {'Product Name:': <25}{res['product_name']}")
         print(f"    {'Software version:': <25}{res['sw_version']}")
         print(f"    {'RF address:': <25}{res['rf_address']}")
