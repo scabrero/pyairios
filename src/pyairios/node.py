@@ -5,7 +5,7 @@ import logging
 from typing import Callable, Dict, List
 
 from .client import AsyncAiriosModbusClient
-from .constants import BatteryStatus, FaultStatus, ProductId, RFCommStatus, RFStats
+from .constants import BatteryStatus, FaultStatus, RFCommStatus, RFStats
 from .data_model import AiriosNodeData
 from .exceptions import AiriosException
 from .registers import (
@@ -127,15 +127,14 @@ class AiriosNode:
         """Get the node RF address, also used as node serial number."""
         return await self.client.get_register(self.regmap[Reg.RF_ADDRESS], self.slave_id)
 
-    async def node_product_id(self) -> Result[ProductId]:
+    async def node_product_id(self) -> Result[int]:
         """Get the node product ID.
 
         This is the value assigned to the virtual node instance created by the bridge when
         a device is bound. The actual received product ID from the real RF node is
         available in the RECEIVED_PRODUCT_ID register.
         """
-        result = await self.client.get_register(self.regmap[Reg.PRODUCT_ID], self.slave_id)
-        return Result(ProductId(result.value), None)
+        return await self.client.get_register(self.regmap[Reg.PRODUCT_ID], self.slave_id)
 
     async def node_software_version(self) -> Result[int]:
         """Get the node software version."""
@@ -167,14 +166,13 @@ class AiriosNode:
         """Get the node product name."""
         return await self.client.get_register(self.regmap[Reg.PRODUCT_NAME], self.slave_id)
 
-    async def node_received_product_id(self) -> Result[ProductId]:
+    async def node_received_product_id(self) -> Result[int]:
         """Get the received product ID.
 
         This is the value received from the bound node. If it does not match register
         NODE_PRODUCT_ID, a wrong product is bound.
         """
-        result = await self.client.get_register(self.regmap[Reg.RECEIVED_PRODUCT_ID], self.slave_id)
-        return Result(ProductId(result.value), result.status)
+        return await self.client.get_register(self.regmap[Reg.RECEIVED_PRODUCT_ID], self.slave_id)
 
     async def node_rf_comm_status(self) -> Result[RFCommStatus]:
         """Get the node RF communication status."""

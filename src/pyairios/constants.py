@@ -9,6 +9,7 @@ class ProductId(IntEnum):
     """
     The product ID is a unique product identifier.
     The value is composed of three fields: product type + sub ID + manufacturer ID.
+    Replaced by pr_id dynamic dict, created during _init_ in BRDG
     """
 
     # this info was copied to the models/ class files as pr_id
@@ -16,7 +17,7 @@ class ProductId(IntEnum):
     # they will be unique as long as all files are in flat models/ dir
     # new definitions will be picked up automatically when dropped in the models/ folder
     # enum keys are the (surrounding) module names
-    # ProductId will remain in use for type hints, so must add new models here too
+    # if ProductId remains in use for type hints, then must add new models here
 
     BRDG_02R13 = 0x0001C849  # RF Bridge
     VMD_02RPS78 = 0x0001C892  # Siber DF Optima 2 controller, copy in model file product_id()
