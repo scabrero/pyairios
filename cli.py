@@ -5,6 +5,7 @@
 import argparse
 import asyncio
 import logging
+import re
 from types import ModuleType
 
 from aiocmd import aiocmd
@@ -492,9 +493,13 @@ class AiriosBridgeCLI(aiocmd.PromptToolkitCmd):
     ) -> None:
         """Bind a new controller."""
         slave_id = int(slave_id)
-        pid = ProductId(int(product_id))
+        if product_id.startswith("0X") and len(product_id) > 2:
+            product_id = str(re.sub(r"0X", "0x", product_id))
+        pid = ProductId(int(product_id))  # should recognize HEX 0x123
         psn = None
         if product_serial is not None:
+            if product_serial.startswith("0X") and len(product_serial) > 2:
+                product_serial = str(re.sub(r"0X", "0x", product_serial))
             psn = int(product_serial)
         await self.bridge.bind_controller(slave_id, pid, psn)
 
@@ -502,7 +507,9 @@ class AiriosBridgeCLI(aiocmd.PromptToolkitCmd):
         """Bind a new accessory."""
         ctrl_slave_id = int(ctrl_slave_id)
         slave_id = int(slave_id)
-        pid = ProductId(int(product_id))
+        if product_id.startswith("0X") and len(product_id) > 2:
+            product_id = str(re.sub(r"0X", "0x", product_id))
+        pid = ProductId(int(product_id))  # should recognize HEX 0x123
         await self.bridge.bind_accessory(ctrl_slave_id, slave_id, pid)
 
     async def do_software_build_date(self) -> None:
