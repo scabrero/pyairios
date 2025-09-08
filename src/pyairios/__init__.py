@@ -86,9 +86,7 @@ class Airios:
         bridge_rf_address = brdg_data["rf_address"].value
         data[self.bridge.slave_id] = brdg_data
 
-        for (
-            _node
-        ) in await self.bridge.nodes():
+        for _node in await self.bridge.nodes():
             key = str(_node.product_id)  # compare to cli.py
             LOGGER.debug(f"Fetch_node_data for key: {key}")
             node_module = self.bridge.modules[key].Node(_node.slave_id, self.bridge.client)

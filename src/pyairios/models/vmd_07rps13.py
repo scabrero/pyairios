@@ -19,6 +19,7 @@ from pyairios.constants import (
     VMDSensorStatus,
     VMDTemperature,
     VMDVentilationMode,
+    VMDVentilationSpeed,
 )
 from pyairios.data_model import AiriosDeviceData
 from pyairios.exceptions import AiriosInvalidArgumentException
@@ -298,8 +299,9 @@ class Node(VmdBase):
             self.regmap[Reg.BASIC_VENT_LEVEL], level, self.slave_id
         )
 
-    async def vent_speed_composite(self) -> Result[int]:
-        """Get the composite ventilation mode."""
+    async def ventilation_speed(self) -> Result[VMDVentilationSpeed]:
+        """Get the ventilation unit active speed preset."""
+
         # Automatic:
         # Ventilation mode:        2
         # Ventilation sub mode:    48
@@ -335,9 +337,23 @@ class Node(VmdBase):
         # Temp. Ventil. mode:      3
         # Temp. Ventil. sub mode:  205
 
-        man_step = await self.client.get_register(self.regmap[Reg.TEMP_VENT_SUB_MODE], self.slave_id)
         mode = await self.client.get_register(self.regmap[Reg.VENT_MODE], self.slave_id)
-        return Result((man_step.value & 0x1) + mode.value * 10, mode.status)
+        man_step = await self.client.get_register(
+            self.regmap[Reg.TEMP_VENT_SUB_MODE], self.slave_id
+        )
+        speed = VMDVentilationSpeed.OFF
+        if mode.value == 2:
+            speed = VMDVentilationSpeed.AUTO
+        elif mode.value == 1:
+            speed = VMDVentilationSpeed.AWAY
+        elif mode.value == 0:
+            if man_step.value <= 202:
+                speed = VMDVentilationSpeed.OVERRIDE_LOW
+            elif man_step.value <= 203:
+                speed = VMDVentilationSpeed.OVERRIDE_MID
+            elif man_step.value <= 205:
+                speed = VMDVentilationSpeed.OVERRIDE_HIGH
+        return Result(speed, mode.status)
 
     async def product_variant(self) -> Result[int]:
         """Get the product variant."""
