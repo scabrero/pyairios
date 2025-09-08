@@ -22,7 +22,7 @@ class ProductId(IntEnum):
     BRDG_02R13 = 0x0001C849  # RF Bridge
     # VMD_02RPS78 = 0x0001C892  # Siber DF Optima 2 controller + 1 other fan, copy in model file product_id()
     # VMD_07RPS13 = 0x0001C883  # ClimaRad VenturaV1X, copy in model file product_id()
-    VMN_02LM11 = 0x0001C852  # ?
+    # VMN_02LM11 = 0x0001C852  # ?
     # VMN_05LM02 = 0x0001C83E  # Siber 4 button remote, copy ino model file product_id()
 
     # def __str__(self) -> str | int:
@@ -397,6 +397,7 @@ class VMDHeater:
 class VMDCapabilities(Flag):
     """Ventilation unit capabilities."""
 
+    NO_CAPABLE = 0x0000
     PRE_HEATER_AVAILABLE = 0x0001
     POST_HEATER_AVAILABLE = 0x0002
     RESERVED = 0x0004
