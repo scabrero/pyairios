@@ -651,7 +651,7 @@ class BRDG02R13(AiriosNode):
 
     async def print_data(self) -> None:
         """
-        Print labels + states for this Bridge.
+        Print labels + states for this Bridge in CLI.
 
         :return: no confirmation, outputs to serial monitor
         """

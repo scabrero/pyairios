@@ -158,6 +158,11 @@ class VmdBase(AiriosDevice):
         return Result(VMDCapabilities(), None)
 
     def print_data(self, res) -> None:
+        """
+        Print shared VMD labels + states, in CLI.
+
+        :return: no confirmation, outputs to serial monitor
+        """
         print("Node data")
         print("---------")
         print(f"    {'Product ID:': <25}{res['product_id']} (0x{int(res['product_id'].value):08X})")
