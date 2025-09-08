@@ -131,7 +131,7 @@ def pr_id() -> int:
 
 def product_descr() -> str | tuple[str, ...]:
     # for key VMD_02RPS78
-    return "Siber DF Evo", "Siber DF Optima 2"
+    return ("Siber DF Evo", "Siber DF Optima 2")
 
 
 class Node(VmdBase):
