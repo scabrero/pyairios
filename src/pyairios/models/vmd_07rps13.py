@@ -110,7 +110,6 @@ class NodeData(AiriosDeviceData):
     filter_remaining_days: Result[int] | None
     filter_remaining_percent: Result[int] | None
     indoor_air_temperature: Result[VMDTemperature] | None
-    # postheater: Result[VMDHeater] | None
     product_variant: Result[int] | None
     supply_air_temperature: Result[VMDTemperature] | None
     supply_fan_speed: Result[int] | None
@@ -119,6 +118,7 @@ class NodeData(AiriosDeviceData):
     temp_ventilation_sub_mode: Result[int] | None
     ventilation_mode: Result[int] | None
     ventilation_sub_mode: Result[int] | None
+    ventilation_speed: Result[int] | None  # required for HA fan
 
 
 def pr_id() -> int:
@@ -298,6 +298,47 @@ class Node(VmdBase):
             self.regmap[Reg.BASIC_VENT_LEVEL], level, self.slave_id
         )
 
+    async def vent_speed_composite(self) -> Result[int]:
+        """Get the composite ventilation mode."""
+        # Automatic:
+        # Ventilation mode:        2
+        # Ventilation sub mode:    48
+        # Temp. Ventil. mode:      0
+        # Temp. Ventil. sub mode:  0
+        #
+        # Pause:
+        # Ventilation mode:        1
+        # Ventilation sub mode:    0
+        # Temp. Ventil. mode:      1
+        # Temp. Ventil. sub mode:  0
+        #
+        # Manual/temp 1:
+        # Ventilation mode:        0
+        # Ventilation sub mode:    0
+        # Temp. Ventil. mode:      3
+        # Temp. Ventil. sub mode:  201
+        #
+        # Manual/temp 2:
+        # Ventilation mode:        0
+        # Ventilation sub mode:    0
+        # Temp. Ventil. mode:      3
+        # Temp. Ventil. sub mode:  202
+        #
+        # Ventilation mode:        0
+        # Ventilation sub mode:    0
+        # Temp. Ventil. mode:      3
+        # Temp. Ventil. sub mode:  203
+        #
+        # Stand 5 == Boost >>
+        # Ventilation mode:        0
+        # Ventilation sub mode:    0
+        # Temp. Ventil. mode:      3
+        # Temp. Ventil. sub mode:  205
+
+        man_step = await self.client.get_register(self.regmap[Reg.TEMP_VENT_SUB_MODE], self.slave_id)
+        mode = await self.client.get_register(self.regmap[Reg.VENT_MODE], self.slave_id)
+        return Result((man_step.value & 0x1) + mode.value * 10, mode.status)
+
     async def product_variant(self) -> Result[int]:
         """Get the product variant."""
         regdesc = self.regmap[Reg.PRODUCT_VARIANT]
@@ -451,9 +492,9 @@ class Node(VmdBase):
             filter_remaining_percent=await _safe_fetch(self.filter_remaining_percent),
             bypass_position=await _safe_fetch(self.bypass_position),
             basic_ventilation_enable=await _safe_fetch(self.basic_vent_enable),
-            # postheater=await _safe_fetch(self.postheater),
             co2_level=await _safe_fetch(self.co2_level),
             co2_control_setpoint=await _safe_fetch(self.co2_setpoint),
+            ventilation_speed=await _safe_fetch(self.vent_speed_composite),
         )
 
     async def print_data(self) -> None:
