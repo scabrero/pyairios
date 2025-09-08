@@ -12,7 +12,7 @@ class ProductId(IntEnum):
     Replaced by pr_id dynamic dict, created during _init_ in BRDG
     """
 
-    # this info was copied to the models/ class files as pr_id
+    # this info was moved to the models/ class files as pr_id
     # get the dict from bridge by calling bridge.product_ids
     # they will be unique as long as all files are in flat models/ dir
     # new definitions will be picked up automatically when dropped in the models/ folder
@@ -20,24 +20,24 @@ class ProductId(IntEnum):
     # if ProductId remains in use for type hints, then must add new models here
 
     BRDG_02R13 = 0x0001C849  # RF Bridge
-    VMD_02RPS78 = 0x0001C892  # Siber DF Optima 2 controller, copy in model file product_id()
-    VMD_07RPS13 = 0x0001C883  # ClimaRad VenturaV1X, copy in model file product_id()
-    VMN_02LM11 = 0x0001C852
-    VMN_05LM02 = 0x0001C83E  # Siber 4 button remote, copy ino model file product_id()
+    # VMD_02RPS78 = 0x0001C892  # Siber DF Optima 2 controller + 1 other fan, copy in model file product_id()
+    # VMD_07RPS13 = 0x0001C883  # ClimaRad VenturaV1X, copy in model file product_id()
+    VMN_02LM11 = 0x0001C852  # ?
+    # VMN_05LM02 = 0x0001C83E  # Siber 4 button remote, copy ino model file product_id()
 
-    def __str__(self) -> str:
-        # TODO for k:v in name_by_key:
-        if self.value == self.BRDG_02R13:
-            return "BRDG-02R13"
-        if self.value == self.VMD_02RPS78:
-            return "VMD-02RPS78"
-        if self.value == self.VMD_07RPS13:
-            return "VMD-07RPS13"
-        if self.value == self.VMN_02LM11:
-            return "VMN-02LM11"
-        if self.value == self.VMN_05LM02:
-            return "VMN-05LM02"
-        raise ValueError(f"Unknown product ID value {self.value}")
+    # def __str__(self) -> str | int:
+    #     # TODO for k:v in name_by_key:
+    #     if self.value == self.BRDG_02R13:
+    #         return self.BRDG_02R13  # used in config_flow
+    #     if self.value == self.VMD_02RPS78:
+    #         return "VMD-02RPS78"
+    #     if self.value == self.VMD_07RPS13:
+    #         return "VMD-07RPS13"
+    #     if self.value == self.VMN_02LM11:
+    #         return "VMN-02LM11"
+    #     if self.value == self.VMN_05LM02:
+    #         return "VMN-05LM02"
+    #     raise ValueError(f"Unknown product ID value {self.value}")
 
 
 class BoundStatus(IntEnum):
