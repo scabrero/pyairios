@@ -231,7 +231,7 @@ class BRDG02R13(AiriosNode):
 
     def __str__(self) -> str:
         return f"BRDG-02R13@{self.slave_id}"
-        # node method doesn't work for Bridge module in CLI (has the path too)
+        # node method doesn't work for Bridge module in CLI (contains the path too)
 
     async def load_models(self) -> int:
         """

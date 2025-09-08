@@ -181,7 +181,7 @@ class Node(VmdBase):
         """Get the ventilation unit capabilities.
         Capabilities register not supported on VMD-07RPS13, so must simulate"""
         # Ventura capabilities:
-        _caps = VMDCapabilities.OFF_CAPABLE | VMDCapabilities.AUTO_MODE_CAPABLE
+        _caps = VMDCapabilities.NO_CAPABLE  #  | VMDCapabilities.AUTO_MODE_CAPABLE
         return Result(
             _caps,
             ResultStatus(
