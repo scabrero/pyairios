@@ -88,7 +88,7 @@ class Airios:
 
         for (
             _node
-        ) in await self.bridge.nodes():  # all info for USED nodes is in the model class files
+        ) in await self.bridge.nodes():
             key = str(_node.product_id)  # compare to cli.py
             LOGGER.debug(f"Fetch_node_data for key: {key}")
             node_module = self.bridge.modules[key].Node(_node.slave_id, self.bridge.client)

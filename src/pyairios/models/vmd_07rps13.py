@@ -181,10 +181,9 @@ class Node(VmdBase):
         """Get the ventilation unit capabilities.
         Capabilities register not supported on VMD-07RPS13, so must simulate"""
         # Ventura capabilities:
+        _caps = VMDCapabilities.OFF_CAPABLE | VMDCapabilities.AUTO_MODE_CAPABLE
         return Result(
-            VMDCapabilities(
-                VMDCapabilities.OFF_CAPABLE | VMDCapabilities.AUTO_MODE_CAPABLE,
-            ),
+            _caps,
             ResultStatus(
                 datetime.timedelta(1000), ValueStatusSource.UNKNOWN, ValueStatusFlags.VALID
             ),
@@ -459,7 +458,7 @@ class Node(VmdBase):
 
     async def print_data(self) -> None:
         """
-        Print labels + states for this particular model, including VMD base fields
+        Print labels + states for this particular model, including VMD base fields, in CLI.
 
         :return: no confirmation, outputs to serial monitor
         """
