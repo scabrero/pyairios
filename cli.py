@@ -313,17 +313,12 @@ class AiriosVMD07RPS13CLI(aiocmd.PromptToolkitCmd):
         res = await self.vmd.set_rq_temp_vent_sub_mode(preset)  # (s) lookup?
         print(f"{res}")
 
-    async def do_speed(self):
-        """Print the composite speed step."""
-        res = await self.vmd.vent_speed_composite()
-        speed = "Unknown"
-        if res == 20:
-            speed = "Automatic"
-        elif res < 10:
-            speed = "Manual step " + res
-        elif res == 10:
-            speed = "Paused"
-        print(speed)
+    async def do_ventilation_speed(self) -> None:
+        """Print the current ventilation speed."""
+        res = await self.vmd.ventilation_speed()
+        print(f"{res}")
+        if res.status is not None:
+            print(f"{res.status}")
 
     async def do_indoor_hum(self):
         """Print the indoor humidity level in %."""
