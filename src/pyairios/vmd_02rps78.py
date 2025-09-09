@@ -200,7 +200,7 @@ class VMD02RPS78(AiriosDevice):
         return f"VMD-02RPS78@{self.slave_id}"
 
     async def capabilities(self) -> Result[VMDCapabilities]:
-        """Get the ventilation unit capabilitires."""
+        """Get the ventilation unit capabilities."""
         regdesc = self.regmap[Reg.CAPABILITIES]
         result = await self.client.get_register(regdesc, self.slave_id)
         return Result(VMDCapabilities(result.value), result.status)

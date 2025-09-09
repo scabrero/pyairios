@@ -559,7 +559,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Airios RF bridge Command Line Interface",
         epilog=(
-            "Thanks to Siber for providing the documentation and suppport to develop this library."
+            "Thanks to Siber for providing the documentation and support to develop this library."
         ),
     )
     args = parser.parse_args()

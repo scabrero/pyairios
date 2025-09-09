@@ -35,7 +35,7 @@ class Airios:
             transport.__class__ = AiriosRtuTransport
             self._client = AsyncAiriosModbusRtuClient(transport)
         else:
-            raise AiriosException(f"Unknown trasport {transport}")
+            raise AiriosException(f"Unknown transport {transport}")
         self.bridge = BRDG02R13(slave_id, self._client)
 
     async def nodes(self) -> list[AiriosBoundNodeInfo]:
@@ -43,7 +43,7 @@ class Airios:
         return await self.bridge.nodes()
 
     async def node(self, slave_id: int) -> AiriosNode:
-        """Get a node intance by its Modbus slave ID."""
+        """Get a node instance by its Modbus slave ID."""
         return await self.bridge.node(slave_id)
 
     async def bind_status(self) -> BindingStatus:
@@ -95,9 +95,9 @@ class Airios:
         return AiriosData(bridge_rf_address=bridge_rf_address, nodes=data)
 
     async def connect(self) -> bool:
-        """Establish underlaying Modbus connection."""
+        """Establish underlying Modbus connection."""
         return await self._client.connect()
 
     def close(self) -> None:
-        """Close underlaying Modbus connection."""
+        """Close underlying Modbus connection."""
         return self._client.close()
