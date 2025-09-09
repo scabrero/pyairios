@@ -113,14 +113,12 @@ class NumberRegister(RegisterBase[T]):
     def encode(self, value: T) -> list[int]:
         """Encode value to register bytes."""
         if isinstance(value, int):
-            int_value = value
-        elif isinstance(value, float):
-            int_value = int(value)
-        elif isinstance(value, bool):
-            int_value = int(value)
-        else:
-            raise AiriosInvalidArgumentException(f"Unsupported type {type(value)}")
-        return ModbusClientMixin.convert_to_registers(int_value, self.datatype, word_order="little")
+            return ModbusClientMixin.convert_to_registers(value, self.datatype, word_order="little")
+        if isinstance(value, (bool, float)):
+            return ModbusClientMixin.convert_to_registers(
+                int(value), self.datatype, word_order="little"
+            )
+        raise AiriosInvalidArgumentException(f"Unsupported type {type(value)}")
 
 
 class U16Register(NumberRegister[int]):

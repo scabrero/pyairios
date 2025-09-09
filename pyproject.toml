@@ -28,6 +28,11 @@ dependencies = [
     "aiocmd>=0.1.5"
 ]
 
+[dependency-groups]
+typing = ["mypy"]
+linting = ["pylint"]
+dev = [{include-group = "typing"}, {include-group = "linting"}, "pre-commit"]
+
 [project.urls]
 Homepage = "https://github.com/scabrero/pyairios"
 Repository = "https://github.com/scabrero/pyairios.git"
