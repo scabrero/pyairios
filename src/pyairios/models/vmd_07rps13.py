@@ -16,6 +16,7 @@ from pyairios.constants import (
     VMDErrorCode,
     VMDHeater,
     VMDHeaterStatus,
+    VMDRequestedVentilationSpeed,
     VMDSensorStatus,
     VMDTemperature,
     VMDVentilationMode,
@@ -354,6 +355,24 @@ class Node(VmdBase):
             elif man_step.value <= 205:
                 speed = VMDVentilationSpeed.OVERRIDE_HIGH
         return Result(speed, mode.status)
+
+    async def set_ventilation_speed(self, speed: VMDRequestedVentilationSpeed) -> bool:
+        """Set the ventilation unit speed (temp 8H) preset."""
+        md = 0  # VMDVentilationSpeed.OFF, PAUSE?
+        if speed == VMDRequestedVentilationSpeed.AUTO:
+            md = 0
+        elif speed == VMDRequestedVentilationSpeed.AWAY:
+            md = 0
+        elif speed == VMDRequestedVentilationSpeed.LOW:
+            md = 202
+        elif speed == VMDRequestedVentilationSpeed.MID:
+            md = 203
+        elif speed == VMDRequestedVentilationSpeed.HIGH:
+            md = 205
+
+        return await self.client.set_register(  # check why no immediate change
+            self.regmap[Reg.REQ_VENT_SUB_MODE], md, self.slave_id
+        )
 
     async def product_variant(self) -> Result[int]:
         """Get the product variant."""
