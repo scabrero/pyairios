@@ -121,7 +121,9 @@ class NumberRegister(RegisterBase[T]):
         ):  # all CLI entries are passed in as str, despite casting in method call
             try:
                 int_value = int(value)
-                return ModbusClientMixin.convert_to_registers(int_value, self.datatype, word_order="little")
+                return ModbusClientMixin.convert_to_registers(
+                    int_value, self.datatype, word_order="little"
+                )
             except AiriosInvalidArgumentException:
                 raise AiriosInvalidArgumentException(f"Entered str {value} not a number")
         elif isinstance(value, int):

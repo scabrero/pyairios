@@ -510,7 +510,7 @@ class Node(VmdBase):
             basic_ventilation_enable=await _safe_fetch(self.basic_vent_enable),
             co2_level=await _safe_fetch(self.co2_level),
             co2_control_setpoint=await _safe_fetch(self.co2_setpoint),
-            ventilation_speed=await _safe_fetch(self.vent_speed_composite),
+            ventilation_speed=await _safe_fetch(self.ventilation_speed),
         )
 
     async def print_data(self) -> None:
