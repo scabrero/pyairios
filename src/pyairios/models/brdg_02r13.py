@@ -158,7 +158,7 @@ class BRDG02R13(AiriosNode):
     # a dict with product_ids by model (replaces ProductId enum in const.py)
     descriptions: dict[str, str] = {}
     # a dict with label description model, for use in UI
-    modules_loaded = False
+    modules_loaded: bool = False
 
     def __init__(self, slave_id: int, client: AsyncAiriosModbusClient) -> None:
         """Initialize the BRDG-02R13 RF bridge instance."""

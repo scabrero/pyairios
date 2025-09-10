@@ -60,26 +60,6 @@ class BoundStatus(IntEnum):
         raise ValueError(f"Unknown bound status value {self.value}")
 
 
-class ImportStatus(IntEnum):
-    """RF nodes import status."""
-
-    NO_CHANGE = 0
-    """No change in import status."""
-    REIMPORT = 1
-    """Device re-imported to the same controller."""
-    NEW_IMPORT = 2
-    """Device imported for the first time to the controller."""
-
-    def __str__(self) -> str:
-        if self.value == self.NO_CHANGE:
-            return "no_change"
-        if self.value == self.REIMPORT:
-            return "reimport"
-        if self.value == self.NEW_IMPORT:
-            return "new_import"
-        raise ValueError(f"Unknown import status value {self.value}")
-
-
 class RFCommStatus(IntEnum):
     """Node RF Communication status."""
 
