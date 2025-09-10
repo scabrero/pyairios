@@ -117,7 +117,7 @@ class NumberRegister(RegisterBase[T]):
     def encode(self, value: T) -> list[int]:
         """Encode value to register bytes."""
         if isinstance(
-            value, str
+                value, str
         ):  # all CLI entries are passed in as str, despite casting in method call
             try:
                 int_value = int(value)
