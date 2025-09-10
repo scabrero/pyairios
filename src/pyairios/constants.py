@@ -423,6 +423,14 @@ class VMDFaultStatus(IntEnum):
     FAN_FAILURE = 1
 
 
+class VMDOffOnMode(IntEnum):
+    """General use binary state."""
+
+    OFF = 0
+    ON = 1
+    UNKNOWN = 10  # not in specs
+
+
 class VMDVentilationMode(IntEnum):
     """Ventilation unit (Ventura) mode preset."""
 
