@@ -263,6 +263,7 @@ class Node(VmdBase):
         # seen: 0 (with temp_vent_mode 3) | 201 | 202 | .. | 205
         return await self.client.get_register(self.regmap[Reg.TEMP_VENT_SUB_MODE], self.slave_id)
 
+    # can't access these 2 entries in register dump
     # async def room_instance(self) -> Result[int]:
     #     """Get the room_instance: 1 = Main or 2 = Secondary"""
     #     return await self.client.get_register(self.regmap[Reg.ROOM_INSTANCE], self.slave_id)
@@ -285,7 +286,7 @@ class Node(VmdBase):
         return await self.client.get_register(self.regmap[Reg.BASIC_VENT_ENABLE], self.slave_id)
 
     async def set_basic_vent_enable(self, mode: int) -> bool:
-        """Set base ventilation enabled/disabled."""
+        """Set base ventilation enabled=1/disabled=0."""
         return await self.client.set_register(
             self.regmap[Reg.BASIC_VENT_ENABLE], mode, self.slave_id
         )
