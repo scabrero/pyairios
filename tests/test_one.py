@@ -17,6 +17,7 @@ class TestStartPyairiosCli:
     """
     Init CLI test.
     """
+
     def test_init_root(self):
         device = MockSerial()
         device.open()
