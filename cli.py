@@ -17,10 +17,11 @@ except ModuleNotFoundError:
     sys.path.append(f"{os.path.dirname(__file__)}/src")
     from pyairios.client import AsyncAiriosModbusRtuClient
 
-from pyairios.brdg_02r13 import (
-    BRDG02R13,
-    DEFAULT_SLAVE_ID as BRDG02R13_DEFAULT_SLAVE_ID,
-    SerialConfig,
+from pyairios.client import (
+    AiriosRtuTransport,
+    AiriosTcpTransport,
+    AsyncAiriosModbusClient,
+    AsyncAiriosModbusTcpClient,
 )
 from pyairios.constants import (
     Baudrate,
@@ -33,20 +34,21 @@ from pyairios.constants import (
     VMDRequestedVentilationSpeed,
     VMDVentilationSpeed,
 )
-from pyairios.vmd_02rps78 import VMD02RPS78
-from pyairios.vmn_05lm02 import VMN05LM02
 from pyairios.exceptions import (
     AiriosConnectionException,
-    AiriosIOException,
     AiriosInvalidArgumentException,
+    AiriosIOException,
     AiriosNotImplemented,
 )
-from pyairios.client import (
-    AiriosRtuTransport,
-    AiriosTcpTransport,
-    AsyncAiriosModbusClient,
-    AsyncAiriosModbusTcpClient,
+from pyairios.models.brdg_02r13 import (
+    BRDG02R13,
+    SerialConfig,
 )
+from pyairios.models.brdg_02r13 import (
+    DEFAULT_SLAVE_ID as BRDG02R13_DEFAULT_SLAVE_ID,
+)
+from pyairios.models.vmd_02rps78 import VMD02RPS78
+from pyairios.models.vmn_05lm02 import VMN05LM02
 
 
 class AiriosVMN05LM02CLI(aiocmd.PromptToolkitCmd):

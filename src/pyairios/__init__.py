@@ -1,21 +1,22 @@
 """The Airios RF bridge API entrypoint."""
 
-from .brdg_02r13 import BRDG02R13
-from .brdg_02r13 import DEFAULT_SLAVE_ID as BRDG02R13_DEFAULT_SLAVE_ID
+from pyairios.models.brdg_02r13 import BRDG02R13
+from pyairios.models.brdg_02r13 import DEFAULT_SLAVE_ID as BRDG02R13_DEFAULT_SLAVE_ID
+from pyairios.models.vmd_02rps78 import VMD02RPS78
+from pyairios.models.vmn_05lm02 import VMN05LM02
+
 from .client import (
     AiriosBaseTransport,
+    AiriosRtuTransport,
+    AiriosTcpTransport,
     AsyncAiriosModbusClient,
     AsyncAiriosModbusRtuClient,
     AsyncAiriosModbusTcpClient,
-    AiriosRtuTransport,
-    AiriosTcpTransport,
 )
 from .constants import BindingStatus, ProductId
 from .data_model import AiriosBoundNodeInfo, AiriosData, AiriosNodeData
 from .exceptions import AiriosException
 from .node import AiriosNode
-from .vmd_02rps78 import VMD02RPS78
-from .vmn_05lm02 import VMN05LM02
 
 
 class Airios:

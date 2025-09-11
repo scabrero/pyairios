@@ -1,8 +1,8 @@
 """Constants and data types used by this library."""
 
+import datetime
 from dataclasses import dataclass
 from enum import Flag, IntEnum, auto
-import datetime
 
 
 class ProductId(IntEnum):
