@@ -6,8 +6,8 @@ import math
 from dataclasses import dataclass
 from typing import List
 
-from .client import AsyncAiriosModbusClient
-from .constants import (
+from pyairios.client import AsyncAiriosModbusClient
+from pyairios.constants import (
     VMDBypassMode,
     VMDBypassPosition,
     VMDCapabilities,
@@ -19,10 +19,10 @@ from .constants import (
     VMDTemperature,
     VMDVentilationSpeed,
 )
-from .data_model import VMD02RPS78Data
-from .device import AiriosDevice
-from .exceptions import AiriosInvalidArgumentException
-from .registers import (
+from pyairios.data_model import VMD02RPS78Data
+from pyairios.device import AiriosDevice
+from pyairios.exceptions import AiriosInvalidArgumentException
+from pyairios.registers import (
     FloatRegister,
     RegisterAccess,
     RegisterAddress,
