@@ -36,12 +36,21 @@ class Reg(RegisterAddress):
 
 
 def pr_id() -> int:
-    # can't be named product_id to discern from node.product_id
+    """
+    Get product_id for model VMD- models.
+    Named as is to discern from node.product_id register.
+    :return: unique int
+    """
     # base class, should not be called
     return 0x0
 
 
 def product_descr() -> str | tuple[str, ...]:
+    """
+    Get description of product(s) using VMD_xxxx.
+    Human-readable text, used in e.g. HomeAssistant Binding UI.
+    :return: string or tuple of strings, starting with manufacturer
+    """
     # base class, should not be called
     return "-"
 
@@ -49,115 +58,22 @@ def product_descr() -> str | tuple[str, ...]:
 class VmdBase(AiriosDevice):
     """Base class for VMD-xxx controller nodes."""
 
-    def __init__(self, slave_id: int, client: AsyncAiriosModbusClient) -> None:
-        """Initialize the VMD-x controller node instance."""
-        super().__init__(slave_id, client)
+    # no VMD-common registers found, leave here as example for new models that do
+    # def __init__(self, slave_id: int, client: AsyncAiriosModbusClient) -> None:
+    #     """Initialize the VMD-x controller node instance."""
+    #     super().__init__(slave_id, client)
 
         # vmd_registers: List[RegisterBase] = [
         #     U16Register(Reg.CURRENT_VENTILATION_SPEED, RegisterAccess.READ_STATUS),
-        #     U16Register(Reg.FAN_SPEED_EXHAUST, RegisterAccess.READ_STATUS),
-        #     U16Register(Reg.FAN_SPEED_SUPPLY, RegisterAccess.READ_STATUS),
-        #     U16Register(Reg.ERROR_CODE, RegisterAccess.READ_STATUS),
-        #     U16Register(
-        #         Reg.VENTILATION_SPEED_OVERRIDE_REMAINING_TIME,
-        #         RegisterAccess.READ_STATUS,
-        #     ),
-        #     FloatRegister(Reg.TEMPERATURE_INDOOR, RegisterAccess.READ_STATUS),
-        #     FloatRegister(Reg.TEMPERATURE_OUTDOOR, RegisterAccess.READ_STATUS),
-        #     FloatRegister(Reg.TEMPERATURE_EXHAUST, RegisterAccess.READ_STATUS),
-        #     FloatRegister(Reg.TEMPERATURE_SUPPLY, RegisterAccess.READ_STATUS),
-        #     U16Register(Reg.PREHEATER, RegisterAccess.READ_STATUS),
-        #     U16Register(Reg.FILTER_DIRTY, RegisterAccess.READ_STATUS),
-        #     U16Register(Reg.DEFROST, RegisterAccess.READ_STATUS),
-        #     U16Register(Reg.BYPASS_POSITION, RegisterAccess.READ_STATUS),
-        #     U16Register(Reg.HUMIDITY_INDOOR, RegisterAccess.READ_STATUS),
-        #     U16Register(Reg.HUMIDITY_OUTDOOR, RegisterAccess.READ_STATUS),
-        #     FloatRegister(Reg.FLOW_INLET, RegisterAccess.READ_STATUS),
-        #     FloatRegister(Reg.FLOW_OUTLET, RegisterAccess.READ_STATUS),
-        #     U16Register(Reg.AIR_QUALITY, RegisterAccess.READ_STATUS),
-        #     U16Register(Reg.AIR_QUALITY_BASIS, RegisterAccess.READ_STATUS),
-        #     U16Register(Reg.CO2_LEVEL, RegisterAccess.READ_STATUS),
-        #     U16Register(Reg.POST_HEATER, RegisterAccess.READ_STATUS),
-        #     U16Register(Reg.CAPABILITIES, RegisterAccess.READ_STATUS),
-        #     U16Register(Reg.FILTER_REMAINING_DAYS, RegisterAccess.READ_STATUS),
-        #     U16Register(Reg.FILTER_DURATION, RegisterAccess.READ_STATUS),
-        #     U16Register(Reg.FILTER_REMAINING_PERCENT, RegisterAccess.READ_STATUS),
-        #     U16Register(Reg.FAN_RPM_EXHAUST, RegisterAccess.READ_STATUS),
-        #     U16Register(Reg.FAN_RPM_SUPPLY, RegisterAccess.READ_STATUS),
-        #     U16Register(Reg.BYPASS_MODE, RegisterAccess.READ_STATUS),
-        #     U16Register(Reg.BYPASS_STATUS, RegisterAccess.READ_STATUS),
-        #     U16Register(
-        #         Reg.REQUESTED_VENTILATION_SPEED,
-        #         RegisterAccess.READ_WRITE_STATUS,
-        #     ),
-        #     U16Register(Reg.OVERRIDE_TIME_SPEED_LOW, RegisterAccess.WRITE),
-        #     U16Register(Reg.OVERRIDE_TIME_SPEED_MID, RegisterAccess.WRITE),
-        #     U16Register(Reg.OVERRIDE_TIME_SPEED_HIGH, RegisterAccess.WRITE),
-        #     U16Register(
-        #         Reg.REQUESTED_BYPASS_MODE,
-        #         RegisterAccess.READ_WRITE_STATUS,
-        #     ),
-        #     U16Register(Reg.FILTER_RESET, RegisterAccess.WRITE_STATUS),
-        #     U16Register(
-        #         Reg.FAN_SPEED_AWAY_SUPPLY,
-        #         RegisterAccess.READ_WRITE_STATUS,
-        #     ),
-        #     U16Register(
-        #         Reg.FAN_SPEED_AWAY_EXHAUST,
-        #         RegisterAccess.READ_WRITE_STATUS,
-        #     ),
-        #     U16Register(
-        #         Reg.FAN_SPEED_LOW_SUPPLY,
-        #         RegisterAccess.READ_WRITE_STATUS,
-        #     ),
-        #     U16Register(
-        #         Reg.FAN_SPEED_LOW_EXHAUST,
-        #         RegisterAccess.READ_WRITE_STATUS,
-        #     ),
-        #     U16Register(
-        #         Reg.FAN_SPEED_MID_SUPPLY,
-        #         RegisterAccess.READ_WRITE_STATUS,
-        #     ),
-        #     U16Register(
-        #         Reg.FAN_SPEED_MID_EXHAUST,
-        #         RegisterAccess.READ_WRITE_STATUS,
-        #     ),
-        #     U16Register(
-        #         Reg.FAN_SPEED_HIGH_SUPPLY,
-        #         RegisterAccess.READ_WRITE_STATUS,
-        #     ),
-        #     U16Register(
-        #         Reg.FAN_SPEED_HIGH_EXHAUST,
-        #         RegisterAccess.READ_WRITE_STATUS,
-        #     ),
-        #     FloatRegister(
-        #         Reg.FROST_PROTECTION_PREHEATER_SETPOINT,
-        #         RegisterAccess.READ_WRITE_STATUS,
-        #     ),
-        #     FloatRegister(
-        #         Reg.PREHEATER_SETPOINT,
-        #         RegisterAccess.READ_WRITE_STATUS,
-        #     ),
-        #     FloatRegister(
-        #         Reg.FREE_VENTILATION_HEATING_SETPOINT,
-        #         RegisterAccess.READ_WRITE_STATUS,
-        #     ),
-        #     FloatRegister(
-        #         Reg.FREE_VENTILATION_COOLING_OFFSET,
-        #         RegisterAccess.READ_WRITE_STATUS,
-        #     ),
+        #     ...
         # ]
         # self._add_registers(vmd_registers)
-
-    # def __str__(self) -> str:
-    #     prompt = str(re.sub(r"_", "-", self.__module__.upper()))
-    #     return f"{prompt}@{self.slave_id}"
 
     async def capabilities(self) -> Result[VMDCapabilities] | None:
         # not all fans support capabilities register call, must return basics
         return Result(VMDCapabilities(), None)
 
-    def print_data(self, res) -> None:
+    def print_base_data(self, res) -> None:
         """
         Print shared VMD labels + states, in CLI.
 

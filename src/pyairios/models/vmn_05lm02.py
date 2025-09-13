@@ -12,7 +12,6 @@ from pyairios.data_model import AiriosDeviceData
 from pyairios.device import AiriosDevice
 from pyairios.node import _safe_fetch
 from pyairios.registers import (
-    RegisterAccess,
     RegisterAddress,
     RegisterBase,
     Result,
@@ -35,13 +34,20 @@ class NodeData(AiriosDeviceData):
 
 
 def pr_id() -> int:
-    # can't be named product_id to discern from node.product_id
-    # for key VMN_05LM02
+    """
+    Get product_id for model VMN_05LM02.
+    Named as is to discern from node.product_id register.
+    :return: unique int
+    """
     return 0x0001C83E
 
 
 def product_descr() -> str | tuple[str, ...]:
-    # for key VMN_05LM02
+    """
+    Get description of product(s) using VMN_05LM02.
+    Human-readable text, used in e.g. HomeAssistant Binding UI.
+    :return: string or tuple of strings, starting with manufacturer
+    """
     return "Siber 4 button Remote"
 
 
@@ -51,7 +57,7 @@ class Node(AiriosDevice):
     def __init__(self, slave_id: int, client: AsyncAiriosModbusClient) -> None:
         """Initialize the VMN-05LM02 node instance."""
         super().__init__(slave_id, client)
-        LOGGER.debug(f"Starting Siber Remote Node({slave_id})")
+        LOGGER.debug("Starting Siber Remote Node(%s)", slave_id)
         vmn_registers: List[RegisterBase] = [
             U16Register(Reg.REQUESTED_VENTILATION_SPEED, self.read_status),
         ]
@@ -90,7 +96,7 @@ class Node(AiriosDevice):
 
         :return: no confirmation, outputs to serial monitor
         """
-        res = await self.fetch_node_data()
+        res = await self.fetch_node_data()  # customised per model
 
         print("Node data")
         print("---------")

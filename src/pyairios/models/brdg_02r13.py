@@ -139,13 +139,20 @@ class Reg(RegisterAddress):
 
 
 def pr_id() -> int:
-    # can't be named product_id to discern from node.product_id
-    # for key BRDG-02R13
+    """
+    Get product_id for model BRDG-02R13.
+    Named as is to discern from node.product_id register.
+    :return: unique int
+    """
     return 0x0001C849
 
 
 def product_descr() -> str | tuple[str, ...]:
-    # for key BRDG-02R13
+    """
+    Get description of product(s) using BRDG-02R13.
+    Human-readable text, used in e.g. HomeAssistant Binding UI.
+    :return: string or tuple of strings, starting with manufacturer
+    """
     return "Airios RS485 RF Gateway"
 
 
@@ -268,7 +275,8 @@ class BRDG02R13(AiriosNode):
                 self.modules[model_key] = mod
 
                 # now we can use the module as if it were imported normally
-                # check correct loading by fetching the product_id (the int to check binding against)
+                # check correct loading by fetching the product_id
+                # (the int to check binding against)
                 _id = self.modules[model_key].pr_id()
                 # verify no duplicate product_id's
                 if _id in check_id:  #  product_id not unique among models
@@ -300,8 +308,7 @@ class BRDG02R13(AiriosNode):
             task = asyncio.create_task(self.load_models())
             await task
             return self.modules
-        else:
-            return self.modules
+        return self.modules
 
     async def model_descriptions(self) -> dict[str, str] | None:
         """
@@ -313,8 +320,7 @@ class BRDG02R13(AiriosNode):
             task = asyncio.create_task(self.load_models())
             await task
             return self.descriptions
-        else:
-            return self.descriptions
+        return self.descriptions
 
     async def product_ids(self) -> dict[str, int] | None:
         """
@@ -326,8 +332,7 @@ class BRDG02R13(AiriosNode):
             task = asyncio.create_task(self.load_models())
             await task
             return self.prids
-        else:
-            return self.prids
+        return self.prids
 
     async def bind_controller(
         self,
@@ -485,7 +490,7 @@ class BRDG02R13(AiriosNode):
         LOGGER.debug("Starting Bridge.nodes()")
         nodes: List[AiriosBoundNodeInfo] = []
         for item in reg_descs:
-            LOGGER.debug(f"Starting item node({self.slave_id})")
+            LOGGER.debug("Starting item node(%s)", self.slave_id)
             result = await self.client.get_register(item, self.slave_id)
             LOGGER.debug("got result")
             if result is None or result.value is None:
@@ -526,7 +531,7 @@ class BRDG02R13(AiriosNode):
             if nd.slave_id != slave_id:
                 continue
             key = str(nd.product_id)  # compare to cli.py and _init_.py
-            LOGGER.debug(f"Fetch matching module for: {key}")
+            LOGGER.debug("Fetch matching module for: %s", key)
             return self.modules[key].Node(slave_id, self.client)
 
         raise AiriosException(f"Node {slave_id} not found")
@@ -655,7 +660,7 @@ class BRDG02R13(AiriosNode):
 
         :return: no confirmation, outputs to serial monitor
         """
-        res = await self.fetch_bridge_data()
+        res = await self.fetch_bridge_data()  # customised per model
 
         print("Node data")
         print("---------")

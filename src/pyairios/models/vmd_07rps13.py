@@ -124,12 +124,20 @@ class NodeData(AiriosDeviceData):
 
 
 def pr_id() -> int:
-    # for key VMD_07RPS13
+    """
+    Get product_id for model VMD_07RPS13.
+    Named as is to discern from node.product_id register.
+    :return: unique int
+    """
     return 0x0001C883
 
 
 def product_descr() -> str | tuple[str, ...]:
-    # for key VMD_07RPS13
+    """
+    Get description of product(s) using VMD_07RPS13.
+    Human-readable text, used in e.g. HomeAssistant Binding UI.
+    :return: string or tuple of strings, starting with manufacturer
+    """
     return "ClimaRad Ventura V1"
 
 
@@ -540,9 +548,9 @@ class Node(VmdBase):
         :return: no confirmation, outputs to serial monitor
         """
 
-        res = await self.fetch_node_data()  # customised in model file
+        res = await self.fetch_node_data()  # customised per model
 
-        super().print_data(res)
+        super().print_base_data(res)
 
         print("VMD-07RPS13 data")
         print("----------------")

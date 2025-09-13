@@ -51,12 +51,12 @@ from pyairios.models.brdg_02r13 import (
 
 LOGGER = logging.getLogger(__name__)
 
-# all (usable) models found are stored in:
-modules: dict[str, ModuleType] = {}
+# global variables available in all classes:
+MODULES: dict[str, ModuleType] = {}
 # dict with imported modules by class name
-prids: dict[str, int] = {}
-# # dict with pr_id's (expected productid) by class name
-# descriptions: dict[str, str] = {}
+PRIDS: dict[str, int] = {}
+# dict with pr_id's (expected productid) by class name
+# DESCRIPTIONS: dict[str, str] = {}
 # # dict with label description model, for use in UI
 
 
@@ -418,11 +418,11 @@ class AiriosBridgeCLI(aiocmd.PromptToolkitCmd):
 
         # find by product_id: {'VMD-07RPS13': 116867, 'VMD-02RPS78': 116882, 'VMN-05LM02': 116798}
         # fetch models etc. from bridge. compare to src/pyairios/_init_.py
-        for key, _id in prids.items():
+        for key, _id in PRIDS.items():
             LOGGER.debug("Fetch _id for item: %s", key)
             if node_info.product_id == _id:
                 # Can we use node["product_name"] as key?
-                _node = modules[key].Node(node_info.slave_id, self.bridge.client)
+                _node = MODULES[key].Node(node_info.slave_id, self.bridge.client)
                 if key == "VMD-02RPS78":  # dedicated CLI for each model
                     await AiriosVMD02RPS78CLI(_node).run()
                     return
@@ -572,12 +572,13 @@ class AiriosClientCLI(aiocmd.PromptToolkitCmd):  # pylint: disable=too-few-publi
         bridge = BRDG02R13(_address, self.client)
 
         # bridge.load_models()  # is lazy loaded
-        modules = await bridge.models()
-        print(f"Loaded modules: {modules}")
-        prids = await bridge.product_ids()
-        print(f"Loaded product_id's: {prids}")
-        # descriptions = await bridge.model_descriptions()
-        # print(f"Supported models by key: {descriptions}")
+        global MODULES, PRIDS  # pylint: disable=global-statement
+        MODULES = await bridge.models()
+        print(f"Loaded modules: {MODULES}")
+        PRIDS = await bridge.product_ids()
+        print(f"Loaded product_id's: {PRIDS}")
+        # DESCRIPTIONS = await bridge.model_descriptions()
+        # print(f"Supported models by key: {DESCRIPTIONS}")
 
         await AiriosBridgeCLI(bridge).run()
 

@@ -125,12 +125,20 @@ class NodeData(AiriosDeviceData):
 
 
 def pr_id() -> int:
-    # for key VMD_02RPS78
+    """
+    Get product_id for model VMD_02RPS78.
+    Named as is to discern from node.product_id register.
+    :return: unique int
+    """
     return 0x0001C892
 
 
 def product_descr() -> str | tuple[str, ...]:
-    # for key VMD_02RPS78
+    """
+    Get description of product(s) using VMD_02RPS78.
+    Human-readable text, used in e.g. HomeAssistant Binding UI.
+    :return: string or tuple of strings, starting with manufacturer
+    """
     return ("Siber DF Evo", "Siber DF Optima 2")
 
 
@@ -140,7 +148,7 @@ class Node(VmdBase):
     def __init__(self, slave_id: int, client: AsyncAiriosModbusClient) -> None:
         """Initialize the VMD-02RPS78 controller node instance."""
         super().__init__(slave_id, client)
-        LOGGER.debug(f"Starting Siber Node({slave_id})")
+        LOGGER.debug("Starting Siber Node(%s)", slave_id)
 
         vmd_registers: List[RegisterBase] = [
             U16Register(Reg.CURRENT_VENTILATION_SPEED, self.read_status),
@@ -702,9 +710,9 @@ class Node(VmdBase):
         :return: no confirmation, outputs to serial monitor
         """
 
-        res = await self.fetch_node_data()
+        res = await self.fetch_node_data()  # customised per model
 
-        super().print_data(res)
+        super().print_base_data(res)
 
         print("VMD-02RPS78 data")
         print("----------------")

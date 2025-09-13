@@ -230,7 +230,7 @@ class AsyncAiriosModbusClient:
     async def get_register(self, regdesc: RegisterBase[T], slave: int) -> Result[T]:
         """Get a register from device."""
 
-        LOGGER.debug(f"client.get_register() starting. Access = {regdesc.description.access}")
+        LOGGER.debug("client.get_register() starting. Access = %s", regdesc.description.access)
         if RegisterAccess.READ & regdesc.description.access == 0:
             LOGGER.warning("Attempt to read non-readable register %s", regdesc)
             raise ValueError(f"Attempt to read non-readable register {regdesc}")
@@ -265,14 +265,13 @@ class AsyncAiriosModbusClient:
 
     async def set_register(self, register: RegisterBase[T], value: t.Any, slave: int) -> bool:
         """Write a register to the device."""
-        LOGGER.debug(f"client.get_register() starting. Access = {register.description.access}")
+        LOGGER.debug("client.get_register() starting. Access = %s", register.description.access)
         if RegisterAccess.WRITE & register.description.access == 0:
             LOGGER.warning("Attempt to write non-writable register %s", register)
             raise ValueError(f"Trying to write non-writable register {register}")
 
         registers = register.encode(value)
         return await self._write_registers(register.description.address, registers, slave)
-        return True
 
     async def connect(self) -> bool:
         """Establish underlying Modbus connection."""
