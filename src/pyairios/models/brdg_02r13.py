@@ -499,7 +499,7 @@ class BRDG02R13(AiriosNode):
                 continue
             _product_id: int = -1
             for _id in self.prids.values():
-                if result.value == _id:
+                if _id == result.value:
                     _product_id = _id
             if _product_id == -1:
                 LOGGER.warning("Unknown product ID %s", result.value)

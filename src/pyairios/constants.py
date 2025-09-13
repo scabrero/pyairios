@@ -26,7 +26,6 @@ class ProductId(IntEnum):
     # VMN_05LM02 = 0x0001C83E  # Siber 4 button remote, copy ino model file product_id()
 
     # def __str__(self) -> str | int:
-    #     # TODO for k:v in name_by_key:
     #     if self.value == self.BRDG_02R13:
     #         return self.BRDG_02R13  # used in config_flow
     #     if self.value == self.VMD_02RPS78:
