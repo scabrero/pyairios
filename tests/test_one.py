@@ -15,10 +15,13 @@ logging.basicConfig(stream=sys.stdout, level=logging.DEBUG, format="%(levelname)
 
 class TestStartPyairiosCli:
     """
-    Init CLI test.
+    CLI tests.
     """
 
-    def test_init_root(self):
+    def test_init_root(self) -> None:
+        """
+        Test root level init of cli.py.
+        """
         device = MockSerial()
         device.open()
         serial = Serial(device.port)
