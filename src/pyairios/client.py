@@ -1,19 +1,20 @@
-"""Async client for the Airios BRDB-02R13 Modbus gateway."""
+"""Async client for the Airios BRDG-02R13 Modbus gateway."""
 
 from __future__ import annotations
 
+import asyncio
 import datetime
 import logging
 import time
 import typing as t
-import asyncio
 from dataclasses import dataclass
 
 import pymodbus.client as modbusClient
 from pymodbus.client.mixin import ModbusClientMixin
+from pymodbus.constants import ExcCodes
 from pymodbus.exceptions import ConnectionException as ModbusConnectionException
 from pymodbus.exceptions import ModbusException, ModbusIOException
-from pymodbus.pdu import ExceptionResponse, ModbusPDU
+from pymodbus.pdu import ModbusPDU
 from pymodbus.pdu.register_message import (
     WriteMultipleRegistersResponse,
     WriteSingleRegisterResponse,
@@ -115,10 +116,12 @@ class AsyncAiriosModbusClient:
                     await asyncio.sleep(delay)
 
                 response = await self.client.read_holding_registers(
-                    register, count=length, slave=slave
+                    register,
+                    count=length,
+                    device_id=slave,  # pymodbus keyword was renamed
                 )
-                if isinstance(response, ExceptionResponse):
-                    if response.exception_code == ExceptionResponse.SLAVE_BUSY:
+                if isinstance(response, ExcCodes):
+                    if response == ExcCodes.DEVICE_BUSY:
                         message = (
                             "Got a SlaveBusy Modbus Exception while reading "
                             f"register {register} (length {length}) from slave {slave}"
@@ -126,7 +129,7 @@ class AsyncAiriosModbusClient:
                         LOGGER.info(message)
                         raise AiriosSlaveBusyException(message)
 
-                    if response.exception_code == ExceptionResponse.SLAVE_FAILURE:
+                    if response == ExcCodes.DEVICE_FAILURE:
                         message = (
                             "Got a SlaveFailure Modbus Exception while reading "
                             f"register {register} (length {length}) from slave {slave}"
@@ -134,7 +137,7 @@ class AsyncAiriosModbusClient:
                         LOGGER.info(message)
                         raise AiriosSlaveFailureException(message)
 
-                    if response.exception_code == ExceptionResponse.ACKNOWLEDGE:
+                    if response == ExcCodes.ACKNOWLEDGE:
                         message = (
                             f"Got ACK while reading register {register} (length {length}) "
                             f"from slave {slave}."
@@ -147,9 +150,7 @@ class AsyncAiriosModbusClient:
                         f"(length {length}) from slave {slave}: {response}"
                     )
                     LOGGER.warning(message)
-                    raise AiriosReadException(
-                        message, modbus_exception_code=response.exception_code
-                    )
+                    raise AiriosReadException(message, modbus_exception_code=response)
 
                 if len(response.registers) != length:
                     message = (
@@ -190,23 +191,20 @@ class AsyncAiriosModbusClient:
                     response = await self.client.write_register(
                         register,
                         value[0],
-                        slave=slave,
+                        device_id=slave,  # pymodbus keyword was renamed
                     )
                 else:
                     response = await self.client.write_registers(
                         register,
                         value,
-                        slave=slave,
+                        device_id=slave,  # pymodbus keyword was renamed
                     )
-                if isinstance(response, ExceptionResponse):
+                if isinstance(response, ExcCodes):
                     message = (
-                        f"Failed to write value {value} to register {register}: "
-                        f"{response.exception_code:02X}"
+                        f"Failed to write value {value} to register {register}: {response:02X}"
                     )
                     LOGGER.info(message)
-                    raise AiriosWriteException(
-                        message, modbus_exception_code=response.exception_code
-                    )
+                    raise AiriosWriteException(message, modbus_exception_code=response)
             except ModbusIOException as err:
                 message = f"Could not write register, I/O exception: {err}"
                 LOGGER.error(message)
@@ -232,9 +230,10 @@ class AsyncAiriosModbusClient:
     async def get_register(self, regdesc: RegisterBase[T], slave: int) -> Result[T]:
         """Get a register from device."""
 
-        if RegisterAccess.READ not in regdesc.description.access:
-            LOGGER.warning("Attempt to read not readable register %s", regdesc)
-            raise ValueError(f"Attempt to read not readable register {regdesc}")
+        LOGGER.debug(f"client.get_register() starting. Access = {regdesc.description.access}")
+        if RegisterAccess.READ & regdesc.description.access == 0:
+            LOGGER.warning("Attempt to read non-readable register %s", regdesc)
+            raise ValueError(f"Attempt to read non-readable register {regdesc}")
 
         response = await self._read_registers(
             regdesc.description.address, regdesc.description.length, slave
@@ -243,7 +242,7 @@ class AsyncAiriosModbusClient:
         value = regdesc.decode(response.registers)
         value_status = None
 
-        if RegisterAccess.STATUS in regdesc.description.access:
+        if RegisterAccess.STATUS is regdesc.description.access:
             response = await self._read_registers(regdesc.description.address + 10000, 1, slave)
             tmp: int = t.cast(
                 int,
@@ -266,13 +265,14 @@ class AsyncAiriosModbusClient:
 
     async def set_register(self, register: RegisterBase[T], value: t.Any, slave: int) -> bool:
         """Write a register to the device."""
-
-        if RegisterAccess.WRITE not in register.description.access:
-            LOGGER.warning("Attempt to write not writable register %s", register)
-            raise ValueError(f"Trying to write not writable register {register}")
+        LOGGER.debug(f"client.get_register() starting. Access = {register.description.access}")
+        if RegisterAccess.WRITE & register.description.access == 0:
+            LOGGER.warning("Attempt to write non-writable register %s", register)
+            raise ValueError(f"Trying to write non-writable register {register}")
 
         registers = register.encode(value)
         return await self._write_registers(register.description.address, registers, slave)
+        return True
 
     async def connect(self) -> bool:
         """Establish underlying Modbus connection."""
