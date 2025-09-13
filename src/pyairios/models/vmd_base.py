@@ -2,15 +2,15 @@
 
 from __future__ import annotations
 
-# import re
+import datetime
 from dataclasses import dataclass, field
 
-from pyairios.client import AsyncAiriosModbusClient
-from pyairios.constants import VMDCapabilities
+from pyairios.constants import VMDCapabilities, ValueStatusSource, ValueStatusFlags
 from pyairios.device import AiriosDevice
 from pyairios.registers import (
     RegisterAddress,
     Result,
+    ResultStatus,
 )
 
 
@@ -70,8 +70,16 @@ class VmdBase(AiriosDevice):
     #     self._add_registers(vmd_registers)
 
     async def capabilities(self) -> Result[VMDCapabilities] | None:
+        """Get the ventilation unit capabilities.
+        If Capabilities register not supported on model, must simulate"""
         # not all fans support capabilities register call, must return basics
-        return Result(VMDCapabilities(), None)
+        _caps = VMDCapabilities.NO_CAPABLE
+        return Result(
+            _caps,
+            ResultStatus(
+                datetime.timedelta(1000), ValueStatusSource.UNKNOWN, ValueStatusFlags.VALID
+            ),
+        )
 
     def print_base_data(self, res) -> None:
         """

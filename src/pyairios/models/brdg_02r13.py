@@ -281,7 +281,8 @@ class BRDG02R13(AiriosNode):
                 # verify no duplicate product_id's
                 if _id in check_id:  #  product_id not unique among models
                     raise AiriosException(
-                        f"Found duplicate product_id while collecting models: id {model_key} used by {self.modules[model_key].__name__} and by {mod.__name__}"
+                        f"Found duplicate product_id while collecting models:id {model_key}"
+                        f"used by {self.modules[model_key].__name__} and by {mod.__name__}"
                     )
                 self.prids[model_key] = _id
                 check_id.append(_id)  # remember all added _id's to check for duplicates

@@ -147,7 +147,7 @@ class Node(VmdBase):
     def __init__(self, slave_id: int, client: AsyncAiriosModbusClient) -> None:
         """Initialize the VMD-07RPS13 Ventura controller node instance."""
         super().__init__(slave_id, client)
-        LOGGER.debug(f"Starting Ventura Node({slave_id})")
+        LOGGER.debug("Starting Ventura Node(%s)", slave_id)
 
         vmd_registers: List[RegisterBase] = [
             FloatRegister(Reg.TEMPERATURE_EXHAUST, self.read_status),
@@ -525,7 +525,7 @@ class Node(VmdBase):
             # ventilation_sub_mode_exh=await _safe_fetch(self.vent_sub_mode_exh),  # failed
             temp_ventilation_mode=await _safe_fetch(self.temp_vent_mode),
             temp_ventilation_sub_mode=await _safe_fetch(self.temp_vent_sub_mode),
-            # temp_ventilation_sub_mode_exh=await _safe_fetch(self.temp_vent_sub_mode_exh),  # failed
+            # temp_ventilation_sub_mode_exh=await _safe_fetch(self.temp_vent_sub_mode_exh), # failed
             exhaust_fan_speed=await _safe_fetch(self.exhaust_fan_speed),
             supply_fan_speed=await _safe_fetch(self.supply_fan_speed),
             indoor_air_temperature=await _safe_fetch(self.indoor_air_temperature),
@@ -583,7 +583,9 @@ class Node(VmdBase):
         print(f"    {'Filter remaining perc.:': <25}{res['filter_remaining_percent']}%")
 
         print(
-            f"    {'Bypass position:': <25}{'Open ' if res == 1 else 'Closed '}{res['bypass_position']}"
+            f"    {'Bypass position:': <25}{'Open ' if res == 1 else 'Closed '}{
+                res['bypass_position']
+            }"
         )
         print(f"    {'Base ventil. enabled:': <25}{res['basic_ventilation_enable']}")
 

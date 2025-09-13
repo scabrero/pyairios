@@ -285,10 +285,10 @@ class Node(VmdBase):
         raise AiriosInvalidArgumentException(f"Invalid temporary override speed {speed}")
 
     # async def preset_away_fans_speed(self) -> VMDPresetFansSpeeds:
-    #     """Get the away ventilation speed preset fan speeds."""
-    #     r1 = await self.client.get_register(self.regmap[Reg.FAN_SPEED_AWAY_SUPPLY], self.slave_id)
-    #     r2 = await self.client.get_register(self.regmap[Reg.FAN_SPEED_AWAY_EXHAUST], self.slave_id)
-    #     return VMDPresetFansSpeeds(supply_fan_speed=r1, exhaust_fan_speed=r2)
+    #    """Get the away ventilation speed preset fan speeds."""
+    #    r1 = await self.client.get_register(self.regmap[Reg.FAN_SPEED_AWAY_SUPPLY], self.slave_id)
+    #    r2 = await self.client.get_register(self.regmap[Reg.FAN_SPEED_AWAY_EXHAUST], self.slave_id)
+    #    return VMDPresetFansSpeeds(supply_fan_speed=r1, exhaust_fan_speed=r2)
 
     async def set_preset_away_fans_speed(self, supply: int, exhaust: int) -> bool:
         """Set the away ventilation speed preset fan speeds."""
