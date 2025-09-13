@@ -90,7 +90,7 @@ class Airios:
         for _node in await self.bridge.nodes():
             for key, _id in prids.items():
                 if _id == _node.product_id:
-                    LOGGER.debug(f"fetch_node_data for key: {key}")
+                    LOGGER.debug("fetch_node_data for key: %s", key)
                     node_module = brdg_data["models"][key].Node(_node.slave_id, self.bridge.client)
                     node_data = await node_module.fetch_node_data()
                     data[_node.slave_id] = node_data

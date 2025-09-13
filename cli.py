@@ -55,7 +55,7 @@ LOGGER = logging.getLogger(__name__)
 modules: dict[str, ModuleType] = {}
 # dict with imported modules by class name
 prids: dict[str, int] = {}
-# # dict with pr_id's (expected productid) by class name (eventually, replacing ProductId enum in const.py?)
+# # dict with pr_id's (expected productid) by class name
 # descriptions: dict[str, str] = {}
 # # dict with label description model, for use in UI
 
@@ -63,7 +63,7 @@ prids: dict[str, int] = {}
 class AiriosVMN05LM02CLI(aiocmd.PromptToolkitCmd):
     """The VMN_ modules common CLI interface."""
 
-    def __init__(self, vmn) -> None:  # TODO subclass aiocmd_type
+    def __init__(self, vmn) -> None:  # TODO(eb): subclass aiocmd_type
         """
         :param vmn: contains all details of this model
         """
@@ -345,7 +345,7 @@ class AiriosVMD07RPS13CLI(aiocmd.PromptToolkitCmd):
         if await self.vmd.set_basic_vent_enable(state):
             await self.do_base_vent_enabled()
         else:
-            print(f"Error setting base_vent_enabled")
+            print("Error setting base_vent_enabled")
 
     async def do_base_vent_level(self):
         """Print the base ventilation level."""
@@ -358,7 +358,7 @@ class AiriosVMD07RPS13CLI(aiocmd.PromptToolkitCmd):
             res = await self.vmd.basic_vent_level()
             print(f"base_vent_level set to: {res.value}")
         else:
-            print(f"Error setting base_vent_level")
+            print("Error setting base_vent_level")
 
     async def do_filter_remaining(self):
         """Print the filter remaining."""
@@ -377,7 +377,7 @@ class AiriosVMD07RPS13CLI(aiocmd.PromptToolkitCmd):
             res = await self.vmd.co2_setpoint()
             print(f"CO2 setpoint set to: {res.value} ppm")
         else:
-            print(f"Error setting CO2 setpoint")
+            print("Error setting CO2 setpoint")
 
     # actions
 
@@ -419,18 +419,18 @@ class AiriosBridgeCLI(aiocmd.PromptToolkitCmd):
         # find by product_id: {'VMD-07RPS13': 116867, 'VMD-02RPS78': 116882, 'VMN-05LM02': 116798}
         # fetch models etc. from bridge. compare to src/pyairios/_init_.py
         for key, _id in prids.items():
-            LOGGER.debug(f"Fetch _id for item: {key}")
+            LOGGER.debug("Fetch _id for item: %s", key)
             if node_info.product_id == _id:
                 # Can we use node["product_name"] as key?
                 _node = modules[key].Node(node_info.slave_id, self.bridge.client)
                 if key == "VMD-02RPS78":  # dedicated CLI for each model
                     await AiriosVMD02RPS78CLI(_node).run()
                     return
-                elif key == "VMD-07RPS13":  # ClimaRad Ventura
+                if key == "VMD-07RPS13":  # ClimaRad Ventura
                     LOGGER.debug("Node Ventura starts")
                     await AiriosVMD07RPS13CLI(_node).run()
                     return
-                elif key == "VMN-05LM02":  # Remote accessory
+                if key == "VMN-05LM02":  # Remote accessory
                     await AiriosVMN05LM02CLI(_node).run()
                     return
         # add new models AiriosXXXXXXXXXCLI here to use them in CLI
@@ -571,7 +571,6 @@ class AiriosClientCLI(aiocmd.PromptToolkitCmd):  # pylint: disable=too-few-publi
             _address = int(address)
         bridge = BRDG02R13(_address, self.client)
 
-        global modules, prids  # , descriptions
         # bridge.load_models()  # is lazy loaded
         modules = await bridge.models()
         print(f"Loaded modules: {modules}")
