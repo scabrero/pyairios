@@ -124,8 +124,8 @@ class NumberRegister(RegisterBase[T]):
                 return ModbusClientMixin.convert_to_registers(
                     int_value, self.datatype, word_order="little"
                 )
-            except AiriosInvalidArgumentException:
-                raise AiriosInvalidArgumentException(f"Entered str {value} not a number")
+            except AiriosInvalidArgumentException as exc:
+                raise AiriosInvalidArgumentException(f"Entered str {value} not a number") from exc
         elif isinstance(value, int):
             return ModbusClientMixin.convert_to_registers(value, self.datatype, word_order="little")
         if isinstance(value, (bool, float)):
@@ -152,8 +152,8 @@ class U8Register(NumberRegister[int]):
         ):  # all CLI entries are passed in as str, despite casting in method call
             try:
                 int_value = int(value)
-            except AiriosInvalidArgumentException:
-                raise AiriosInvalidArgumentException(f"Entered str {value} not a number")
+            except AiriosInvalidArgumentException as exc:
+                raise AiriosInvalidArgumentException(f"Entered str {value} not a number") from exc
         elif isinstance(value, int):
             int_value = value
         elif isinstance(value, bool):

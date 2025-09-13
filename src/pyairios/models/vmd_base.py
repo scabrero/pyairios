@@ -63,11 +63,11 @@ class VmdBase(AiriosDevice):
     #     """Initialize the VMD-x controller node instance."""
     #     super().__init__(slave_id, client)
 
-        # vmd_registers: List[RegisterBase] = [
-        #     U16Register(Reg.CURRENT_VENTILATION_SPEED, RegisterAccess.READ_STATUS),
-        #     ...
-        # ]
-        # self._add_registers(vmd_registers)
+    #     vmd_registers: List[RegisterBase] = [
+    #         U16Register(Reg.CURRENT_VENTILATION_SPEED, RegisterAccess.READ_STATUS),
+    #         ...
+    #     ]
+    #     self._add_registers(vmd_registers)
 
     async def capabilities(self) -> Result[VMDCapabilities] | None:
         # not all fans support capabilities register call, must return basics
