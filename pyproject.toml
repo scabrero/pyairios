@@ -31,7 +31,8 @@ dependencies = [
 [dependency-groups]
 typing = ["mypy"]
 linting = ["pylint"]
-dev = [{include-group = "typing"}, {include-group = "linting"}, "pre-commit"]
+tests = ["mock-serial", "pytest", "pytest-asyncio", "pytest-reserial"]
+dev = [{include-group = "typing"}, {include-group = "linting"}, {include-group = "tests"}, "pre-commit"]
 
 [project.urls]
 Homepage = "https://github.com/scabrero/pyairios"

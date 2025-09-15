@@ -4,7 +4,6 @@
 import logging
 import sys
 
-import pytest
 from mock_serial import MockSerial
 from serial import Serial
 
@@ -13,12 +12,12 @@ from cli import AiriosRootCLI
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG, format="%(levelname)s - %(message)s")
 
 
-class TestStartPyairiosCli:
+class TestStartPyairios:  # pylint: disable=too-few-public-methods
     """
-    CLI tests.
+    pyairios tests.
     """
 
-    def test_init_root(self) -> None:
+    def test_init_cli_root(self) -> None:
         """
         Test root level init of cli.py.
         """
@@ -34,4 +33,7 @@ class TestStartPyairiosCli:
         serial.close()
         device.close()
 
-        # TODO(eb): mock serial port so test can run, see pymodbus simulator + their tests
+    # TODO(eb): mock serial port so connect + next cli levels can run
+    #  see pymodbus simulator + their tests
+
+    # TODO(eb): add Airios api init test
