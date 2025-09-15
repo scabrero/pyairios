@@ -5,8 +5,8 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import List
 
-from .client import AsyncAiriosModbusClient
-from .constants import (
+from pyairios.client import AsyncAiriosModbusClient
+from pyairios.constants import (
     Baudrate,
     BindingMode,
     BindingStatus,
@@ -16,15 +16,17 @@ from .constants import (
     ResetMode,
     StopBits,
 )
-from .data_model import AiriosBoundNodeInfo, BRDG02R13Data
-from .exceptions import (
+from pyairios.data_model import AiriosBoundNodeInfo, BRDG02R13Data
+from pyairios.exceptions import (
     AiriosBindingException,
     AiriosException,
     AiriosInvalidArgumentException,
 )
-from .node import AiriosNode
-from .node import Reg as NodeReg
-from .registers import (
+from pyairios.models.vmd_02rps78 import VMD02RPS78
+from pyairios.models.vmn_05lm02 import VMN05LM02
+from pyairios.node import AiriosNode
+from pyairios.node import Reg as NodeReg
+from pyairios.registers import (
     DateTimeRegister,
     FloatRegister,
     RegisterAccess,
@@ -35,8 +37,6 @@ from .registers import (
     U16Register,
     U32Register,
 )
-from .vmd_02rps78 import VMD02RPS78
-from .vmn_05lm02 import VMN05LM02
 
 DEFAULT_SLAVE_ID = 207
 
