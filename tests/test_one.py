@@ -4,7 +4,6 @@
 import logging
 import sys
 
-import pytest  #  pylint: disable=unused-import
 from mock_serial import MockSerial
 from serial import Serial
 
@@ -14,7 +13,7 @@ from pyairios import Airios, AiriosRtuTransport
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG, format="%(levelname)s - %(message)s")
 
 
-class TestStartPyairiosCli:
+class TestStartPyairiosCli:  # pylint: disable=too-few-public-methods
     """
     CLI tests.
     """
@@ -51,6 +50,7 @@ class TestStartPyairiosCli:
             await cli.do_connect_rtu(str(serial))
             # timeout here, but no error
             # TODO(eb): mock serial port so test can run, see pymodbus tests
+            # see pymodbus simulator + their tests
         except TimeoutError:
             pass
         else:

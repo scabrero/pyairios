@@ -21,7 +21,7 @@ from pyairios.constants import (
 )
 from pyairios.data_model import AiriosDeviceData
 from pyairios.exceptions import AiriosInvalidArgumentException
-from pyairios.models.vmd_base import VmdBase
+from pyairios.models.vmd_base import VmdBase, VMDPresetFansSpeeds
 from pyairios.node import _safe_fetch
 from pyairios.registers import (
     FloatRegister,
@@ -284,11 +284,11 @@ class Node(VmdBase):
             )
         raise AiriosInvalidArgumentException(f"Invalid temporary override speed {speed}")
 
-    # async def preset_away_fans_speed(self) -> VMDPresetFansSpeeds:
-    #    """Get the away ventilation speed preset fan speeds."""
-    #    r1 = await self.client.get_register(self.regmap[Reg.FAN_SPEED_AWAY_SUPPLY], self.slave_id)
-    #    r2 = await self.client.get_register(self.regmap[Reg.FAN_SPEED_AWAY_EXHAUST], self.slave_id)
-    #    return VMDPresetFansSpeeds(supply_fan_speed=r1, exhaust_fan_speed=r2)
+    async def preset_away_fans_speed(self) -> VMDPresetFansSpeeds:
+        """Get the away ventilation speed preset fan speeds."""
+        r1 = await self.client.get_register(self.regmap[Reg.FAN_SPEED_AWAY_SUPPLY], self.slave_id)
+        r2 = await self.client.get_register(self.regmap[Reg.FAN_SPEED_AWAY_EXHAUST], self.slave_id)
+        return VMDPresetFansSpeeds(supply_fan_speed=r1, exhaust_fan_speed=r2)
 
     async def set_preset_away_fans_speed(self, supply: int, exhaust: int) -> bool:
         """Set the away ventilation speed preset fan speeds."""
@@ -304,11 +304,11 @@ class Node(VmdBase):
         )
         return r1 and r2
 
-    # async def preset_low_fans_speed(self) -> VMDPresetFansSpeeds:
-    #     """Get the low ventilation speed preset fan speeds."""
-    #     r1 = await self.client.get_register(self.regmap[Reg.FAN_SPEED_LOW_SUPPLY], self.slave_id)
-    #     r2 = await self.client.get_register(self.regmap[Reg.FAN_SPEED_LOW_EXHAUST], self.slave_id)
-    #     return VMDPresetFansSpeeds(supply_fan_speed=r1, exhaust_fan_speed=r2)
+    async def preset_low_fans_speed(self) -> VMDPresetFansSpeeds:
+        """Get the low ventilation speed preset fan speeds."""
+        r1 = await self.client.get_register(self.regmap[Reg.FAN_SPEED_LOW_SUPPLY], self.slave_id)
+        r2 = await self.client.get_register(self.regmap[Reg.FAN_SPEED_LOW_EXHAUST], self.slave_id)
+        return VMDPresetFansSpeeds(supply_fan_speed=r1, exhaust_fan_speed=r2)
 
     async def set_preset_low_fans_speed(self, supply: int, exhaust: int) -> bool:
         """Set the low ventilation speed preset fan speeds."""
@@ -324,14 +324,14 @@ class Node(VmdBase):
         )
         return r1 and r2
 
-    # async def preset_mid_fans_speed(self) -> VMDPresetFansSpeeds:
-    #     """Get the medium ventilation speed preset fan speeds."""
-    #     r1 = await self.client.get_register(self.regmap[Reg.FAN_SPEED_MID_SUPPLY], self.slave_id)
-    #     r2 = await self.client.get_register(self.regmap[Reg.FAN_SPEED_MID_EXHAUST], self.slave_id)
-    #     return VMDPresetFansSpeeds(supply_fan_speed=r1, exhaust_fan_speed=r2)
+    async def preset_mid_fans_speed(self) -> VMDPresetFansSpeeds:
+        """Get the mid ventilation speed preset fan speeds."""
+        r1 = await self.client.get_register(self.regmap[Reg.FAN_SPEED_MID_SUPPLY], self.slave_id)
+        r2 = await self.client.get_register(self.regmap[Reg.FAN_SPEED_MID_EXHAUST], self.slave_id)
+        return VMDPresetFansSpeeds(supply_fan_speed=r1, exhaust_fan_speed=r2)
 
     async def set_preset_mid_fans_speed(self, supply: int, exhaust: int) -> bool:
-        """Set the medium ventilation speed preset fan speeds."""
+        """Set the mid ventilation speed preset fan speeds."""
         if supply < 0 or exhaust < 0:
             raise AiriosInvalidArgumentException("Speed must be in range 0-40 %")
         if supply > 100 or exhaust > 100:
@@ -344,11 +344,11 @@ class Node(VmdBase):
         )
         return r1 and r2
 
-    # async def preset_high_fans_speed(self) -> VMDPresetFansSpeeds:
-    #     """Get the high ventilation speed preset fan speeds."""
-    #     r1 = await self.client.get_register(self.regmap[Reg.FAN_SPEED_HIGH_SUPPLY], self.slave_id)
-    #     r2 = await self.client.get_register(self.regmap[Reg.FAN_SPEED_HIGH_EXHAUST], self.slave_id)
-    #     return VMDPresetFansSpeeds(supply_fan_speed=r1, exhaust_fan_speed=r2)
+    async def preset_high_fans_speed(self) -> VMDPresetFansSpeeds:
+        """Get the high ventilation speed preset fan speeds."""
+        r1 = await self.client.get_register(self.regmap[Reg.FAN_SPEED_HIGH_SUPPLY], self.slave_id)
+        r2 = await self.client.get_register(self.regmap[Reg.FAN_SPEED_HIGH_EXHAUST], self.slave_id)
+        return VMDPresetFansSpeeds(supply_fan_speed=r1, exhaust_fan_speed=r2)
 
     async def set_preset_high_fans_speed(self, supply: int, exhaust: int) -> bool:
         """Set the high ventilation speed preset fan speeds."""

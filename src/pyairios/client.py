@@ -120,8 +120,8 @@ class AsyncAiriosModbusClient:
                     count=length,
                     device_id=slave,  # pymodbus keyword was renamed
                 )
-                if isinstance(response, ExcCodes):
-                    if response == ExcCodes.DEVICE_BUSY:
+                if isinstance(response, ExceptionResponse):
+                    if response.exception_code == ExcCodes.DEVICE_BUSY:
                         message = (
                             "Got a SlaveBusy Modbus Exception while reading "
                             f"register {register} (length {length}) from slave {slave}"
@@ -129,7 +129,7 @@ class AsyncAiriosModbusClient:
                         LOGGER.info(message)
                         raise AiriosSlaveBusyException(message)
 
-                    if response == ExcCodes.DEVICE_FAILURE:
+                    if response.exception_code == ExcCodes.DEVICE_FAILURE:
                         message = (
                             "Got a SlaveFailure Modbus Exception while reading "
                             f"register {register} (length {length}) from slave {slave}"
@@ -137,7 +137,7 @@ class AsyncAiriosModbusClient:
                         LOGGER.info(message)
                         raise AiriosSlaveFailureException(message)
 
-                    if response == ExcCodes.ACKNOWLEDGE:
+                    if response.exception_code == ExcCodes.ACKNOWLEDGE:
                         message = (
                             f"Got ACK while reading register {register} (length {length}) "
                             f"from slave {slave}."
