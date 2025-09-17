@@ -1,5 +1,5 @@
 [MASTER]
-init-hook='import sys; sys.path.append("src")'
+init-hook='import sys; sys.path.append("src"); sys.path.append(".")'
 
 [MESSAGES CONTROL]
 disable=duplicate-code,too-many-public-methods
