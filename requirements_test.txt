@@ -1,0 +1,5 @@
+mock-serial==0.0.1
+pytest==8.4.1
+pytest-asyncio==1.1.0
+pytest-reserial==0.4.3
+pytest-timeout==2.4.0

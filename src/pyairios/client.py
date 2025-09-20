@@ -1,4 +1,4 @@
-"""Async client for the Airios BRDB-02R13 Modbus gateway."""
+"""Async client for the Airios BRDG-02R13 Modbus gateway."""
 
 from __future__ import annotations
 
@@ -235,9 +235,10 @@ class AsyncAiriosModbusClient:
     async def get_register(self, regdesc: RegisterBase[T], slave: int) -> Result[T]:
         """Get a register from device."""
 
-        if RegisterAccess.READ not in regdesc.description.access:
-            LOGGER.warning("Attempt to read not readable register %s", regdesc)
-            raise ValueError(f"Attempt to read not readable register {regdesc}")
+        LOGGER.debug("client.get_register() starting. Access = %s", regdesc.description.access)
+        if RegisterAccess.READ & regdesc.description.access == 0:
+            LOGGER.warning("Attempt to read non-readable register %s", regdesc)
+            raise ValueError(f"Attempt to read non-readable register {regdesc}")
 
         response = await self._read_registers(
             regdesc.description.address, regdesc.description.length, slave
@@ -246,7 +247,7 @@ class AsyncAiriosModbusClient:
         value = regdesc.decode(response.registers)
         value_status = None
 
-        if RegisterAccess.STATUS in regdesc.description.access:
+        if RegisterAccess.STATUS is regdesc.description.access:
             response = await self._read_registers(regdesc.description.address + 10000, 1, slave)
             tmp: int = t.cast(
                 int,
@@ -269,10 +270,10 @@ class AsyncAiriosModbusClient:
 
     async def set_register(self, register: RegisterBase[T], value: t.Any, slave: int) -> bool:
         """Write a register to the device."""
-
-        if RegisterAccess.WRITE not in register.description.access:
-            LOGGER.warning("Attempt to write not writable register %s", register)
-            raise ValueError(f"Trying to write not writable register {register}")
+        LOGGER.debug("client.get_register() starting. Access = %s", register.description.access)
+        if RegisterAccess.WRITE & register.description.access == 0:
+            LOGGER.warning("Attempt to write non-writable register %s", register)
+            raise ValueError(f"Trying to write non-writable register {register}")
 
         registers = register.encode(value)
         return await self._write_registers(register.description.address, registers, slave)
