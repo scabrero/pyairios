@@ -14,7 +14,7 @@ from pymodbus.client.mixin import ModbusClientMixin
 from pymodbus.constants import ExcCodes
 from pymodbus.exceptions import ConnectionException as ModbusConnectionException
 from pymodbus.exceptions import ModbusException, ModbusIOException
-from pymodbus.pdu import ModbusPDU
+from pymodbus.pdu import ExceptionResponse, ModbusPDU
 from pymodbus.pdu.register_message import (
     WriteMultipleRegistersResponse,
     WriteSingleRegisterResponse,
@@ -150,7 +150,9 @@ class AsyncAiriosModbusClient:
                         f"(length {length}) from slave {slave}: {response}"
                     )
                     LOGGER.warning(message)
-                    raise AiriosReadException(message, modbus_exception_code=response)
+                    raise AiriosReadException(
+                        message, modbus_exception_code=response.exception_code
+                    )
 
                 if len(response.registers) != length:
                     message = (
@@ -199,12 +201,15 @@ class AsyncAiriosModbusClient:
                         value,
                         device_id=slave,  # pymodbus keyword was renamed
                     )
-                if isinstance(response, ExcCodes):
+                if isinstance(response, ExceptionResponse):
                     message = (
-                        f"Failed to write value {value} to register {register}: {response:02X}"
+                        f"Failed to write value {value} to register {register}: "
+                        f"{response.exception_code:02X}"
                     )
                     LOGGER.info(message)
-                    raise AiriosWriteException(message, modbus_exception_code=response)
+                    raise AiriosWriteException(
+                        message, modbus_exception_code=response.exception_code
+                    )
             except ModbusIOException as err:
                 message = f"Could not write register, I/O exception: {err}"
                 LOGGER.error(message)
