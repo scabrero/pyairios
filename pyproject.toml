@@ -31,7 +31,7 @@ dependencies = [
 [dependency-groups]
 typing = ["mypy", "types-pyserial"]
 linting = ["pylint"]
-tests = ["mock-serial", "pytest", "pytest-asyncio", "pytest-reserial"]
+tests = ["pytest", "pytest-asyncio", "pytest-reserial"]
 dev = [{include-group = "typing"}, {include-group = "linting"}, {include-group = "tests"}, "pre-commit"]
 
 [project.urls]
