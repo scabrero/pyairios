@@ -76,12 +76,12 @@ class StringRegister(RegisterBase[str]):
     def decode(self, registers: list[int]) -> str:
         """Decode register bytes to value."""
 
-        def registers_to_bytearray(registers: list[int]) -> bytearray:
+        def registers_to_bytearray(_registers: list[int]) -> bytearray:
             """Convert registers to bytes."""
-            b = bytearray()
-            for x in registers:
-                b.extend(x.to_bytes(2, "big"))
-            return b
+            _b = bytearray()
+            for x in _registers:
+                _b.extend(x.to_bytes(2, "big"))
+            return _b
 
         b = registers_to_bytearray(registers)
 
