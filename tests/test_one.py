@@ -34,6 +34,7 @@ class TestStartPyairiosCli:
 
         # init CLI
         cli = AiriosRootCLI()
+        # connect
         await cli.do_connect_rtu("/dev/null")
 
         assert cli.client, "no client"
