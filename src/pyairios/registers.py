@@ -163,6 +163,19 @@ class U8Register(NumberRegister[int]):
         return super().encode(int_value)
 
 
+class U8Register(NumberRegister[int]):
+    """Unsigned 8-bit entry, sent to modbus as UINT16 register."""
+
+    datatype = ModbusClientMixin.DATATYPE.UINT16
+    min = 0
+    max = 2**8 - 1
+
+    def __init__(self, address: RegisterAddress, access: RegisterAccess) -> None:
+        """Initialize the U8Register instance."""
+        description = RegisterDescription(address, 1, access)
+        super().__init__(description)
+
+
 class U16Register(NumberRegister[int]):
     """Unsigned 16-bit register."""
 
