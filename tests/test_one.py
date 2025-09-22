@@ -1,81 +1,77 @@
 #!/usr/bin/env python3
 """pyairios minimal pytest suite."""
+# compare to pymodbus/test/client/test_client_sync.py TestSyncClientSerial
 
 import logging
+import pytest
 import sys
-
-from mock_serial import MockSerial
-from serial import Serial
 
 from cli import AiriosRootCLI
 from pyairios import Airios, AiriosRtuTransport
+from pyairios.exceptions import AiriosConnectionException
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG, format="%(levelname)s - %(message)s")
 
 
-class TestStartPyairiosCli:  # pylint: disable=too-few-public-methods
+class TestStartPyairiosCli:
     """
     CLI tests.
     """
 
-    def test_init_cli_root(self) -> None:
+    def test_cli_root_init(self) -> None:
         """
-        Test root level init of cli.py.
+        Test cli.py root level init.
         """
-        device = MockSerial()
-        device.open()
-        serial = Serial(device.port)
 
         # init CLI
         cli = AiriosRootCLI()
         assert cli, "no CLI"
 
-        # break down
-        serial.close()
-        device.close()
-
     @pytest.mark.asyncio
-    @pytest.mark.timeout(1)
-    async def test_cli_init(self) -> None:
+    async def test_cli_connect(self) -> None:
         """
-        Test cli.py serial connect on mocked port.
+        Test cli.py serial connect on null port.
         """
-        device = MockSerial()
-        device.open()
-        serial = Serial(device.port)
 
         # init CLI
         cli = AiriosRootCLI()
-        try:
-            await cli.do_connect_rtu(str(serial))
-            # timeout here, but no error
-            # TODO(eb): mock serial port so test can run, see pymodbus tests
-            # see pymodbus simulator + their tests
-        except TimeoutError:
-            pass
-        else:
-            raise AssertionError("Expected TimeoutError")
+        # connect
+        await cli.do_connect_rtu("/dev/null")
 
-        # assert cli.client, "no client"
+        assert cli.client, "no client"
 
-        # break down
-        serial.close()
-        device.close()
+
+class TestStartPyairiosApi:
+    """
+    Airios api tests.
+    """
 
     @pytest.mark.asyncio
     async def test_api_init(self) -> None:
         """
-        Test pyairios api serial connect on mocked port.
+        Test pyairios api serial init.
         """
-        device = MockSerial()
-        device.open()
-        serial = Serial(device.port)
-        transport = AiriosRtuTransport(device)
+
+        transport = AiriosRtuTransport("/dev/null")
 
         # init api
         api = Airios(transport)
         assert api, "no api"
 
-        # break down
-        serial.close()
-        device.close()
+    @pytest.mark.asyncio
+    async def test_api_connect(self) -> None:
+        """
+        Test pyairios api serial connect.
+        """
+
+        transport = AiriosRtuTransport("/dev/null")
+        api = Airios(transport)
+
+        # try to connect
+        try:
+            await api.connect()
+        except AiriosConnectionException:
+            pass
+        else:
+            raise AssertionError("Expected AiriosConnectionException")
+        # api.close()
