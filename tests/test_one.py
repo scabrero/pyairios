@@ -3,8 +3,9 @@
 # compare to pymodbus/test/client/test_client_sync.py TestSyncClientSerial
 
 import logging
-import pytest
 import sys
+
+import pytest
 
 from cli import AiriosRootCLI
 from pyairios import Airios, AiriosRtuTransport
