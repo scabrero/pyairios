@@ -1,6 +1,7 @@
 """Register definitions."""
 
 import datetime
+import logging
 import struct
 import typing as t
 from dataclasses import dataclass
@@ -10,6 +11,8 @@ from pymodbus.client.mixin import ModbusClientMixin
 
 from .constants import ValueStatusFlags, ValueStatusSource
 from .exceptions import AiriosDecodeError, AiriosInvalidArgumentException
+
+LOGGER = logging.getLogger(__name__)
 
 T = t.TypeVar("T")
 
@@ -102,6 +105,17 @@ class StringRegister(RegisterBase[str]):
 class NumberRegister(RegisterBase[T]):
     """Base class for number registers."""
 
+    min: int = 0
+    max: int = 2**64 - 1
+
+    def clamp(self, value: int) -> int:
+        """Clamp provided value to datatype range."""
+        if value < self.min or value > self.max:
+            raise AiriosInvalidArgumentException(
+                f"Entered value {value} is out of range [{self.min}..{self.max}]"
+            )
+        return value
+
     def decode(self, registers: list[int]) -> T:
         """Decode register bytes to value."""
         result: T = t.cast(
@@ -112,74 +126,24 @@ class NumberRegister(RegisterBase[T]):
 
     def encode(self, value: T) -> list[int]:
         """Encode value to register bytes."""
-        if isinstance(
-            value, str
-        ):  # all CLI entries are passed in as str, despite casting in method call
-            try:
-                int_value = int(value)
-                return ModbusClientMixin.convert_to_registers(
-                    int_value, self.datatype, word_order="little"
-                )
-            except AiriosInvalidArgumentException as exc:
-                raise AiriosInvalidArgumentException(f"Entered str {value} not a number") from exc
-        elif isinstance(value, int):
-            return ModbusClientMixin.convert_to_registers(value, self.datatype, word_order="little")
-        if isinstance(value, (bool, float)):
-            return ModbusClientMixin.convert_to_registers(
-                int(value), self.datatype, word_order="little"
-            )
-        raise AiriosInvalidArgumentException(f"Unsupported type {type(value)}")
-
-
-class U8Register(NumberRegister[int]):
-    """Unsigned 8-bit entry, sent to modbus as UINT16 register."""
-
-    datatype = ModbusClientMixin.DATATYPE.UINT16
-
-    def __init__(self, address: RegisterAddress, access: RegisterAccess) -> None:
-        """Initialize the U8Register instance."""
-        description = RegisterDescription(address, 1, access)
-        super().__init__(description)
-
-    def encode(self, value: T) -> list[int]:
-        """Encode value to register bytes."""
-        if isinstance(
-            value, str
-        ):  # all CLI entries are passed in as str, despite casting in method call
-            try:
-                int_value = int(value)
-            except AiriosInvalidArgumentException as exc:
-                raise AiriosInvalidArgumentException(f"Entered str {value} not a number") from exc
-        elif isinstance(value, int):
-            int_value = value
-        elif isinstance(value, bool):
-            int_value = int(value)
-        else:
-            raise AiriosInvalidArgumentException(f"Unsupported type {type(value)}")
-        if int_value != int_value & 255:  # int_value > 1 byte
-            raise AiriosInvalidArgumentException(
-                f"Entered value {value} > 255 (too large for UINT8)"
-            )
-        return super().encode(int_value)
-
-
-class U8Register(NumberRegister[int]):
-    """Unsigned 8-bit entry, sent to modbus as UINT16 register."""
-
-    datatype = ModbusClientMixin.DATATYPE.UINT16
-    min = 0
-    max = 2**8 - 1
-
-    def __init__(self, address: RegisterAddress, access: RegisterAccess) -> None:
-        """Initialize the U8Register instance."""
-        description = RegisterDescription(address, 1, access)
-        super().__init__(description)
+        try:
+            if isinstance(value, (str, int, bool, float)):
+                reg_value = int(value)
+            else:
+                raise AiriosInvalidArgumentException(f"Unsupported type {type(value)}")
+            reg_value = self.clamp(reg_value)
+        except ValueError as ex:
+            msg = f"Invalid value {value}"
+            raise AiriosInvalidArgumentException(msg) from ex
+        return ModbusClientMixin.convert_to_registers(reg_value, self.datatype, word_order="little")
 
 
 class U16Register(NumberRegister[int]):
     """Unsigned 16-bit register."""
 
     datatype = ModbusClientMixin.DATATYPE.UINT16
+    min = 0
+    max = 2**16 - 1
 
     def __init__(self, address: RegisterAddress, access: RegisterAccess) -> None:
         """Initialize the U16Register instance."""
@@ -191,6 +155,8 @@ class I16Register(NumberRegister[int]):
     """Signed 16-bit register."""
 
     datatype = ModbusClientMixin.DATATYPE.INT16
+    min = 2**15 * -1
+    max = 2**15 - 1
 
     def __init__(self, address: RegisterAddress, access: RegisterAccess) -> None:
         """Initialize the I16Register instance."""
@@ -202,6 +168,8 @@ class U32Register(NumberRegister[int]):
     """Unsigned 32-bit register."""
 
     datatype = ModbusClientMixin.DATATYPE.UINT32
+    min = 0
+    max = 2**32 - 1
 
     def __init__(self, address: RegisterAddress, access: RegisterAccess) -> None:
         """Initialize the U32Register instance."""
@@ -213,6 +181,8 @@ class FloatRegister(NumberRegister[float]):
     """Float register."""
 
     datatype = ModbusClientMixin.DATATYPE.FLOAT32
+    min = 0
+    max = 2**32 - 1
 
     def __init__(self, address: RegisterAddress, access: RegisterAccess) -> None:
         """Initialize the FloatRegister instance."""
