@@ -8,6 +8,7 @@ import sys
 
 from cli import AiriosRootCLI
 from pyairios import Airios, AiriosRtuTransport
+from pyairios.exceptions import AiriosConnectionException
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG, format="%(levelname)s - %(message)s")
 
@@ -17,9 +18,9 @@ class TestStartPyairiosCli:
     CLI tests.
     """
 
-    def test_init_cli_root(self) -> None:
+    def test_cli_root_init(self) -> None:
         """
-        Test root level init of cli.py.
+        Test cli.py root level init.
         """
 
         # init CLI
@@ -27,7 +28,7 @@ class TestStartPyairiosCli:
         assert cli, "no CLI"
 
     @pytest.mark.asyncio
-    async def test_cli_init(self) -> None:
+    async def test_cli_connect(self) -> None:
         """
         Test cli.py serial connect on null port.
         """
@@ -48,7 +49,7 @@ class TestStartPyairiosApi:
     @pytest.mark.asyncio
     async def test_api_init(self) -> None:
         """
-        Test pyairios api serial connect on null port.
+        Test pyairios api serial init.
         """
 
         transport = AiriosRtuTransport("/dev/null")
@@ -56,3 +57,21 @@ class TestStartPyairiosApi:
         # init api
         api = Airios(transport)
         assert api, "no api"
+
+    @pytest.mark.asyncio
+    async def test_api_connect(self) -> None:
+        """
+        Test pyairios api serial connect.
+        """
+
+        transport = AiriosRtuTransport("/dev/null")
+        api = Airios(transport)
+
+        # try to connect
+        try:
+            await api.connect()
+        except AiriosConnectionException:
+            pass
+        else:
+            raise AssertionError("Expected AiriosConnectionException")
+        # api.close()
