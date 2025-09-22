@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import math
 from dataclasses import dataclass
 from typing import List
@@ -30,6 +31,8 @@ from pyairios.registers import (
     Result,
     U16Register,
 )
+
+LOGGER = logging.getLogger(__name__)
 
 
 @dataclass

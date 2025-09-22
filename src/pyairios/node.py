@@ -21,7 +21,7 @@ from .registers import (
     U32Register,
 )
 
-_LOGGER = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 class Reg(RegisterAddress):
@@ -194,7 +194,7 @@ class AiriosNode:
         for i in range(0, nrecs):
             ok = await self.client.set_register(self.regmap[Reg.RF_STATS_INDEX], i, self.slave_id)
             if not ok:
-                _LOGGER.warning("Failed to write %d to RF stats index register", i)
+                LOGGER.warning("Failed to write %d to RF stats index register", i)
                 continue
             r = await self.client.get_register(self.regmap[Reg.RF_STATS_DEVICE], self.slave_id)
             device_id: int = r.value

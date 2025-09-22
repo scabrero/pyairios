@@ -1,6 +1,7 @@
 """Register definitions."""
 
 import datetime
+import logging
 import struct
 import typing as t
 from dataclasses import dataclass
@@ -10,6 +11,8 @@ from pymodbus.client.mixin import ModbusClientMixin
 
 from .constants import ValueStatusFlags, ValueStatusSource
 from .exceptions import AiriosDecodeError, AiriosInvalidArgumentException
+
+LOGGER = logging.getLogger(__name__)
 
 T = t.TypeVar("T")
 

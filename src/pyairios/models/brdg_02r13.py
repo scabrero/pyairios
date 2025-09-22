@@ -40,7 +40,7 @@ from pyairios.registers import (
 
 DEFAULT_SLAVE_ID = 207
 
-_LOGGER = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 @dataclass
@@ -376,7 +376,7 @@ class BRDG02R13(AiriosNode):
             try:
                 product_id = ProductId(result.value)
             except ValueError:
-                _LOGGER.warning("Unknown product ID %s", result.value)
+                LOGGER.warning("Unknown product ID %s", result.value)
                 continue
             else:
                 product_id = ProductId(result.value)

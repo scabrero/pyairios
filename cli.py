@@ -50,6 +50,8 @@ from pyairios.models.brdg_02r13 import (
 from pyairios.models.vmd_02rps78 import VMD02RPS78
 from pyairios.models.vmn_05lm02 import VMN05LM02
 
+LOGGER = logging.getLogger(__name__)
+
 
 class AiriosVMN05LM02CLI(aiocmd.PromptToolkitCmd):
     """The VMN05LM02 CLI interface."""

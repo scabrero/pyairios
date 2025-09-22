@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import List
 
 from pyairios.client import AsyncAiriosModbusClient
@@ -15,6 +16,8 @@ from pyairios.registers import (
     Result,
     U16Register,
 )
+
+LOGGER = logging.getLogger(__name__)
 
 
 class Reg(RegisterAddress):
