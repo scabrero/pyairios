@@ -198,7 +198,8 @@ class Node(VmdBase):
                 Reg.REQ_VENT_SUB_MODE,
                 (RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS),
             ),
-            # U8Register(Reg.ROOM_INSTANCE, (RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS)),
+            # U8Register(Reg.ROOM_INSTANCE,
+            #      (RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS)),
             U8Register(
                 Reg.SYSTEM_VENT_CONFIG,
                 (RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS),
