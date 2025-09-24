@@ -257,18 +257,21 @@ class BRDG02R13(AiriosNode):
                 file_name = str(os.path.basename(file_path))
                 if (
                     file_name == "__init__.py"
-                    # or file_name == "brdg_02r13.py"  # bridge also has sensors that need this info
+                    # or file_name == "brdg_02r13.py"  # bridge has sensors that need this info
                     or file_name.endswith("_base.py")
                 ):  # skip init and any base model definitions
                     continue
                 module_name = file_name.removesuffix(".py")
-                assert module_name is not None
+                if module_name is None:
+                    raise AiriosException(f"Failed to extract mod_name from filename {file_name}")
                 model_key: str = str(re.sub(r"_", "-", module_name).upper())
-                assert model_key is not None
+                if model_key is None:
+                    raise AiriosException(f"Failed to create model_key from {module_name}")
 
                 # using importlib, create a spec for each module:
                 module_spec = importlib.util.spec_from_file_location(module_name, file_path)
-                assert module_spec is not None
+                if module_spec is None:
+                    raise AiriosException(f"Failed to load module {module_name}")
                 # store the spec in a dict by class name:
                 mod = importlib.util.module_from_spec(module_spec)
                 # load the module from the spec:
@@ -689,7 +692,8 @@ class BRDG02R13(AiriosNode):
         print(f"    {'Uptime:': <40}{res['power_on_time']}")
         print("")
 
-        print(f"Installed {len(list(res['models']))} model files")
+        amount = 0 if res["models"] is None else len(res["models"])
+        print(f"Installed {amount} model files")
         # print(res['models'])
         for key, mod in res["models"].items():
             print(f"    {key[:3]}{':': <37}{key} {str(mod.Node)} {mod.product_descr} {mod.pr_id}")

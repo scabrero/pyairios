@@ -80,19 +80,22 @@ class Airios:
         data: dict[int, AiriosNodeData] = {}
 
         brdg_data = await self.bridge.fetch_bridge_data()
-        if brdg_data["rf_address"] is None:
+        if brdg_data is None or brdg_data["rf_address"] is None:
             raise AiriosException("Failed to fetch node RF address")
         bridge_rf_address = brdg_data["rf_address"].value
         data[self.bridge.slave_id] = brdg_data
 
         prids = brdg_data["product_ids"]
-        for _node in await self.bridge.nodes():
-            for key, _id in prids.items():
-                if _id == _node.product_id:
-                    LOGGER.debug("fetch_node_data for key: %s", key)
-                    node_module = brdg_data["models"][key].Node(_node.slave_id, self.bridge.client)
-                    node_data = await node_module.fetch_node_data()
-                    data[_node.slave_id] = node_data
+        if prids is not None:
+            for _node in await self.bridge.nodes():
+                for key, _id in prids.items():
+                    if _id == _node.product_id:
+                        LOGGER.debug("fetch_node_data for key: %s", key)
+                        node_module = brdg_data["models"][key].Node(
+                            _node.slave_id, self.bridge.client
+                        )
+                        node_data = await node_module.fetch_node_data()
+                        data[_node.slave_id] = node_data
 
         return AiriosData(bridge_rf_address=bridge_rf_address, nodes=data)
 
