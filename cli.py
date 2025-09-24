@@ -5,6 +5,8 @@
 import argparse
 import asyncio
 import logging
+import re
+from types import ModuleType
 
 from aiocmd import aiocmd
 
@@ -27,7 +29,6 @@ from pyairios.constants import (
     Baudrate,
     ModbusEvents,
     Parity,
-    ProductId,
     ResetMode,
     StopBits,
     VMDBypassMode,
@@ -47,17 +48,29 @@ from pyairios.models.brdg_02r13 import (
 from pyairios.models.brdg_02r13 import (
     DEFAULT_SLAVE_ID as BRDG02R13_DEFAULT_SLAVE_ID,
 )
-from pyairios.models.vmd_02rps78 import VMD02RPS78
-from pyairios.models.vmn_05lm02 import VMN05LM02
+
+LOGGER = logging.getLogger(__name__)
+
+# global variables available in all classes:
+MODULES: dict[str, ModuleType] = {}
+# dict with imported modules by class name
+PRIDS: dict[str, int] = {}
+# dict with pr_id's (expected productid) by class name
+# DESCRIPTIONS: dict[str, str] = {}
+# # dict with label description model, for use in UI
 
 
 class AiriosVMN05LM02CLI(aiocmd.PromptToolkitCmd):
-    """The VMN05LM02 CLI interface."""
+    """The VMN_ modules common CLI interface."""
 
-    def __init__(self, vmn: VMN05LM02) -> None:
+    def __init__(self, vmn) -> None:  # TODO(eb): subclass aiocmd_type
+        """
+        :param vmn: contains all details of this model
+        """
         super().__init__()
-        self.prompt = f"[VMN-05LM02@{vmn.slave_id}]>> "
         self.vmn = vmn
+        self.class_pointer = str(vmn)
+        self.prompt = f"[{str(vmn)}]>> "
 
     async def do_received_product_id(self) -> None:
         """Print the received product ID from the device."""
@@ -72,37 +85,26 @@ class AiriosVMN05LM02CLI(aiocmd.PromptToolkitCmd):
             print(f"\t{res.status}")
 
     async def do_status(self) -> None:
-        """Print the device status."""
-        res = await self.vmn.fetch_vmn_data()
-        print("Node data")
-        print("---------")
-        print(f"    {'Product ID:': <25}{res['product_id']}")
-        print(f"    {'Product Name:': <25}{res['product_name']}")
-        print(f"    {'Software version:': <25}{res['sw_version']}")
-        print(f"    {'RF address:': <25}{res['rf_address']}")
-        print("")
-
-        print("Device data")
-        print("---------")
-        print(f"    {'RF comm status:': <25}{res['rf_comm_status']}")
-        print(f"    {'Battery status:': <25}{res['battery_status']}")
-        print(f"    {'Fault status:': <25}{res['fault_status']}")
-        print(f"    {'Bound status:': <25}{res['bound_status']}")
-        print(f"    {'Value error status:': <25}{res['value_error_status']}")
-        print("")
-
-        print("VMN-02LM11 data")
-        print("----------------")
-        print(f"    {'Requested ventilation speed:': <40}{res['requested_ventilation_speed']}")
+        """Print the complete device status."""
+        await self.vmn.print_data()
 
 
 class AiriosVMD02RPS78CLI(aiocmd.PromptToolkitCmd):
     """The VMD02RPS78 CLI interface."""
 
-    def __init__(self, vmd: VMD02RPS78) -> None:
+    def __init__(self, vmd) -> None:
+        """
+        :param vmd: contains all details of this model
+        """
         super().__init__()
-        self.prompt = f"[VMD-02RPS78@{vmd.slave_id}]>> "
         self.vmd = vmd
+        self.class_pointer = str(vmd)
+        self.prompt = f"[{str(vmd)}]>> "
+
+    async def do_received_product_id(self) -> None:
+        """Print the received product ID from the device."""
+        res = await self.vmd.node_received_product_id()
+        print(f"0x{res.value:08X}")
 
     async def do_capabilities(self) -> None:
         """Print the device RF capabilities."""
@@ -110,91 +112,8 @@ class AiriosVMD02RPS78CLI(aiocmd.PromptToolkitCmd):
         print(f"{res.value} ({res.status})")
 
     async def do_status(self) -> None:  # pylint: disable=too-many-statements
-        """Print the device status."""
-        res = await self.vmd.fetch_vmd_data()
-        print("Node data")
-        print("---------")
-        print(f"    {'Product ID:': <25}{res['product_id']}")
-        print(f"    {'Product Name:': <25}{res['product_name']}")
-        print(f"    {'Software version:': <25}{res['sw_version']}")
-        print(f"    {'RF address:': <25}{res['rf_address']}")
-        print("")
-
-        print("Device data")
-        print("---------")
-        print(f"    {'RF comm status:': <25}{res['rf_comm_status']}")
-        print(f"    {'Battery status:': <25}{res['battery_status']}")
-        print(f"    {'Fault status:': <25}{res['fault_status']}")
-        print(f"    {'Bound status:': <25}{res['bound_status']}")
-        print(f"    {'Value error status:': <25}{res['value_error_status']}")
-        print("")
-
-        print("VMD-02RPS78 data")
-        print("----------------")
-        print(f"    {'Error code:': <25}{res['error_code']}")
-
-        print(f"    {'Ventilation speed:': <25}{res['ventilation_speed']}")
-        print(f"    {'Override remaining time:': <25}{res['override_remaining_time']}")
-
-        print(
-            f"    {'Supply fan speed:': <25}{res['supply_fan_speed']}% "
-            f"({res['supply_fan_rpm']} RPM)"
-        )
-        print(
-            f"    {'Exhaust fan speed:': <25}{res['exhaust_fan_speed']}% "
-            f"({res['exhaust_fan_rpm']} RPM)"
-        )
-
-        print(f"    {'Indoor temperature:': <25}{res['indoor_air_temperature']}")
-        print(f"    {'Outdoor temperature:': <25}{res['outdoor_air_temperature']}")
-        print(f"    {'Exhaust temperature:': <25}{res['exhaust_air_temperature']}")
-        print(f"    {'Supply temperature:': <25}{res['supply_air_temperature']}")
-
-        print(f"    {'Filter dirty:': <25}{res['filter_dirty']}")
-        print(f"    {'Filter remaining:': <25}{res['filter_remaining_percent']} %")
-        print(f"    {'Filter duration:': <25}{res['filter_duration_days']} days")
-
-        print(f"    {'Bypass position:': <25}{res['bypass_position']}")
-        print(f"    {'Bypass status:': <25}{res['bypass_status']}")
-        print(f"    {'Bypass mode:': <25}{res['bypass_mode']}")
-
-        print(f"    {'Defrost:': <25}{res['defrost']}")
-        print(f"    {'Preheater:': <25}{res['preheater']}")
-        print(f"    {'Postheater:': <25}{res['postheater']}")
-        print("")
-
-        print(f"    {'Preset speeds':<25}{'Supply':<10}{'Exhaust':<10}")
-        print(f"    {'-------------':<25}")
-        print(
-            f"    {'High':<25}{str(res['preset_high_fan_speed_supply']) + ' %':<10}"
-            f"{str(res['preset_high_fan_speed_exhaust']) + ' %':<10}"
-        )
-        print(
-            f"    {'Mid':<25}{str(res['preset_medium_fan_speed_supply']) + ' %':<10}"
-            f"{str(res['preset_medium_fan_speed_exhaust']) + ' %':<10}"
-        )
-        print(
-            f"    {'Low':<25}{str(res['preset_low_fan_speed_supply']) + ' %':<10}"
-            f"{str(res['preset_low_fan_speed_exhaust']) + ' %':<10}"
-        )
-        print(
-            f"    {'Standby':<25}{str(res['preset_standby_fan_speed_supply']) + ' %':<10}"
-            f"{str(res['preset_standby_fan_speed_exhaust']) + ' %':<10}"
-        )
-        print("")
-
-        print("    Setpoints")
-        print("    ---------")
-        print(
-            f"    {'Frost protection preheater setpoint:':<40}"
-            f"{res['frost_protection_preheater_setpoint']} ºC"
-        )
-        print(f"    {'Preheater setpoint:': <40}{res['preheater_setpoint']} ºC")
-        print(f"    {'Free ventilation setpoint:':<40}{res['free_ventilation_setpoint']} ºC")
-        print(
-            f"    {'Free ventilation cooling offset:':<40}"
-            f"{res['free_ventilation_cooling_offset']} K"
-        )
+        """Print the complete device status."""
+        await self.vmd.print_data()
 
     async def do_error_code(self) -> None:
         """Print the current error code."""
@@ -303,43 +222,222 @@ class AiriosVMD02RPS78CLI(aiocmd.PromptToolkitCmd):
         await self.vmd.filter_reset()
 
 
+class AiriosVMD07RPS13CLI(aiocmd.PromptToolkitCmd):
+    """The VMD07RPS13 ClimaRad Ventura V1 CLI interface."""
+
+    def __init__(self, vmd) -> None:
+        """
+        :param vmd: contains all details of this model
+        """
+        super().__init__()
+        self.vmd = vmd
+        self.class_pointer = str(vmd)
+        self.prompt = f"[{str(vmd)}]>> "
+
+    async def do_received_product_id(self) -> None:
+        """Print the received product ID from the device."""
+        res = await self.vmd.node_received_product_id()
+        print(f"0x{res.value:08X}")
+
+    async def do_capabilities(self) -> None:
+        """Print the device RF capabilities."""
+        res = await self.vmd.capabilities()
+        if res is not None:
+            print(f"{res.value} ({res.status})")
+        else:
+            print("N/A")
+
+    async def do_status(self) -> None:  # pylint: disable=too-many-statements
+        """Print the complete device status."""
+        await self.vmd.print_data()
+
+    async def do_error_code(self) -> None:
+        """Print the current error code."""
+        res = await self.vmd.error_code()
+        print(f"{res}")
+
+    async def do_vent_mode(self) -> None:
+        """Print the current ventilation mode."""
+        res = await self.vmd.vent_mode()
+        print(f"{res}")
+        if res.status is not None:
+            print(f"{res.status}")
+
+    async def do_rq_vent_mode(self) -> None:  # failed
+        """Print the current requested ventilation mode."""
+        res = await self.vmd.rq_vent_mode()
+        print(f"{res}")
+
+    async def do_rq_vent_sub_mode(self) -> None:  # works!
+        """Print the current requested ventilation sub mode."""
+        res = await self.vmd.rq_vent_sub_mode()
+        print(f"{res}")
+
+    async def do_rq_temp_vent_mode(self) -> None:
+        """Print the requested temp. ventilation mode."""
+        res = await self.vmd.rq_temp_vent_mode()
+        print(f"{res}")
+
+    async def do_rq_temp_vent_mode_set(self, preset: int) -> None:
+        """Change the requested ventilation mode. 0=Off, 1=Pause, 2=On, 3=Man1, 5=Man3, 8=Service"""
+        # s = VMDRequestedVentilationSpeed.parse(preset)
+        res = await self.vmd.set_rq_temp_vent_mode(preset)  # (s) lookup?
+        print(f"{res}")
+
+    async def do_rq_temp_vent_sub_mode(self) -> None:
+        """Print the requested temp. ventilation sub mode."""
+        res = await self.vmd.rq_temp_vent_sub_mode()
+        print(f"{res}")
+
+    async def do_rq_vent_mode_set(self, preset: int) -> None:
+        """Change the requested ventilation mode. 0=Off, 1=Pause, 2=On, 3=Man1, 5=Man3, 8=Service"""
+        # s = VMDRequestedVentilationSpeed.parse(preset)
+        res = await self.vmd.set_rq_vent_mode(preset)  # (s) lookup?
+        print(f"{res}")
+
+    async def do_rq_vent_sub_mode_set(self, preset: int) -> None:
+        """Change the requested ventilation sub mode. 0=Off, 201 - 205"""
+        # s = VMDRequestedVentilationSpeed.parse(preset)
+        res = await self.vmd.set_rq_vent_sub_mode(preset)  # (s) lookup?
+        print(f"{res}")
+
+    async def do_temp_vent_sub_mode(self) -> None:
+        """Print the current temp. ventilation sub mode"""
+        # s = VMDRequestedVentilationSpeed.parse(preset)
+        res = await self.vmd.temp_vent_sub_mode()  # (s) lookup?
+        print(f"{res}")
+
+    async def do_rq_temp_vent_sub_mode_set(self, preset: int) -> None:
+        """Change the requested ventilation sub mode. 0=Off, 201 - 205"""
+        # s = VMDRequestedVentilationSpeed.parse(preset)
+        res = await self.vmd.set_rq_temp_vent_sub_mode(preset)  # (s) lookup?
+        print(f"{res}")
+
+    async def do_ventilation_speed(self) -> None:
+        """Print the current ventilation speed."""
+        res = await self.vmd.ventilation_speed()
+        print(f"{res}")
+        if res.status is not None:
+            print(f"{res.status}")
+
+    async def do_indoor_hum(self):
+        """Print the indoor humidity level in %."""
+        res = await self.vmd.indoor_humidity()
+        print(f"{res} %")
+
+    async def do_outdoor_hum(self):
+        """Print the outdoor humidity level in %."""
+        res = await self.vmd.outdoor_humidity()
+        print(f"{res} %")
+
+    async def do_bypass_pos(self):
+        """Print the bypass position."""
+        res = await self.vmd.bypass_position()
+        print(f"{res} {'Open' if res == 1 else 'Closed'}")
+
+    async def do_base_vent_enabled(self):
+        """Print the base ventilation enabled: On/Off = 1/0."""
+        res = await self.vmd.basic_vent_enable()
+        print(f"{res} {'On' if res.value == 1 else 'Off'}")
+
+    async def do_base_vent_enabled_set(self, state: bool) -> None:
+        """Set the base ventilation enabled: on/off = 1/0."""
+        if await self.vmd.set_basic_vent_enable(state):
+            await self.do_base_vent_enabled()
+        else:
+            print("Error setting base_vent_enabled")
+
+    async def do_base_vent_level(self):
+        """Print the base ventilation level."""
+        res = await self.vmd.basic_vent_level()
+        print(f"base_vent_level: {res}")
+
+    async def do_base_vent_level_set(self, lvl: int) -> None:
+        """Set the base ventilation level."""
+        if await self.vmd.set_basic_vent_level(lvl):
+            res = await self.vmd.basic_vent_level()
+            print(f"base_vent_level set to: {res.value}")
+        else:
+            print("Error setting base_vent_level")
+
+    async def do_filter_remaining(self):
+        """Print the filter remaining."""
+        r1 = await self.vmd.filter_remaining_percent()
+        r2 = await self.vmd.filter_remaining_days()
+        print(f"{r1.value} % ({r2.value} days)")
+
+    async def do_co2_setpoint(self):
+        """Print the CO2 setpoint in ppm."""
+        res = await self.vmd.co2_setpoint()
+        print(f"{res.value} ppm")
+
+    async def do_co2_setpoint_set(self, setp: int) -> None:
+        """Change the CO2 setpoint in ppm. Factory default = 1000."""
+        if await self.vmd.set_co2_setpoint(setp):
+            res = await self.vmd.co2_setpoint()
+            print(f"CO2 setpoint set to: {res.value} ppm")
+        else:
+            print("Error setting CO2 setpoint")
+
+    # actions
+
+    async def do_filter_reset(self):
+        """Reset the filter change timer."""
+        await self.vmd.filter_reset()
+
+
 class AiriosBridgeCLI(aiocmd.PromptToolkitCmd):
     """The bridge CLI interface."""
 
     def __init__(self, bridge: BRDG02R13) -> None:
         super().__init__()
-        self.prompt = f"[BRDG-02R13@{bridge.slave_id}]>> "
+        self.prompt = f"[{str(bridge)}]>> "
         self.bridge = bridge
 
     async def do_nodes(self) -> None:
         """Print the list of bound nodes."""
+        LOGGER.debug("do_node starting")
         res = await self.bridge.nodes()
         for n in res:
             print(f"{n}")
 
     async def do_node(self, slave_id: str) -> None:
         """Manage a bound node."""
+        LOGGER.debug("do_node fetch nodes")
         nodes = await self.bridge.nodes()
+        LOGGER.debug("do_node starting")
         node_info = None
         for n in nodes:
+            LOGGER.debug("do_node match slave_id")
             if int(slave_id) == int(n.slave_id):
                 node_info = n
                 break
-
+        LOGGER.debug("node_info starting")
         if node_info is None:
             raise AiriosIOException(f"Node with address {slave_id} not bound")
 
-        if node_info.product_id == ProductId.VMD_02RPS78:
-            vmd = VMD02RPS78(node_info.slave_id, self.bridge.client)
-            await AiriosVMD02RPS78CLI(vmd).run()
-            return
+        # find by product_id: {'VMD-07RPS13': 116867, 'VMD-02RPS78': 116882, 'VMN-05LM02': 116798}
+        # fetch models etc. from bridge. compare to src/pyairios/_init_.py
+        for key, _id in PRIDS.items():
+            LOGGER.debug("Fetch _id for item: %s", key)
+            if node_info.product_id == _id:
+                # Can we use node["product_name"] as key?
+                _node = MODULES[key].Node(node_info.slave_id, self.bridge.client)
+                if key == "VMD-02RPS78":  # dedicated CLI for each model
+                    await AiriosVMD02RPS78CLI(_node).run()
+                    return
+                if key == "VMD-07RPS13":  # ClimaRad Ventura
+                    LOGGER.debug("Node Ventura starts")
+                    await AiriosVMD07RPS13CLI(_node).run()
+                    return
+                if key == "VMN-05LM02":  # Remote accessory
+                    await AiriosVMN05LM02CLI(_node).run()
+                    return
+        # add new models AiriosXXXXXXXXXCLI here to use them in CLI
 
-        if node_info.product_id == ProductId.VMN_05LM02:
-            vmn = VMN05LM02(node_info.slave_id, self.bridge.client)
-            await AiriosVMN05LM02CLI(vmn).run()
-            return
-
-        raise AiriosNotImplemented(f"{node_info.product_id} not implemented")
+        raise AiriosNotImplemented(
+            f"{node_info.product_id} not implemented. Drop new definitions in models/"
+        )
 
     async def do_rf_sent_messages(self) -> None:
         """Print the RF sent messages."""
@@ -404,9 +502,13 @@ class AiriosBridgeCLI(aiocmd.PromptToolkitCmd):
     ) -> None:
         """Bind a new controller."""
         slave_id = int(slave_id)
-        pid = ProductId(int(product_id))
+        if product_id.startswith("0X") and len(product_id) > 2:
+            product_id = str(re.sub(r"0X", "0x", product_id))
+        pid = int(product_id)  # should recognize HEX 0x123
         psn = None
         if product_serial is not None:
+            if product_serial.startswith("0X") and len(product_serial) > 2:
+                product_serial = str(re.sub(r"0X", "0x", product_serial))
             psn = int(product_serial)
         await self.bridge.bind_controller(slave_id, pid, psn)
 
@@ -414,7 +516,9 @@ class AiriosBridgeCLI(aiocmd.PromptToolkitCmd):
         """Bind a new accessory."""
         ctrl_slave_id = int(ctrl_slave_id)
         slave_id = int(slave_id)
-        pid = ProductId(int(product_id))
+        if product_id.startswith("0X") and len(product_id) > 2:
+            product_id = str(re.sub(r"0X", "0x", product_id))
+        pid = int(product_id)  # should recognize HEX 0x123
         await self.bridge.bind_accessory(ctrl_slave_id, slave_id, pid)
 
     async def do_software_build_date(self) -> None:
@@ -442,30 +546,8 @@ class AiriosBridgeCLI(aiocmd.PromptToolkitCmd):
         await self.bridge.set_oem_code(int(number))
 
     async def do_status(self) -> None:
-        """Print the device status."""
-        res = await self.bridge.fetch_bridge()
-        print("Node data")
-        print("---------")
-        print(f"    {'Product ID:': <25}{res['product_id']}")
-        print(f"    {'Product Name:': <25}{res['product_name']}")
-        print(f"    {'Software version:': <25}{res['sw_version']}")
-        print(f"    {'RF address:': <25}{res['rf_address']}")
-        print("")
-
-        print("Device data")
-        print("---------")
-        print(f"    {'RF comm status:': <25}{res['rf_comm_status']}")
-        print(f"    {'Battery status:': <25}{res['battery_status']}")
-        print(f"    {'Fault status:': <25}{res['fault_status']}")
-        print("")
-
-        print("BRDG-02R13 data")
-        print("----------------")
-        print(f"    {'RF sent messages last hour': <40}{res['rf_sent_messages_last_hour']}")
-        print(f"    {'RF sent messages current hour:': <40}{res['rf_sent_messages_current_hour']}")
-        print(f"    {'RF load last hour:': <40}{res['rf_load_last_hour']}")
-        print(f"    {'RF load current hour:': <40}{res['rf_load_current_hour']}")
-        print(f"    {'Uptime:': <40}{res['power_on_time']}")
+        """Print the complete device status."""
+        await self.bridge.print_data()
 
 
 class AiriosClientCLI(aiocmd.PromptToolkitCmd):  # pylint: disable=too-few-public-methods
@@ -488,6 +570,16 @@ class AiriosClientCLI(aiocmd.PromptToolkitCmd):  # pylint: disable=too-few-publi
         else:
             _address = int(address)
         bridge = BRDG02R13(_address, self.client)
+
+        # bridge.load_models()  # is lazy loaded
+        global MODULES, PRIDS  # pylint: disable=global-statement
+        MODULES = await bridge.models()
+        print(f"Loaded modules: {MODULES}")
+        PRIDS = await bridge.product_ids()
+        print(f"Loaded product_id's: {PRIDS}")
+        # DESCRIPTIONS = await bridge.model_descriptions()
+        # print(f"Supported models by key: {DESCRIPTIONS}")
+
         await AiriosBridgeCLI(bridge).run()
 
 
@@ -533,9 +625,12 @@ class AiriosRootCLI(aiocmd.PromptToolkitCmd):
             self.client = None
 
     async def do_set_log_level(self, level: str) -> None:
-        "Set the log level: critical, fatal, error, warning, info or debug."
+        """Set the log level: critical, fatal, error, warning, info or debug."""
+        if level is None:
+            return
         logging.basicConfig()
         log = logging.getLogger()
+
         if level.casefold() == "critical".casefold():
             log.setLevel(logging.CRITICAL)
         elif level.casefold() == "fatal".casefold():
