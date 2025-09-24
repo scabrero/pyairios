@@ -275,6 +275,8 @@ class BRDG02R13(AiriosNode):
                 # store the spec in a dict by class name:
                 mod = importlib.util.module_from_spec(module_spec)
                 # load the module from the spec:
+                if mod is None:
+                    raise AiriosException(f"Failed to load module_from_spec {module_name}")
                 module_spec.loader.exec_module(mod)
                 # store the imported module in dict:
                 self.modules[model_key] = mod
@@ -693,8 +695,10 @@ class BRDG02R13(AiriosNode):
         print("")
 
         amount = 0 if res["models"] is None else len(res["models"])
-        print(f"Installed {amount} model files")
-        # print(res['models'])
-        for key, mod in res["models"].items():
-            print(f"    {key[:3]}{':': <37}{key} {str(mod.Node)} {mod.product_descr} {mod.pr_id}")
+        print(f"Loaded {amount} model files")
+        if res["models"] is not None:
+            for key, mod in res["models"].items():
+                print(
+                    f"    {key[:3]}{':': <37}{key} {str(mod.Node)} {mod.product_descr} {mod.pr_id}"
+                )
         # print(f"    {'ProductIDs:': <40}{res['product_ids']}")
