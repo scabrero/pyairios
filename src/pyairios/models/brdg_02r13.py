@@ -259,14 +259,16 @@ class BRDG02R13(AiriosNode):
                     file_name == "__init__.py"
                     # or file_name == "brdg_02r13.py"  # bridge also has sensors that need this info
                     or file_name.endswith("_base.py")
-                ):  # skip BRDG and the base model definitions
+                ):  # skip init and any base model definitions
                     continue
                 module_name = file_name.removesuffix(".py")
+                assert module_name is not None
                 model_key: str = str(re.sub(r"_", "-", module_name).upper())
                 assert model_key is not None
 
                 # using importlib, create a spec for each module:
                 module_spec = importlib.util.spec_from_file_location(module_name, file_path)
+                assert module_spec is not None
                 # store the spec in a dict by class name:
                 mod = importlib.util.module_from_spec(module_spec)
                 # load the module from the spec:
