@@ -257,21 +257,26 @@ class BRDG02R13(AiriosNode):
                 file_name = str(os.path.basename(file_path))
                 if (
                     file_name == "__init__.py"
-                    # or file_name == "brdg_02r13.py"  # bridge also has sensors that need this info
+                    # or file_name == "brdg_02r13.py"  # bridge has sensors that need this info
                     or file_name.endswith("_base.py")
                 ):  # skip init and any base model definitions
                     continue
                 module_name = file_name.removesuffix(".py")
-                assert module_name is not None
+                if module_name is None:
+                    raise AiriosException(f"Failed to extract mod_name from filename {file_name}")
                 model_key: str = str(re.sub(r"_", "-", module_name).upper())
-                assert model_key is not None
+                if model_key is None:
+                    raise AiriosException(f"Failed to create model_key from {module_name}")
 
                 # using importlib, create a spec for each module:
                 module_spec = importlib.util.spec_from_file_location(module_name, file_path)
-                assert module_spec is not None
+                if module_spec is None or module_spec.loader is None:
+                    raise AiriosException(f"Failed to load module {module_name}")
                 # store the spec in a dict by class name:
                 mod = importlib.util.module_from_spec(module_spec)
                 # load the module from the spec:
+                if mod is None:
+                    raise AiriosException(f"Failed to load module_from_spec {module_name}")
                 module_spec.loader.exec_module(mod)
                 # store the imported module in dict:
                 self.modules[model_key] = mod
@@ -530,10 +535,10 @@ class BRDG02R13(AiriosNode):
         if slave_id == self.slave_id:
             return self  # the bridge as node
 
-        for nd in await self.nodes():
-            if nd.slave_id != slave_id:
+        for _node in await self.nodes():
+            if _node.slave_id != slave_id:
                 continue
-            key = str(nd.product_id)  # compare to cli.py and _init_.py
+            key = str(_node.product_id)  # compare to cli.py and _init_.py
             LOGGER.debug("Fetch matching module for: %s", key)
             return self.modules[key].Node(slave_id, self.client)
 
@@ -689,8 +694,11 @@ class BRDG02R13(AiriosNode):
         print(f"    {'Uptime:': <40}{res['power_on_time']}")
         print("")
 
-        print(f"{len(res['models'])} Installed model files")
-        # print(res['models'])
-        for key, mod in res["models"].items():
-            print(f"    {key[:3]}{':': <37}{key} {str(mod.Node)} {mod.product_descr} {mod.pr_id}")
+        amount = 0 if res["models"] is None else len(res["models"])
+        print(f"Loaded {amount} model files")
+        if res["models"] is not None:
+            for key, mod in res["models"].items():
+                print(
+                    f"    {key[:3]}{':': <37}{key} {str(mod.Node)} {mod.product_descr} {mod.pr_id}"
+                )
         # print(f"    {'ProductIDs:': <40}{res['product_ids']}")
