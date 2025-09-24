@@ -28,6 +28,7 @@ from pyairios.models.vmd_base import VmdBase
 from pyairios.node import _safe_fetch
 from pyairios.registers import (
     FloatRegister,
+    RegisterAccess,
     RegisterAddress,
     RegisterBase,
     Result,
@@ -150,38 +151,62 @@ class Node(VmdBase):
         LOGGER.debug("Starting Ventura Node(%s)", slave_id)
 
         vmd_registers: List[RegisterBase] = [
-            FloatRegister(Reg.TEMPERATURE_EXHAUST, self.read_status),
-            FloatRegister(Reg.TEMPERATURE_INLET, self.read_status),
-            FloatRegister(Reg.TEMPERATURE_OUTLET, self.read_status),
-            # FloatRegister(Reg.TEMPERATURE_SUPPLY, self.read_status),
-            U8Register(Reg.BASIC_VENT_ENABLE, self.read_write_status),
-            U8Register(Reg.BASIC_VENT_LEVEL, self.read_write_status),
-            U8Register(Reg.BYPASS_POSITION, self.read_status),
-            U16Register(Reg.CO2_CONTROL_SETPOINT, self.read_write),
-            U16Register(Reg.CO2_LEVEL, self.read_status),
-            U8Register(Reg.ERROR_CODE, self.read_status),
-            U8Register(Reg.FAN_SPEED_EXHAUST, self.read_status),
-            U8Register(Reg.FAN_SPEED_SUPPLY, self.read_status),
-            U8Register(Reg.FILTER_DIRTY, self.read_status),
-            # U16Register(Reg.FILTER_DURATION, self.read_status),
-            U16Register(Reg.FILTER_REMAINING_DAYS, self.read_status),
-            U8Register(Reg.FILTER_REMAINING_PERCENT, self.read_status),
-            U8Register(Reg.FILTER_RESET, self.write_status),
-            U8Register(Reg.HUMIDITY_INDOOR, self.read_status),
-            U8Register(Reg.HUMIDITY_OUTDOOR, self.read_status),
-            U16Register(Reg.OVERRIDE_TIME_MANUAL, self.read_write),
-            U8Register(Reg.POST_HEATER_DEMAND, self.read_status),
-            U8Register(Reg.PRODUCT_VARIANT, self.read_write_status),  # UINT8?
-            U8Register(Reg.REQ_TEMP_VENT_MODE, self.read_write_status),
-            U8Register(Reg.REQ_TEMP_VENT_SUB_MODE, self.read_write_status),
-            U8Register(Reg.REQ_VENT_MODE, self.read_write_status),
-            U8Register(Reg.REQ_VENT_SUB_MODE, self.read_write_status),
-            # U8Register(Reg.ROOM_INSTANCE, self.read_write_status),
-            U8Register(Reg.SYSTEM_VENT_CONFIG, self.read_write_status),
-            U8Register(Reg.TEMP_VENT_MODE, self.read_status),
-            U8Register(Reg.TEMP_VENT_SUB_MODE, self.read_status),
-            U8Register(Reg.VENT_MODE, self.read_status),
-            U8Register(Reg.VENT_SUB_MODE, self.read_status),
+            FloatRegister(Reg.TEMPERATURE_EXHAUST, (RegisterAccess.READ | RegisterAccess.STATUS)),
+            FloatRegister(Reg.TEMPERATURE_INLET, (RegisterAccess.READ | RegisterAccess.STATUS)),
+            FloatRegister(Reg.TEMPERATURE_OUTLET, (RegisterAccess.READ | RegisterAccess.STATUS)),
+            # FloatRegister(Reg.TEMPERATURE_SUPPLY, (RegisterAccess.READ | RegisterAccess.STATUS)),
+            U8Register(
+                Reg.BASIC_VENT_ENABLE,
+                (RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS),
+            ),
+            U8Register(
+                Reg.BASIC_VENT_LEVEL,
+                (RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS),
+            ),
+            U8Register(Reg.BYPASS_POSITION, (RegisterAccess.READ | RegisterAccess.STATUS)),
+            U16Register(Reg.CO2_CONTROL_SETPOINT, (RegisterAccess.READ | RegisterAccess.WRITE)),
+            U16Register(Reg.CO2_LEVEL, (RegisterAccess.READ | RegisterAccess.STATUS)),
+            U8Register(Reg.ERROR_CODE, (RegisterAccess.READ | RegisterAccess.STATUS)),
+            U8Register(Reg.FAN_SPEED_EXHAUST, (RegisterAccess.READ | RegisterAccess.STATUS)),
+            U8Register(Reg.FAN_SPEED_SUPPLY, (RegisterAccess.READ | RegisterAccess.STATUS)),
+            U8Register(Reg.FILTER_DIRTY, (RegisterAccess.READ | RegisterAccess.STATUS)),
+            # U16Register(Reg.FILTER_DURATION, (RegisterAccess.READ | RegisterAccess.STATUS)),
+            U16Register(Reg.FILTER_REMAINING_DAYS, (RegisterAccess.READ | RegisterAccess.STATUS)),
+            U8Register(Reg.FILTER_REMAINING_PERCENT, (RegisterAccess.READ | RegisterAccess.STATUS)),
+            U8Register(Reg.FILTER_RESET, (RegisterAccess.WRITE | RegisterAccess.STATUS)),
+            U8Register(Reg.HUMIDITY_INDOOR, (RegisterAccess.READ | RegisterAccess.STATUS)),
+            U8Register(Reg.HUMIDITY_OUTDOOR, (RegisterAccess.READ | RegisterAccess.STATUS)),
+            U16Register(Reg.OVERRIDE_TIME_MANUAL, (RegisterAccess.READ | RegisterAccess.WRITE)),
+            U8Register(Reg.POST_HEATER_DEMAND, (RegisterAccess.READ | RegisterAccess.STATUS)),
+            U8Register(
+                Reg.PRODUCT_VARIANT,
+                (RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS),
+            ),  # UINT8?
+            U8Register(
+                Reg.REQ_TEMP_VENT_MODE,
+                (RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS),
+            ),
+            U8Register(
+                Reg.REQ_TEMP_VENT_SUB_MODE,
+                (RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS),
+            ),
+            U8Register(
+                Reg.REQ_VENT_MODE,
+                (RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS),
+            ),
+            U8Register(
+                Reg.REQ_VENT_SUB_MODE,
+                (RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS),
+            ),
+            # U8Register(Reg.ROOM_INSTANCE, (RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS)),
+            U8Register(
+                Reg.SYSTEM_VENT_CONFIG,
+                (RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS),
+            ),
+            U8Register(Reg.TEMP_VENT_MODE, (RegisterAccess.READ | RegisterAccess.STATUS)),
+            U8Register(Reg.TEMP_VENT_SUB_MODE, (RegisterAccess.READ | RegisterAccess.STATUS)),
+            U8Register(Reg.VENT_MODE, (RegisterAccess.READ | RegisterAccess.STATUS)),
+            U8Register(Reg.VENT_SUB_MODE, (RegisterAccess.READ | RegisterAccess.STATUS)),
         ]
         self._add_registers(vmd_registers)
 
