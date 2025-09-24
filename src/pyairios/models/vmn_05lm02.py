@@ -100,7 +100,7 @@ class Node(AiriosDevice):
 
         print("Node data")
         print("---------")
-        print(f"    {'Product ID:': <25}{res['product_id']} (0x{int(res['product_id'].value):08X})")
+        print(f"    {'Product ID:': <25}{res['product_id']} (0x{res['product_id']:08X})")
         print(f"    {'Product Name:': <25}{res['product_name']}")
         print(f"    {'Software version:': <25}{res['sw_version']}")
         print(f"    {'RF address:': <25}{res['rf_address']}")
