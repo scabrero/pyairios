@@ -270,7 +270,7 @@ class BRDG02R13(AiriosNode):
 
                 # using importlib, create a spec for each module:
                 module_spec = importlib.util.spec_from_file_location(module_name, file_path)
-                if module_spec is None:
+                if module_spec is None or module_spec.loader is None:
                     raise AiriosException(f"Failed to load module {module_name}")
                 # store the spec in a dict by class name:
                 mod = importlib.util.module_from_spec(module_spec)
@@ -535,10 +535,10 @@ class BRDG02R13(AiriosNode):
         if slave_id == self.slave_id:
             return self  # the bridge as node
 
-        for nd in await self.nodes():
-            if nd.slave_id != slave_id:
+        for _node in await self.nodes():
+            if _node.slave_id != slave_id:
                 continue
-            key = str(nd.product_id)  # compare to cli.py and _init_.py
+            key = str(_node.product_id)  # compare to cli.py and _init_.py
             LOGGER.debug("Fetch matching module for: %s", key)
             return self.modules[key].Node(slave_id, self.client)
 

@@ -86,7 +86,7 @@ class Airios:
         data[self.bridge.slave_id] = brdg_data
 
         prids = brdg_data["product_ids"]
-        if prids is not None:
+        if prids is not None and brdg_data["models"] is not None:
             for _node in await self.bridge.nodes():
                 for key, _id in prids.items():
                     if _id == _node.product_id and brdg_data["models"][key] is not None:
