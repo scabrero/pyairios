@@ -689,8 +689,7 @@ class BRDG02R13(AiriosNode):
         print(f"    {'Uptime:': <40}{res['power_on_time']}")
         print("")
 
-        size = len([key for key in res['models']])
-        print(f"Installed {size} model files")
+        print(f"Installed {len(list(res['models']))} model files")
         # print(res['models'])
         for key, mod in res["models"].items():
             print(f"    {key[:3]}{':': <37}{key} {str(mod.Node)} {mod.product_descr} {mod.pr_id}")
