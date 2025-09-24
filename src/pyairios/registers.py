@@ -73,12 +73,12 @@ class StringRegister(RegisterBase[str]):
     def decode(self, registers: list[int]) -> str:
         """Decode register bytes to value."""
 
-        def registers_to_bytearray(registers: list[int]) -> bytearray:
+        def registers_to_bytearray(_registers: list[int]) -> bytearray:
             """Convert registers to bytes."""
-            b = bytearray()
-            for x in registers:
-                b.extend(x.to_bytes(2, "big"))
-            return b
+            _b = bytearray()
+            for x in _registers:
+                _b.extend(x.to_bytes(2, "big"))
+            return _b
 
         b = registers_to_bytearray(registers)
 
@@ -112,7 +112,17 @@ class NumberRegister(RegisterBase[T]):
 
     def encode(self, value: T) -> list[int]:
         """Encode value to register bytes."""
-        if isinstance(value, int):
+        if isinstance(
+            value, str
+        ):  # all CLI entries are passed in as str, despite casting in method call
+            try:
+                int_value = int(value)
+                return ModbusClientMixin.convert_to_registers(
+                    int_value, self.datatype, word_order="little"
+                )
+            except AiriosInvalidArgumentException as exc:
+                raise AiriosInvalidArgumentException(f"Entered str {value} not a number") from exc
+        elif isinstance(value, int):
             return ModbusClientMixin.convert_to_registers(value, self.datatype, word_order="little")
         if isinstance(value, (bool, float)):
             return ModbusClientMixin.convert_to_registers(
