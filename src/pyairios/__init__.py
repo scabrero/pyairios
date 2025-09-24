@@ -1,9 +1,9 @@
 """The Airios RF bridge API entrypoint."""
 
+import logging
+
 from pyairios.models.brdg_02r13 import BRDG02R13
 from pyairios.models.brdg_02r13 import DEFAULT_SLAVE_ID as BRDG02R13_DEFAULT_SLAVE_ID
-from pyairios.models.vmd_02rps78 import VMD02RPS78
-from pyairios.models.vmn_05lm02 import VMN05LM02
 
 from .client import (
     AiriosBaseTransport,
@@ -13,10 +13,12 @@ from .client import (
     AsyncAiriosModbusRtuClient,
     AsyncAiriosModbusTcpClient,
 )
-from .constants import BindingStatus, ProductId
+from .constants import BindingStatus
 from .data_model import AiriosBoundNodeInfo, AiriosData, AiriosNodeData
 from .exceptions import AiriosException
 from .node import AiriosNode
+
+LOGGER = logging.getLogger(__name__)
 
 
 class Airios:
@@ -54,7 +56,7 @@ class Airios:
     async def bind_controller(
         self,
         slave_id: int,
-        product_id: ProductId,
+        product_id: int,
         product_serial: int | None = None,
     ) -> bool:
         """Bind a new controller to the bridge."""
@@ -64,7 +66,7 @@ class Airios:
         self,
         controller_slave_id: int,
         slave_id: int,
-        product_id: ProductId,
+        product_id: int,
     ) -> bool:
         """Bind a new accessory to the bridge."""
         return await self.bridge.bind_accessory(controller_slave_id, slave_id, product_id)
@@ -77,21 +79,20 @@ class Airios:
         """Get the data from all nodes at once."""
         data: dict[int, AiriosNodeData] = {}
 
-        brdg_data = await self.bridge.fetch_bridge()
+        brdg_data = await self.bridge.fetch_bridge_data()
         if brdg_data["rf_address"] is None:
             raise AiriosException("Failed to fetch node RF address")
         bridge_rf_address = brdg_data["rf_address"].value
         data[self.bridge.slave_id] = brdg_data
 
-        for node in await self.bridge.nodes():
-            if node.product_id == ProductId.VMD_02RPS78:
-                vmd = VMD02RPS78(node.slave_id, self.bridge.client)
-                vmd_data = await vmd.fetch_vmd_data()
-                data[node.slave_id] = vmd_data
-            if node.product_id == ProductId.VMN_05LM02:
-                vmn = VMN05LM02(node.slave_id, self.bridge.client)
-                vmn_data = await vmn.fetch_vmn_data()
-                data[node.slave_id] = vmn_data
+        prids = brdg_data["product_ids"]
+        for _node in await self.bridge.nodes():
+            for key, _id in prids.items():
+                if _id == _node.product_id:
+                    LOGGER.debug("fetch_node_data for key: %s", key)
+                    node_module = brdg_data["models"][key].Node(_node.slave_id, self.bridge.client)
+                    node_data = await node_module.fetch_node_data()
+                    data[_node.slave_id] = node_data
 
         return AiriosData(bridge_rf_address=bridge_rf_address, nodes=data)
 

@@ -6,29 +6,18 @@ from enum import Flag, IntEnum, auto
 
 
 class ProductId(IntEnum):
-    """The product ID is a unique product identifier.
-
-    The value is composed by three fields, product type + sub ID + manufacturer ID.
+    """
+    The product ID is a unique product identifier.
+    The value is composed of three fields: product type + sub ID + manufacturer ID.
+    Replaced by pr_id dynamic dict, created during _init_ in BRDG
     """
 
-    BRDG_02R13 = 0x0001C849
-    VMD_02RPS78 = 0x0001C892
-    VMN_05LM02 = 0x0001C83E
-    VMN_02LM11 = 0x0001C852
-    VMD_07RPS13 = 0x0001C883  # ClimaRad VenturaV1X
-
-    def __str__(self) -> str:
-        if self.value == self.BRDG_02R13:
-            return "BRDG-02R13"
-        if self.value == self.VMD_02RPS78:
-            return "VMD-02RPS78"
-        if self.value == self.VMN_05LM02:
-            return "VMN-05LM02"
-        if self.value == self.VMN_02LM11:
-            return "VMN-02LM11"
-        if self.value == self.VMD_07RPS13:
-            return "VMD-07RPS13"
-        raise ValueError(f"Unknown product ID value {self.value}")
+    # this info was moved to the models/ class files as pr_id
+    # get the dict from bridge by calling bridge.product_ids
+    # they will be unique as long as all files are in flat models/ dir
+    # new definitions will be picked up automatically when dropped there
+    # only Bridge product_id required as const, used during api init
+    BRDG_02R13 = 0x0001C849  # RF Bridge
 
 
 class BoundStatus(IntEnum):
@@ -368,6 +357,7 @@ class VMDHeater:
 class VMDCapabilities(Flag):
     """Ventilation unit capabilities."""
 
+    NO_CAPABLE = 0x0000
     PRE_HEATER_AVAILABLE = 0x0001
     POST_HEATER_AVAILABLE = 0x0002
     RESERVED = 0x0004
@@ -391,6 +381,53 @@ class VMDFaultStatus(IntEnum):
 
     OK = 0
     FAN_FAILURE = 1
+
+
+class VMDOffOnMode(IntEnum):
+    """General use binary state."""
+
+    OFF = 0
+    ON = 1
+    UNKNOWN = 10  # not in specs
+
+
+class VMDVentilationMode(IntEnum):
+    """Ventilation unit (Ventura) mode preset."""
+
+    OFF = 0
+    PAUSE = 1
+    ON = 2
+    OVERRIDE_1 = 3
+    OVERRIDE_2 = 4
+    OVERRIDE_3 = 5
+    OVERRIDE_4 = 6
+    OVERRIDE_5 = 7
+    SERVICE = 8
+    RETYPE = 9
+    UNKNOWN = 10  # not in specs
+
+    def __str__(self) -> str:  # pylint: disable=too-many-return-statements
+        if self.value == self.OFF:
+            return "Off"
+        if self.value == self.PAUSE:
+            return "Pause"
+        if self.value == self.ON:
+            return "On/Auto"
+        if self.value == self.OVERRIDE_1:
+            return "I (temporary override)"
+        if self.value == self.OVERRIDE_2:
+            return "II (temporary override)"
+        if self.value == self.OVERRIDE_3:
+            return "III (temporary override)"
+        if self.value == self.OVERRIDE_4:
+            return "IV (temporary override)"
+        if self.value == self.OVERRIDE_5:
+            return "V (temporary override)"
+        if self.value == self.SERVICE:
+            return "Service Mode"
+        if self.value == self.RETYPE:
+            return "Retype (see manual)"
+        raise ValueError(f"Unknown ventilation mode value {self.value}")
 
 
 class VMDVentilationSpeed(IntEnum):
@@ -590,5 +627,6 @@ class VMDBypassMode(IntEnum):
 class VMDBypassPosition:
     """VMD bypass position sample."""
 
+    # Ventura bp_position: 0 = closed, 100 = open
     position: int
     error: bool

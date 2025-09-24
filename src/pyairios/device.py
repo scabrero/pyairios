@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+import re
 from typing import List
 
 from .client import AsyncAiriosModbusClient
 from .constants import BoundStatus, ValueErrorStatus
 from .data_model import AiriosDeviceData
-from .node import AiriosNode
+from .node import AiriosNode, _safe_fetch
 from .registers import (
     I16Register,
     RegisterAccess,
@@ -41,6 +42,10 @@ class AiriosDevice(AiriosNode):
         ]
         self._add_registers(dev_registers)
 
+    def __str__(self) -> str:
+        prompt = str(re.sub(r"_", "-", self.__module__.upper()))
+        return f"{prompt}@{self.slave_id}"
+
     async def device_bound_status(self) -> Result[BoundStatus]:
         """Get the device bound status."""
         result = await self.client.get_register(self.regmap[Reg.BOUND_STATUS], self.slave_id)
@@ -56,13 +61,13 @@ class AiriosDevice(AiriosNode):
 
         return AiriosDeviceData(
             slave_id=self.slave_id,
-            rf_address=await self._safe_fetch(self.node_rf_address),
-            product_id=await self._safe_fetch(self.node_product_id),
-            sw_version=await self._safe_fetch(self.node_software_version),
-            product_name=await self._safe_fetch(self.node_product_name),
-            rf_comm_status=await self._safe_fetch(self.node_rf_comm_status),
-            battery_status=await self._safe_fetch(self.node_battery_status),
-            fault_status=await self._safe_fetch(self.node_fault_status),
-            bound_status=await self._safe_fetch(self.device_bound_status),
-            value_error_status=await self._safe_fetch(self.device_value_error_status),
+            rf_address=await _safe_fetch(self.node_rf_address),
+            product_id=await _safe_fetch(self.node_product_id),
+            sw_version=await _safe_fetch(self.node_software_version),
+            product_name=await _safe_fetch(self.node_product_name),
+            rf_comm_status=await _safe_fetch(self.node_rf_comm_status),
+            battery_status=await _safe_fetch(self.node_battery_status),
+            fault_status=await _safe_fetch(self.node_fault_status),
+            bound_status=await _safe_fetch(self.device_bound_status),
+            value_error_status=await _safe_fetch(self.device_value_error_status),
         )
