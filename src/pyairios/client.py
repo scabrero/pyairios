@@ -1,4 +1,4 @@
-"""Async client for the Airios BRDB-02R13 Modbus gateway."""
+"""Async client for the Airios BRDG-02R13 Modbus gateway."""
 
 from __future__ import annotations
 

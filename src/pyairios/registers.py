@@ -73,12 +73,12 @@ class StringRegister(RegisterBase[str]):
     def decode(self, registers: list[int]) -> str:
         """Decode register bytes to value."""
 
-        def registers_to_bytearray(registers: list[int]) -> bytearray:
+        def registers_to_bytearray(_registers: list[int]) -> bytearray:
             """Convert registers to bytes."""
-            b = bytearray()
-            for x in registers:
-                b.extend(x.to_bytes(2, "big"))
-            return b
+            _b = bytearray()
+            for x in _registers:
+                _b.extend(x.to_bytes(2, "big"))
+            return _b
 
         b = registers_to_bytearray(registers)
 
@@ -112,13 +112,55 @@ class NumberRegister(RegisterBase[T]):
 
     def encode(self, value: T) -> list[int]:
         """Encode value to register bytes."""
-        if isinstance(value, int):
+        if isinstance(
+            value, str
+        ):  # all CLI entries are passed in as str, despite casting in method call
+            try:
+                int_value = int(value)
+                return ModbusClientMixin.convert_to_registers(
+                    int_value, self.datatype, word_order="little"
+                )
+            except AiriosInvalidArgumentException as exc:
+                raise AiriosInvalidArgumentException(f"Entered str {value} not a number") from exc
+        elif isinstance(value, int):
             return ModbusClientMixin.convert_to_registers(value, self.datatype, word_order="little")
         if isinstance(value, (bool, float)):
             return ModbusClientMixin.convert_to_registers(
                 int(value), self.datatype, word_order="little"
             )
         raise AiriosInvalidArgumentException(f"Unsupported type {type(value)}")
+
+
+class U8Register(NumberRegister[int]):
+    """Unsigned 8-bit entry, sent to modbus as UINT16 register."""
+
+    datatype = ModbusClientMixin.DATATYPE.UINT16
+
+    def __init__(self, address: RegisterAddress, access: RegisterAccess) -> None:
+        """Initialize the U8Register instance."""
+        description = RegisterDescription(address, 1, access)
+        super().__init__(description)
+
+    def encode(self, value: T) -> list[int]:
+        """Encode value to register bytes."""
+        if isinstance(
+            value, str
+        ):  # all CLI entries are passed in as str, despite casting in method call
+            try:
+                int_value = int(value)
+            except AiriosInvalidArgumentException as exc:
+                raise AiriosInvalidArgumentException(f"Entered str {value} not a number") from exc
+        elif isinstance(value, int):
+            int_value = value
+        elif isinstance(value, bool):
+            int_value = int(value)
+        else:
+            raise AiriosInvalidArgumentException(f"Unsupported type {type(value)}")
+        if int_value != int_value & 255:  # int_value > 1 byte
+            raise AiriosInvalidArgumentException(
+                f"Entered value {value} > 255 (too large for UINT8)"
+            )
+        return super().encode(int_value)
 
 
 class U16Register(NumberRegister[int]):
