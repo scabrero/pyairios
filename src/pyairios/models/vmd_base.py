@@ -19,9 +19,9 @@ class VMDPresetFansSpeeds:
     """Preset fan speeds."""
 
     # this must load from vmd_base to prevent None error
-    exhaust_fan_speed: Result[int] = field(default=Result(-1))
+    exhaust_fan_speed: Result[int] = field()
     """Exhaust fan speed (%)"""
-    supply_fan_speed: Result[int] = field(default=Result(-1))
+    supply_fan_speed: Result[int] = field()
     """Supply fan speed (%)"""
 
     def __post_init__(self):
