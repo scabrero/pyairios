@@ -538,9 +538,10 @@ class BRDG02R13(AiriosNode):
         for _node in await self.nodes():
             if _node.slave_id != slave_id:
                 continue
-            key = str(_node.product_id)  # compare to cli.py and _init_.py
-            LOGGER.debug("Fetch matching module for: %s", key)
-            return self.modules[key].Node(slave_id, self.client)
+            for key, _id in self.prids.items():
+                if _id == _node.product_id:
+                    LOGGER.debug("Fetch matching module for: %s", key)
+                    return self.modules[key].Node(slave_id, self.client)
 
         raise AiriosException(f"Node {slave_id} not found")
 
