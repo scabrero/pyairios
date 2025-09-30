@@ -509,7 +509,7 @@ class Node(VmdBase):
 
         This is the supply temperature after the heat exchanger.
         """
-        regdesc = self.regmap[Reg.TEMPERATURE_EXHAUST]
+        regdesc = self.regmap[Reg.TEMPERATURE_INLET]
         result = await self.client.get_register(regdesc, self.slave_id)
         if math.isnan(result.value):
             status = VMDSensorStatus.UNAVAILABLE
