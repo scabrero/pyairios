@@ -87,8 +87,8 @@ class Airios:
 
         prids = brdg_data["product_ids"]
         if prids is not None and brdg_data["models"] is not None:
-            for _node in await self.bridge.nodes():
-                for key, _id in prids.items():
+            for _node in await self.bridge.nodes():  # for each bound node (slow)
+                for key, _id in prids.items():  # find a matching model (quick)
                     if _id == _node.product_id and brdg_data["models"][key] is not None:
                         LOGGER.debug("fetch_node_data for key: %s", key)
                         node_module = brdg_data["models"][key].Node(

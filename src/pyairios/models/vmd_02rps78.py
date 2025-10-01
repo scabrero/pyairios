@@ -87,7 +87,7 @@ class Reg(RegisterAddress):  # only override or add differences in VMD_BASE?
     FREE_VENTILATION_COOLING_OFFSET = 42015
 
 
-class NodeData(AiriosDeviceData):
+class DeviceData(AiriosDeviceData):
     """VMD-02RPS78 node data."""
 
     error_code: Result[VMDErrorCode] | None
@@ -651,10 +651,10 @@ class Node(VmdBase):
             self.regmap[Reg.FAN_SPEED_AWAY_EXHAUST], value, self.slave_id
         )
 
-    async def fetch_node_data(self) -> NodeData:  # pylint: disable=duplicate-code
+    async def fetch_node_data(self) -> DeviceData:  # pylint: disable=duplicate-code
         """Fetch all controller data at once."""
 
-        return NodeData(
+        return DeviceData(
             slave_id=self.slave_id,
             rf_address=await _safe_fetch(self.node_rf_address),
             product_id=await _safe_fetch(self.node_product_id),

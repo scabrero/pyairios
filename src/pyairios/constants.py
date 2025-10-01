@@ -104,7 +104,7 @@ class RFStats:
         """RF statistic record."""
 
         device_id: int
-        averate: int
+        average: int
         """Average received signal strength margin  of RF beacon (dB)."""
         stddev: float
         """Standard deviation of received signal strength margin of RF beacon (.1 dB)."""

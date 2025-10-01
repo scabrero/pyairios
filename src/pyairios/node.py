@@ -75,7 +75,7 @@ class AiriosNode:
 
     def __init__(self, slave_id: int, client: AsyncAiriosModbusClient) -> None:
         """Initialize the node class instance."""
-        LOGGER.debug("Init AiriosNode")
+        LOGGER.debug("Init AiriosNode@%s", slave_id)
 
         self.client = client
         self.slave_id = int(slave_id)
@@ -109,7 +109,7 @@ class AiriosNode:
             U32Register(Reg.FAULT_HISTORY_STATUS_INFO, RegisterAccess.READ),
             U16Register(Reg.FAULT_HISTORY_COMM_STATUS, RegisterAccess.READ),
         ]
-        LOGGER.debug("Add node_registers")
+        LOGGER.debug("Add node registers")
         self._add_registers(node_registers)
 
     def _add_registers(self, reglist: List[RegisterBase]):
@@ -165,7 +165,7 @@ class AiriosNode:
         """Get the received product ID.
 
         This is the value received from the bound node. If it does not match register
-        NODE_PRODUCT_ID, a wrong product is bound.
+        PRODUCT_ID, a wrong product is bound.
         """
         return await self.client.get_register(self.regmap[Reg.RECEIVED_PRODUCT_ID], self.slave_id)
 
@@ -223,7 +223,7 @@ class AiriosNode:
             age = datetime.timedelta(minutes=r.value)
             rec = RFStats.Record(
                 device_id=device_id,
-                averate=average,
+                average=average,
                 stddev=stddev,
                 minimum=minimum,
                 maximum=maximum,

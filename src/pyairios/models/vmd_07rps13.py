@@ -96,7 +96,7 @@ class Reg(RegisterAddress):  # only override or add differences in VMD_BASE
     SYSTEM_VENT_CONFIG = 42021  # 1, RW, uint8, "System Ventilation Configuration"
 
 
-class NodeData(AiriosDeviceData):
+class DeviceData(AiriosDeviceData):
     """
     VMD-07RPS13 ClimaRad Ventura V1C/V1D/V1X node data.
     source: ClimaRad Modbus Registers Specs 2024
@@ -526,10 +526,10 @@ class Node(VmdBase):
         status = VMDHeaterStatus.UNAVAILABLE if result.value == 0xEF else VMDHeaterStatus.OK
         return Result(VMDHeater(result.value, status), result.status)
 
-    async def fetch_node_data(self) -> NodeData:  # pylint: disable=duplicate-code
+    async def fetch_node_data(self) -> DeviceData:  # pylint: disable=duplicate-code
         """Fetch all controller data at once."""
 
-        return NodeData(
+        return DeviceData(
             slave_id=self.slave_id,
             # node data from pyairios node
             rf_address=await _safe_fetch(self.node_rf_address),
