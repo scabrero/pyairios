@@ -1,6 +1,7 @@
 """The Airios RF bridge API entrypoint."""
 
 import logging
+from types import ModuleType
 
 from pyairios.models.brdg_02r13 import BRDG02R13
 from pyairios.models.brdg_02r13 import DEFAULT_SLAVE_ID as BRDG02R13_DEFAULT_SLAVE_ID
@@ -48,6 +49,18 @@ class Airios:
     async def node(self, slave_id: int) -> AiriosNode:
         """Get a node instance by its Modbus slave ID."""
         return await self.bridge.node(slave_id)
+
+    async def models(self) -> dict[str, ModuleType] | None:
+        """Get the list of supported models."""
+        return await self.bridge.models()
+
+    async def prids(self) -> dict[str, int] | None:
+        """Get the list of supported product_id's."""
+        return await self.bridge.product_ids()
+
+    async def model_descriptions(self) -> dict[str, str] | None:
+        """Get the list of supported product_id's."""
+        return await self.bridge.model_descriptions()
 
     async def bind_status(self) -> BindingStatus:
         """Get the bind status."""
