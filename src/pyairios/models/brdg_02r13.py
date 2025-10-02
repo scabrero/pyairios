@@ -293,7 +293,7 @@ class BRDG02R13(AiriosNode):
                     )
                 self.prids[model_key] = _id
                 check_id.append(_id)  # remember all added _id's to check for duplicates
-                self.descriptions[model_key] = self.modules[model_key].product_descr
+                self.descriptions[model_key] = self.modules[model_key].product_descr()
 
             LOGGER.debug("Loaded modules:")
             LOGGER.debug(self.modules)  # dict

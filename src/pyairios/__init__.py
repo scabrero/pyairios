@@ -50,16 +50,16 @@ class Airios:
         """Get a node instance by its Modbus slave ID."""
         return await self.bridge.node(slave_id)
 
-    async def models(self) -> dict[str, ModuleType] | None:
+    async def airios_models(self) -> dict[str, ModuleType] | None:
         """Get the list of supported models."""
         return await self.bridge.models()
 
-    async def prids(self) -> dict[str, int] | None:
+    async def airios_prids(self) -> dict[str, int] | None:
         """Get the list of supported product_id's."""
         return await self.bridge.product_ids()
 
-    async def model_descriptions(self) -> dict[str, str] | None:
-        """Get the list of supported product_id's."""
+    async def airios_model_descr(self) -> dict[str, str] | None:
+        """Get the list of supported model descriptions."""
         return await self.bridge.model_descriptions()
 
     async def bind_status(self) -> BindingStatus:
