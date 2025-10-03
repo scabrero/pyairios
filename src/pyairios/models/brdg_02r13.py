@@ -555,20 +555,7 @@ class BRDG02R13(BrdgBase):
         """
         res = await self.fetch_bridge_data()  # customised per model
 
-        print("Node data")
-        print("---------")
-        print(f"    {'Product ID:': <25}{res['product_id']} (0x{res['product_id']:08X})")
-        print(f"    {'Product Name:': <25}{res['product_name']}")
-        print(f"    {'Software version:': <25}{res['sw_version']}")
-        print(f"    {'RF address:': <25}{res['rf_address']}")
-        print("")
-
-        print("Device data")
-        print("---------")
-        print(f"    {'RF comm status:': <25}{res['rf_comm_status']}")
-        print(f"    {'Battery status:': <25}{res['battery_status']}")
-        print(f"    {'Fault status:': <25}{res['fault_status']}")
-        print("")
+        super().print_base_data(res)
 
         print("BRDG-02R13 data")
         print("----------------")
@@ -578,12 +565,3 @@ class BRDG02R13(BrdgBase):
         print(f"    {'RF load current hour:': <40}{res['rf_load_current_hour']}")
         print(f"    {'Uptime:': <40}{res['power_on_time']}")
         print("")
-
-        amount = 0 if res["models"] is None else len(res["models"])
-        print(f"Loaded {amount} model files")
-        if res["models"] is not None:
-            for key, mod in res["models"].items():
-                print(
-                    f"    {key[:3]}{':': <37}{key} {str(mod.Node)} {mod.product_descr} {mod.pr_id}"
-                )
-        # print(f"    {'ProductIDs:': <40}{res['product_ids']}")

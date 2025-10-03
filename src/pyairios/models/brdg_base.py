@@ -157,7 +157,7 @@ class BrdgBase(AiriosDevice):
 
     def print_base_data(self, res) -> None:
         """
-        Print shared VMD labels + states, in CLI.
+        Print shared BRDG labels + states, in CLI.
 
         :return: no confirmation, outputs to serial monitor
         """
@@ -174,8 +174,15 @@ class BrdgBase(AiriosDevice):
         print(f"    {'RF comm status:': <25}{res['rf_comm_status']}")
         print(f"    {'Battery status:': <25}{res['battery_status']}")
         print(f"    {'Fault status:': <25}{res['fault_status']}")
-        print(f"    {'Bound status:': <25}{res['bound_status']}")
-        print(f"    {'Value error status:': <25}{res['value_error_status']}")
         print("")
+
+        amount = 0 if self.modules is None else len(self.modules)
+        print(f"Loaded {amount} model files")
+        if self.modules is not None:
+            for key, mod in self.modules.items():
+                report1 = f"{key[:3]}{':': <6}{key: <14}name: {mod.__name__: <14} descr.:"
+                report2 = f"{str(mod.product_descr()): <38} product_id: {mod.pr_id()}"
+                print(f"    {report1}{report2}")
+        # print(f"    {'ProductIDs:': <13}{self.prids}")
 
         print("----------------")
