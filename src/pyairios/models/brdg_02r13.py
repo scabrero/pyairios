@@ -1,14 +1,8 @@
 """Airios BRDG-02R13 RF bridge implementation."""
 
-import asyncio
-import glob
-import importlib.util
 import logging
-import os
-import re
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from types import ModuleType
 from typing import List
 
 from pyairios.client import AsyncAiriosModbusClient
@@ -27,6 +21,7 @@ from pyairios.exceptions import (
     AiriosException,
     AiriosInvalidArgumentException,
 )
+from pyairios.models.brdg_base import BrdgBase
 from pyairios.node import AiriosNode, _safe_fetch
 from pyairios.node import Reg as NodeReg
 from pyairios.registers import (
@@ -156,16 +151,8 @@ def product_descr() -> str | tuple[str, ...]:
     return "Airios RS485 RF Gateway"
 
 
-class BRDG02R13(AiriosNode):
+class BRDG02R13(BrdgBase):
     """Represents a BRDG-02R13 RF bridge."""
-
-    modules: dict[str, ModuleType] = {}
-    # a dict with imported modules by model
-    prids: dict[str, int] = {}
-    # a dict with product_ids by model (replaces ProductId enum in const.py)
-    descriptions: dict[str, str] = {}
-    # a dict with label description model, for use in UI
-    modules_loaded: bool = False
 
     def __init__(self, slave_id: int, client: AsyncAiriosModbusClient) -> None:
         """Initialize the BRDG-02R13 RF bridge instance."""
@@ -239,108 +226,6 @@ class BRDG02R13(AiriosNode):
     def __str__(self) -> str:
         return f"BRDG-02R13@{self.slave_id}"
         # node method doesn't work for Bridge module in CLI (contains the path too)
-
-    async def load_models(self) -> int:
-        """
-        Analyse and import all VMx.py files from the models/ folder.
-        """
-        if not self.modules_loaded:
-            loop = asyncio.get_running_loop()
-            # must call this async run_in_executor to prevent HA blocking call during file I/O.
-            modules_list = await loop.run_in_executor(
-                None, glob.glob, os.path.join(os.path.dirname(__file__), "*.py")
-            )
-            # we are in models/
-            check_id = []
-
-            for file_path in modules_list:
-                file_name = str(os.path.basename(file_path))
-                if (
-                    file_name == "__init__.py"
-                    # or file_name == "brdg_02r13.py"  # bridge has sensors that need this info
-                    or file_name.endswith("_base.py")
-                ):  # skip init and any base model definitions
-                    continue
-                module_name = file_name.removesuffix(".py")
-                if module_name is None:
-                    raise AiriosException(f"Failed to extract mod_name from filename {file_name}")
-                model_key: str = str(re.sub(r"_", "-", module_name).upper())
-                if model_key is None:
-                    raise AiriosException(f"Failed to create model_key from {module_name}")
-
-                # using importlib, create a spec for each module:
-                module_spec = importlib.util.spec_from_file_location(module_name, file_path)
-                if module_spec is None or module_spec.loader is None:
-                    raise AiriosException(f"Failed to load module {module_name}")
-                # store the spec in a dict by class name:
-                mod = importlib.util.module_from_spec(module_spec)
-                # load the module from the spec:
-                if mod is None:
-                    raise AiriosException(f"Failed to load module_from_spec {module_name}")
-                module_spec.loader.exec_module(mod)
-                # store the imported module in dict:
-                self.modules[model_key] = mod
-
-                # now we can use the module as if it were imported normally
-                # check correct loading by fetching the product_id
-                # (the int to check binding against)
-                _id = self.modules[model_key].pr_id()
-                # verify no duplicate product_id's
-                if _id in check_id:  #  product_id not unique among models
-                    raise AiriosException(
-                        f"Found duplicate product_id while collecting models:id {model_key}"
-                        f"used by {self.modules[model_key].__name__} and by {mod.__name__}"
-                    )
-                self.prids[model_key] = _id
-                check_id.append(_id)  # remember all added _id's to check for duplicates
-                self.descriptions[model_key] = self.modules[model_key].product_descr()
-
-            LOGGER.debug("Loaded modules:")
-            LOGGER.debug(self.modules)  # dict
-            LOGGER.info("Loaded product_id's:")
-            LOGGER.info(self.prids)  # dict
-            LOGGER.info("Loaded products:")
-            LOGGER.info(self.descriptions)  # dict
-            # all loaded up
-            self.modules_loaded = True
-        return len(self.modules)
-
-    async def models(self) -> dict[str, ModuleType] | None:
-        """
-        Util to fetch all supported models with their imported module class.
-        Must call this async run_in_executor to prevent HA blocking call during file I/O.
-
-        :return: dict of all controller and accessory modules by key
-        """
-        if not self.modules_loaded:
-            task = asyncio.create_task(self.load_models())
-            await task
-            return self.modules
-        return self.modules
-
-    async def model_descriptions(self) -> dict[str, str] | None:
-        """
-        Util to fetch all supported model labels.
-
-        :return: dict of all controller and accessory module labels by key
-        """
-        if not self.modules_loaded:
-            task = asyncio.create_task(self.load_models())
-            await task
-            return self.descriptions
-        return self.descriptions
-
-    async def product_ids(self) -> dict[str, int] | None:
-        """
-        Util to pick up all supported models with their productId.
-
-        :return: dict of all controller and accessory definitions installed
-        """
-        if not self.modules_loaded:
-            task = asyncio.create_task(self.load_models())
-            await task
-            return self.prids
-        return self.prids
 
     async def bind_controller(
         self,
