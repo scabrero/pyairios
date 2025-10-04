@@ -541,10 +541,6 @@ class BRDG02R13(BrdgBase):
             rf_load_last_hour=await _safe_fetch(self.rf_load_last_hour),
             rf_load_current_hour=await _safe_fetch(self.rf_load_current_hour),
             power_on_time=await _safe_fetch(self.power_on_time),
-            # add info from ALL definitions in models/
-            models=await self.models(),
-            model_descriptions=await self.model_descriptions(),
-            product_ids=await self.product_ids(),
         )
 
     async def print_data(self) -> None:

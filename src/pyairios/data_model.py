@@ -2,7 +2,6 @@
 
 from dataclasses import dataclass
 from datetime import timedelta
-from types import ModuleType
 from typing import TypedDict
 
 from pyairios.constants import (
@@ -45,7 +44,7 @@ class AiriosDeviceData(AiriosNodeData):
 
 
 # Here only data_models for special devices. To simplify adding new models,
-# 'normal' node data_models, all named Data, are in their respective models/module file
+# 'normal' node data_models, all named DeviceData, are in their respective models/module file
 
 
 class BRDG02R13Data(AiriosNodeData):
@@ -56,10 +55,6 @@ class BRDG02R13Data(AiriosNodeData):
     rf_load_last_hour: Result[float] | None
     rf_load_current_hour: Result[float] | None
     power_on_time: Result[timedelta] | None
-    # Bridge holds info collected from models/ definition at startup:
-    models: dict[str, ModuleType] | None
-    model_descriptions: dict[str, str] | None
-    product_ids: dict[str, int] | None
 
 
 @dataclass
@@ -67,4 +62,4 @@ class AiriosData:
     """Data from all bridge bound nodes."""
 
     bridge_rf_address: int
-    nodes: dict[int, AiriosNodeData | BRDG02R13Data]
+    nodes: dict[int, AiriosDeviceData]
