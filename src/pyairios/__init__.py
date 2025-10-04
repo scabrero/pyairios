@@ -98,15 +98,14 @@ class Airios:
         bridge_rf_address = brdg_data["rf_address"].value
         data[self.bridge.slave_id] = brdg_data
 
-        prids = brdg_data["product_ids"]
-        if prids is not None and brdg_data["models"] is not None:
+        prids = await self.bridge.product_ids()
+        models = await self.bridge.models()
+        if prids is not None and models is not None:
             for _node in await self.bridge.nodes():  # for each bound node (slow)
                 for key, _id in prids.items():  # find a matching model (quick)
-                    if _id == _node.product_id and brdg_data["models"][key] is not None:
+                    if _id == _node.product_id and models[key] is not None:
                         LOGGER.debug("fetch_node_data for key: %s", key)
-                        node_module = brdg_data["models"][key].Node(
-                            _node.slave_id, self.bridge.client
-                        )
+                        node_module = models[key].Node(_node.slave_id, self.bridge.client)
                         node_data = await node_module.fetch_node_data()
                         data[_node.slave_id] = node_data
 
