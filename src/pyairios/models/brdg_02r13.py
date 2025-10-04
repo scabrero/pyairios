@@ -12,7 +12,6 @@ from pyairios.constants import (
     BindingStatus,
     ModbusEvents,
     Parity,
-    ProductId,
     ResetMode,
     StopBits,
 )
@@ -22,9 +21,8 @@ from pyairios.exceptions import (
     AiriosException,
     AiriosInvalidArgumentException,
 )
-from pyairios.models.vmd_02rps78 import VMD02RPS78
-from pyairios.models.vmn_05lm02 import VMN05LM02
-from pyairios.node import AiriosNode
+from pyairios.models.brdg_base import BrdgBase
+from pyairios.node import AiriosNode, _safe_fetch
 from pyairios.node import Reg as NodeReg
 from pyairios.registers import (
     DateTimeRegister,
@@ -40,7 +38,7 @@ from pyairios.registers import (
 
 DEFAULT_SLAVE_ID = 207
 
-_LOGGER = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 @dataclass
@@ -135,13 +133,33 @@ class Reg(RegisterAddress):
     ADDRESS_NODE_32 = 43933
 
 
-class BRDG02R13(AiriosNode):
+def pr_id() -> int:
+    """
+    Get product_id for model BRDG-02R13.
+    Named as is to discern from node.product_id register.
+    :return: unique int
+    """
+    return 0x0001C849
+
+
+def product_descr() -> str | tuple[str, ...]:
+    """
+    Get description of product(s) using BRDG-02R13.
+    Human-readable text, used in e.g. HomeAssistant Binding UI.
+    :return: string or tuple of strings, starting with manufacturer
+    """
+    return "Airios RS485 RF Gateway"
+
+
+class BRDG02R13(BrdgBase):
     """Represents a BRDG-02R13 RF bridge."""
 
     def __init__(self, slave_id: int, client: AsyncAiriosModbusClient) -> None:
         """Initialize the BRDG-02R13 RF bridge instance."""
 
         super().__init__(slave_id, client)
+        LOGGER.debug("Init RF Bridge")
+
         brdg_registers: List[RegisterBase] = [
             U16Register(Reg.CUSTOMER_PRODUCT_ID, RegisterAccess.READ | RegisterAccess.WRITE),
             DateTimeRegister(Reg.UTC_TIME, RegisterAccess.READ | RegisterAccess.WRITE),
@@ -203,14 +221,16 @@ class BRDG02R13(AiriosNode):
             U16Register(Reg.ADDRESS_NODE_32, RegisterAccess.READ),
         ]
         self._add_registers(brdg_registers)
+        # models are lazy loaded or initiated by caller
 
     def __str__(self) -> str:
         return f"BRDG-02R13@{self.slave_id}"
+        # node method doesn't work for Bridge module in CLI (contains the path too)
 
     async def bind_controller(
         self,
         slave_id: int,
-        product_id: ProductId,
+        _product_id: int,
         product_serial: int | None = None,
     ) -> bool:
         """Bind a new controller to the bridge."""
@@ -240,7 +260,7 @@ class BRDG02R13(AiriosNode):
             mode = BindingMode.OUTGOING_SINGLE_PRODUCT_PLUS_SERIAL
 
         ok = await self.client.set_register(
-            self.regmap[Reg.BINDING_PRODUCT_ID], product_id, self.slave_id
+            self.regmap[Reg.BINDING_PRODUCT_ID], _product_id, self.slave_id
         )
         if not ok:
             raise AiriosBindingException("Failed to configure binding product ID")
@@ -278,7 +298,7 @@ class BRDG02R13(AiriosNode):
         self,
         controller_slave_id: int,
         slave_id: int,
-        product_id: ProductId,
+        _product_id: int,
     ) -> bool:
         """Bind a new accessory to the bridge."""
         if controller_slave_id < 2 or controller_slave_id > 247:
@@ -308,7 +328,7 @@ class BRDG02R13(AiriosNode):
             raise AiriosBindingException(f"Bridge not ready for binding: {result.value}")
 
         ok = await self.client.set_register(
-            self.regmap[Reg.BINDING_PRODUCT_ID], product_id, self.slave_id
+            self.regmap[Reg.BINDING_PRODUCT_ID], _product_id, self.slave_id
         )
         if not ok:
             raise AiriosBindingException("Failed to configure binding product ID")
@@ -324,7 +344,7 @@ class BRDG02R13(AiriosNode):
         )
 
     async def nodes(self) -> List[AiriosBoundNodeInfo]:
-        """Get the list of bound nodes."""
+        """Get the list of bound nodes registered on the bridge."""
 
         reg_descs: List[RegisterBase] = [
             self.regmap[Reg.ADDRESS_NODE_1],
@@ -360,26 +380,28 @@ class BRDG02R13(AiriosNode):
             self.regmap[Reg.ADDRESS_NODE_31],
             self.regmap[Reg.ADDRESS_NODE_32],
         ]
-
+        LOGGER.debug("Starting Bridge.nodes()")
         nodes: List[AiriosBoundNodeInfo] = []
         for item in reg_descs:
+            LOGGER.debug("Starting item node(%s)", self.slave_id)
             result = await self.client.get_register(item, self.slave_id)
+            LOGGER.debug("got result")
             if result is None or result.value is None:
                 continue
             slave_id = result.value
             if slave_id == 0:
                 continue
-
+            LOGGER.debug("Starting self.client.get_register")
             result = await self.client.get_register(self.regmap[NodeReg.PRODUCT_ID], slave_id)
             if result is None or result.value is None:
                 continue
-            try:
-                product_id = ProductId(result.value)
-            except ValueError:
-                _LOGGER.warning("Unknown product ID %s", result.value)
+            _product_id: int = -1
+            for _id in self.prids.values():
+                if _id == result.value:
+                    _product_id = _id
+            if _product_id == -1:
+                LOGGER.warning("Unknown product ID %s", result.value)
                 continue
-            else:
-                product_id = ProductId(result.value)
 
             result = await self.client.get_register(self.regmap[NodeReg.RF_ADDRESS], slave_id)
             if result is None or result.value is None:
@@ -387,7 +409,7 @@ class BRDG02R13(AiriosNode):
             rf_address = result.value
 
             info = AiriosBoundNodeInfo(
-                slave_id=slave_id, product_id=product_id, rf_address=rf_address
+                slave_id=slave_id, product_id=_product_id, rf_address=rf_address
             )
             nodes.append(info)
         return nodes
@@ -396,15 +418,14 @@ class BRDG02R13(AiriosNode):
         """Get a node instance by its Modbus slave ID."""
 
         if slave_id == self.slave_id:
-            return self
+            return self  # the bridge as node
 
-        for node in await self.nodes():
-            if node.slave_id != slave_id:
+        for _node in await self.nodes():
+            if _node.slave_id != slave_id:
                 continue
-            if node.product_id == ProductId.VMD_02RPS78:
-                return VMD02RPS78(node.slave_id, self.client)
-            if node.product_id == ProductId.VMN_05LM02:
-                return VMN05LM02(node.slave_id, self.client)
+            key = str(_node.product_id)  # compare to cli.py and _init_.py
+            LOGGER.debug("Fetch matching module for: %s", key)
+            return self.modules[key].Node(slave_id, self.client)
 
         raise AiriosException(f"Node {slave_id} not found")
 
@@ -503,23 +524,40 @@ class BRDG02R13(AiriosNode):
         """
         return await self.client.set_register(self.regmap[Reg.OEM_CODE], code, self.slave_id)
 
-    async def fetch_bridge(self) -> BRDG02R13Data:  # pylint: disable=duplicate-code
+    async def fetch_bridge_data(self) -> BRDG02R13Data:  # pylint: disable=duplicate-code
         """Fetch all bridge data at once."""
 
         return BRDG02R13Data(
             slave_id=self.slave_id,
-            rf_address=await self._safe_fetch(self.node_rf_address),
-            product_id=await self._safe_fetch(self.node_product_id),
-            sw_version=await self._safe_fetch(self.node_software_version),
-            product_name=await self._safe_fetch(self.node_product_name),
-            rf_comm_status=await self._safe_fetch(self.node_rf_comm_status),
-            battery_status=await self._safe_fetch(self.node_battery_status),
-            fault_status=await self._safe_fetch(self.node_fault_status),
-            rf_sent_messages_last_hour=await self._safe_fetch(self.rf_sent_messages_last_hour),
-            rf_sent_messages_current_hour=await self._safe_fetch(
-                self.rf_sent_messages_current_hour
-            ),
-            rf_load_last_hour=await self._safe_fetch(self.rf_load_last_hour),
-            rf_load_current_hour=await self._safe_fetch(self.rf_load_current_hour),
-            power_on_time=await self._safe_fetch(self.power_on_time),
+            rf_address=await _safe_fetch(self.node_rf_address),
+            product_id=await _safe_fetch(self.node_product_id),
+            sw_version=await _safe_fetch(self.node_software_version),
+            product_name=await _safe_fetch(self.node_product_name),
+            rf_comm_status=await _safe_fetch(self.node_rf_comm_status),
+            battery_status=await _safe_fetch(self.node_battery_status),
+            fault_status=await _safe_fetch(self.node_fault_status),
+            rf_sent_messages_last_hour=await _safe_fetch(self.rf_sent_messages_last_hour),
+            rf_sent_messages_current_hour=await _safe_fetch(self.rf_sent_messages_current_hour),
+            rf_load_last_hour=await _safe_fetch(self.rf_load_last_hour),
+            rf_load_current_hour=await _safe_fetch(self.rf_load_current_hour),
+            power_on_time=await _safe_fetch(self.power_on_time),
         )
+
+    async def print_data(self) -> None:
+        """
+        Print labels + states for this Bridge in CLI.
+
+        :return: no confirmation, outputs to serial monitor
+        """
+        res = await self.fetch_bridge_data()  # customised per model
+
+        super().print_base_data(res)
+
+        print("BRDG-02R13 data")
+        print("----------------")
+        print(f"    {'RF sent messages last hour': <40}{res['rf_sent_messages_last_hour']}")
+        print(f"    {'RF sent messages current hour:': <40}{res['rf_sent_messages_current_hour']}")
+        print(f"    {'RF load last hour:': <40}{res['rf_load_last_hour']}")
+        print(f"    {'RF load current hour:': <40}{res['rf_load_current_hour']}")
+        print(f"    {'Uptime:': <40}{res['power_on_time']}")
+        print("")
