@@ -62,4 +62,4 @@ class AiriosData:
     """Data from all bridge bound nodes."""
 
     bridge_rf_address: int
-    nodes: dict[int, AiriosDeviceData]
+    nodes: dict[int, AiriosDeviceData | BRDG02R13Data]

@@ -15,7 +15,12 @@ from .client import (
     AsyncAiriosModbusTcpClient,
 )
 from .constants import BindingStatus
-from .data_model import AiriosBoundNodeInfo, AiriosData, AiriosNodeData
+from .data_model import (
+    AiriosBoundNodeInfo,
+    AiriosData,
+    AiriosDeviceData,
+    BRDG02R13Data,
+)
 from .exceptions import AiriosException
 from .node import AiriosNode
 
@@ -90,7 +95,7 @@ class Airios:
 
     async def fetch(self) -> AiriosData:
         """Get the data from all nodes at once."""
-        data: dict[int, AiriosNodeData] = {}
+        data: dict[int, AiriosDeviceData | BRDG02R13Data] = {}
 
         brdg_data = await self.bridge.fetch_bridge_data()
         if brdg_data is None or brdg_data["rf_address"] is None:
@@ -106,7 +111,7 @@ class Airios:
                     if _id == _node.product_id and models[key] is not None:
                         LOGGER.debug("fetch_node_data for key: %s", key)
                         node_module = models[key].Node(_node.slave_id, self.bridge.client)
-                        node_data = await node_module.fetch_node_data()
+                        node_data = await node_module.fetch_node_data()  # extended DeviceData
                         data[_node.slave_id] = node_data
 
         return AiriosData(bridge_rf_address=bridge_rf_address, nodes=data)
