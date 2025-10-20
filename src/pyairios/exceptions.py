@@ -66,3 +66,7 @@ class AiriosNotImplemented(AiriosException):
 
 class AiriosIOException(AiriosException):
     """I/O exception"""
+
+
+class AiriosUnknownProductException(AiriosException):
+    """Unknown product exception."""
