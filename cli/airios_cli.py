@@ -29,6 +29,7 @@ from pyairios.constants import (
     Parity,
     ProductId,
     ResetMode,
+    SerialConfig,
     StopBits,
     VMDBypassMode,
     VMDRequestedVentilationSpeed,
@@ -42,9 +43,6 @@ from pyairios.exceptions import (
 )
 from pyairios.models.brdg_02r13 import (
     BRDG02R13,
-    SerialConfig,
-)
-from pyairios.models.brdg_02r13 import (
     DEFAULT_SLAVE_ID as BRDG02R13_DEFAULT_SLAVE_ID,
 )
 from pyairios.models.vmd_02rps78 import VMD02RPS78

@@ -259,6 +259,26 @@ class ResetMode(IntEnum):
     """Factory reset"""
 
 
+@dataclass
+class RFLoad:
+    """RF load."""
+
+    load_current_hour: float
+    """The RF load in the current hour (%)."""
+    load_last_hour: float
+    """The RF load in the last hour (%)."""
+
+
+@dataclass
+class RFSentMessages:
+    """RF sent messages."""
+
+    messages_current_hour: int
+    """Messages sent in the current hour."""
+    messages_last_hour: int
+    """Messages sent in the last hour."""
+
+
 class Baudrate(IntEnum):
     """Serial port baudrate."""
 
@@ -332,6 +352,15 @@ class StopBits(IntEnum):
         if int(value) == 2:
             return cls(cls.STOP_2)
         raise ValueError(f"Unknown stop_bits value {value}")
+
+
+@dataclass
+class SerialConfig:
+    """Serial config."""
+
+    baudrate: Baudrate
+    parity: Parity
+    stop_bits: StopBits
 
 
 class VMDSensorStatus(IntEnum):

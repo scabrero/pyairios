@@ -1,7 +1,6 @@
 """Airios BRDG-02R13 RF bridge implementation."""
 
 import logging
-from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import List
 
@@ -14,6 +13,9 @@ from pyairios.constants import (
     Parity,
     ProductId,
     ResetMode,
+    RFLoad,
+    RFSentMessages,
+    SerialConfig,
     StopBits,
 )
 from pyairios.data_model import AiriosBoundNodeInfo, BRDG02R13Data
@@ -41,35 +43,6 @@ from pyairios.registers import (
 DEFAULT_SLAVE_ID = 207
 
 LOGGER = logging.getLogger(__name__)
-
-
-@dataclass
-class RFLoad:
-    """RF load."""
-
-    load_current_hour: float
-    """The RF load in the current hour (%)."""
-    load_last_hour: float
-    """The RF load in the last hour (%)."""
-
-
-@dataclass
-class RFSentMessages:
-    """RF sent messages."""
-
-    messages_current_hour: int
-    """Messages sent in the current hour."""
-    messages_last_hour: int
-    """Messages sent in the last hour."""
-
-
-@dataclass
-class SerialConfig:
-    """Serial config."""
-
-    baudrate: Baudrate
-    parity: Parity
-    stop_bits: StopBits
 
 
 class Reg(RegisterAddress):
