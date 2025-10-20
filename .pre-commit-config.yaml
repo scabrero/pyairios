@@ -39,7 +39,7 @@ repos:
           - --show-error-context
         language: system
         pass_filenames: true
-        files: ^(src|cli)/.+\.py$
+        files: ^(src|cli|tests)/.+\.py$
       - id: pylint
         name: pylint
         entry: pylint
@@ -49,4 +49,4 @@ repos:
         name: pyright
         entry: uv run pyright
         language: system
-        files: ^(src|cli)/.+\.py$
+        files: ^(src|cli|tests)/.+\.py$
