@@ -1,36 +1,52 @@
-# See https://pre-commit.com for more information
-# See https://pre-commit.com/hooks.html for more hooks
 repos:
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+  - repo: https://github.com/astral-sh/uv-pre-commit
+    rev: 0.8.24
     hooks:
-    -   id: trailing-whitespace
-    -   id: end-of-file-fixer
-    -   id: check-yaml
-    -   id: check-added-large-files
+      - id: uv-lock
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.12.8
+    rev: v0.13.3
     hooks:
-      # Run the linter.
       - id: ruff
-        args: [ "src/", "--fix" ]
-      # Run the formatter.
+        args: [ --fix ]
+        files: ^(src|cli)/.+\.py$
       - id: ruff-format
+        files: ^(src/cli)/.+\.py$
   - repo: https://github.com/codespell-project/codespell
-    rev: v2.3.0
+    rev: v2.4.1
     hooks:
       - id: codespell
+        args:
+          - --ignore-words-list=hass
+          - --skip="./.*,*.csv,*.json"
+          - --quiet-level=2
+        exclude_types: [ csv, json ]
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-executables-have-shebangs
+        stages: [ manual ]
+      - id: check-json
+  # These hooks require the locally installed venv (for example myPyllant for mypy)
   - repo: local
     hooks:
-    - id: pylint
-      name: pylint
-      entry: pylint
-      language: system
-      types: [python]
-      args: [ "--rcfile=.pylintrc", ]
-    - id: mypy
-      name: mypy
-      entry: mypy --pretty --show-error-codes --show-error-context
-      language: system
-      pass_filenames: true
-      files: ^(src)/.+\.py$
+      - id: mypy
+        name: mypy
+        entry: uv run mypy
+        args:
+          - --follow-untyped-imports
+          - --pretty
+          - --show-error-codes
+          - --show-error-context
+        language: system
+        pass_filenames: true
+        files: ^(src|cli)/.+\.py$
+      - id: pylint
+        name: pylint
+        entry: pylint
+        language: system
+        types: [python]
+      - id: pyright
+        name: pyright
+        entry: uv run pyright
+        language: system
+        files: ^(src|cli)/.+\.py$

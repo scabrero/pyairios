@@ -27,4 +27,6 @@ jobs:
     - name: Analysing the code with pylint
       run: uv run pylint $(git ls-files '*.py')
     - name: Analysing the code with mypy
-      run: uv run mypy --pretty --show-error-codes --show-error-context ./src
+      run: uv run mypy --follow-untyped-imports --pretty --show-error-codes --show-error-context ./src ./cli
+    - name: Analysing the code with pyright
+      run: uv run pyright ./src ./cli
