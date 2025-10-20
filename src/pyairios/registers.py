@@ -5,9 +5,11 @@ import logging
 import struct
 import typing as t
 from dataclasses import dataclass
-from enum import Flag, IntEnum, auto
+from enum import Flag, auto
 
 from pymodbus.client.mixin import ModbusClientMixin
+
+from pyairios.properties import AiriosBaseProperty
 
 from .constants import ValueStatusFlags, ValueStatusSource
 from .exceptions import AiriosDecodeError, AiriosInvalidArgumentException
@@ -15,10 +17,6 @@ from .exceptions import AiriosDecodeError, AiriosInvalidArgumentException
 LOGGER = logging.getLogger(__name__)
 
 T = t.TypeVar("T")
-
-
-class RegisterAddress(IntEnum):
-    """The register address base class."""
 
 
 class RegisterAccess(Flag):
@@ -33,7 +31,7 @@ class RegisterAccess(Flag):
 class RegisterDescription:
     """Register description."""
 
-    address: RegisterAddress
+    address: int
     length: int
     access: RegisterAccess
 
@@ -43,10 +41,12 @@ class RegisterBase(t.Generic[T]):
 
     description: RegisterDescription
     datatype: ModbusClientMixin.DATATYPE
+    aproperty: AiriosBaseProperty
 
-    def __init__(self, description: RegisterDescription) -> None:
+    def __init__(self, description: RegisterDescription, ap: AiriosBaseProperty) -> None:
         """Initialize the register instance."""
         self.description = description
+        self.aproperty = ap
 
     def decode(self, registers: list[int]) -> T:
         """Decode register bytes to value."""
@@ -68,10 +68,16 @@ class StringRegister(RegisterBase[str]):
 
     datatype = ModbusClientMixin.DATATYPE.STRING
 
-    def __init__(self, address: RegisterAddress, length: int, access: RegisterAccess) -> None:
+    def __init__(
+        self,
+        ap: AiriosBaseProperty,
+        address: int,
+        length: int,
+        access: RegisterAccess,
+    ) -> None:
         """Initialize the StringRegister instance."""
         description = RegisterDescription(address, length, access)
-        super().__init__(description)
+        super().__init__(description, ap)
 
     def decode(self, registers: list[int]) -> str:
         """Decode register bytes to value."""
@@ -145,10 +151,15 @@ class U8Register(NumberRegister[int]):
     min = 0
     max = 2**8 - 1
 
-    def __init__(self, address: RegisterAddress, access: RegisterAccess) -> None:
+    def __init__(
+        self,
+        ap: AiriosBaseProperty,
+        address: int,
+        access: RegisterAccess,
+    ) -> None:
         """Initialize the U8Register instance."""
         description = RegisterDescription(address, 1, access)
-        super().__init__(description)
+        super().__init__(description, ap)
 
 
 class U16Register(NumberRegister[int]):
@@ -158,10 +169,15 @@ class U16Register(NumberRegister[int]):
     min = 0
     max = 2**16 - 1
 
-    def __init__(self, address: RegisterAddress, access: RegisterAccess) -> None:
+    def __init__(
+        self,
+        ap: AiriosBaseProperty,
+        address: int,
+        access: RegisterAccess,
+    ) -> None:
         """Initialize the U16Register instance."""
         description = RegisterDescription(address, 1, access)
-        super().__init__(description)
+        super().__init__(description, ap)
 
 
 class I16Register(NumberRegister[int]):
@@ -171,10 +187,15 @@ class I16Register(NumberRegister[int]):
     min = 2**15 * -1
     max = 2**15 - 1
 
-    def __init__(self, address: RegisterAddress, access: RegisterAccess) -> None:
+    def __init__(
+        self,
+        ap: AiriosBaseProperty,
+        address: int,
+        access: RegisterAccess,
+    ) -> None:
         """Initialize the I16Register instance."""
         description = RegisterDescription(address, 1, access)
-        super().__init__(description)
+        super().__init__(description, ap)
 
 
 class U32Register(NumberRegister[int]):
@@ -184,10 +205,15 @@ class U32Register(NumberRegister[int]):
     min = 0
     max = 2**32 - 1
 
-    def __init__(self, address: RegisterAddress, access: RegisterAccess) -> None:
+    def __init__(
+        self,
+        ap: AiriosBaseProperty,
+        address: int,
+        access: RegisterAccess,
+    ) -> None:
         """Initialize the U32Register instance."""
         description = RegisterDescription(address, 2, access)
-        super().__init__(description)
+        super().__init__(description, ap)
 
 
 class FloatRegister(NumberRegister[float]):
@@ -197,10 +223,15 @@ class FloatRegister(NumberRegister[float]):
     min = 0
     max = 2**32 - 1
 
-    def __init__(self, address: RegisterAddress, access: RegisterAccess) -> None:
+    def __init__(
+        self,
+        ap: AiriosBaseProperty,
+        address: int,
+        access: RegisterAccess,
+    ) -> None:
         """Initialize the FloatRegister instance."""
         description = RegisterDescription(address, 2, access)
-        super().__init__(description)
+        super().__init__(description, ap)
 
 
 class DateRegister(RegisterBase[datetime.date]):
@@ -208,10 +239,15 @@ class DateRegister(RegisterBase[datetime.date]):
 
     datatype = ModbusClientMixin.DATATYPE.UINT32
 
-    def __init__(self, address: RegisterAddress, access: RegisterAccess) -> None:
+    def __init__(
+        self,
+        ap: AiriosBaseProperty,
+        address: int,
+        access: RegisterAccess,
+    ) -> None:
         """Initialize the DateRegister instance."""
         description = RegisterDescription(address, 2, access)
-        super().__init__(description)
+        super().__init__(description, ap)
 
     def decode(self, registers: list[int]) -> datetime.date:
         """Decode register bytes to value."""
@@ -237,10 +273,15 @@ class DateTimeRegister(RegisterBase[datetime.datetime]):
 
     datatype = ModbusClientMixin.DATATYPE.UINT32
 
-    def __init__(self, address: RegisterAddress, access: RegisterAccess) -> None:
+    def __init__(
+        self,
+        ap: AiriosBaseProperty,
+        address: int,
+        access: RegisterAccess,
+    ) -> None:
         """Initialize the DateTimeRegister instance."""
         description = RegisterDescription(address, 2, access)
-        super().__init__(description)
+        super().__init__(description, ap)
 
     def decode(self, registers: list[int]) -> datetime.datetime:
         """Decode register bytes to value."""

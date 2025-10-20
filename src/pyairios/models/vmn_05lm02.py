@@ -9,21 +9,15 @@ from pyairios.client import AsyncAiriosModbusClient
 from pyairios.constants import VMDRequestedVentilationSpeed
 from pyairios.data_model import VMN05LM02Data
 from pyairios.device import AiriosDevice
+from pyairios.properties import AiriosVMNProperty as dp
 from pyairios.registers import (
     RegisterAccess,
-    RegisterAddress,
     RegisterBase,
     Result,
     U16Register,
 )
 
 LOGGER = logging.getLogger(__name__)
-
-
-class Reg(RegisterAddress):
-    """Register set for VMN-05LM02 remote node."""
-
-    REQUESTED_VENTILATION_SPEED = 41000
 
 
 class VMN05LM02(AiriosDevice):
@@ -34,7 +28,7 @@ class VMN05LM02(AiriosDevice):
         super().__init__(slave_id, client)
         vmn_registers: List[RegisterBase] = [
             U16Register(
-                Reg.REQUESTED_VENTILATION_SPEED, RegisterAccess.READ | RegisterAccess.STATUS
+                dp.REQUESTED_VENTILATION_SPEED, 41000, RegisterAccess.READ | RegisterAccess.STATUS
             ),
         ]
         self._add_registers(vmn_registers)
@@ -44,7 +38,7 @@ class VMN05LM02(AiriosDevice):
 
     async def requested_ventilation_speed(self) -> Result[VMDRequestedVentilationSpeed]:
         """Get the requested ventilation speed."""
-        regdesc = self.regmap[Reg.REQUESTED_VENTILATION_SPEED]
+        regdesc = self.regmap[dp.REQUESTED_VENTILATION_SPEED]
         result = await self.client.get_register(regdesc, self.slave_id)
         return Result(VMDRequestedVentilationSpeed(result.value), result.status)
 
