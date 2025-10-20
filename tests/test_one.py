@@ -11,9 +11,7 @@ from cli.airios_cli import AiriosRootCLI
 from pyairios import Airios, AiriosRtuTransport
 from pyairios.exceptions import AiriosConnectionException
 
-logging.basicConfig(
-    stream=sys.stdout, level=logging.DEBUG, format="%(levelname)s - %(message)s"
-)
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG, format="%(levelname)s - %(message)s")
 
 
 class TestStartPyairiosCli:
