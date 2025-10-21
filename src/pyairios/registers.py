@@ -34,6 +34,8 @@ class RegisterDescription:
     address: int
     length: int
     access: RegisterAccess
+    min_value: int
+    max_value: int
 
 
 class RegisterBase(t.Generic[T]):
@@ -76,7 +78,13 @@ class StringRegister(RegisterBase[str]):
         access: RegisterAccess,
     ) -> None:
         """Initialize the StringRegister instance."""
-        description = RegisterDescription(address, length, access)
+        description = RegisterDescription(
+            address,
+            length,
+            access,
+            min_value=0,
+            max_value=2**8 - 1,
+        )
         super().__init__(description, ap)
 
     def decode(self, registers: list[int]) -> str:
@@ -111,14 +119,13 @@ class StringRegister(RegisterBase[str]):
 class NumberRegister(RegisterBase[T]):
     """Base class for number registers."""
 
-    min: int = 0
-    max: int = 2**64 - 1
-
     def clamp(self, value: int) -> int:
         """Clamp provided value to datatype range."""
-        if value < self.min or value > self.max:
+        rmin = self.description.min_value
+        rmax = self.description.max_value
+        if value < rmin or value > rmax:
             raise AiriosInvalidArgumentException(
-                f"Entered value {value} is out of range [{self.min}..{self.max}]"
+                f"Property {self.aproperty} value {value} is out of range [{rmin}..{rmax}]"
             )
         return value
 
@@ -148,17 +155,17 @@ class U8Register(NumberRegister[int]):
     """Unsigned 8-bit entry, sent to modbus as UINT16 register."""
 
     datatype = ModbusClientMixin.DATATYPE.UINT16
-    min = 0
-    max = 2**8 - 1
 
-    def __init__(
+    def __init__(  # pylint: disable=too-many-arguments,too-many-positional-arguments
         self,
         ap: AiriosBaseProperty,
         address: int,
         access: RegisterAccess,
+        min_value=0,
+        max_value=2**8 - 1,
     ) -> None:
         """Initialize the U8Register instance."""
-        description = RegisterDescription(address, 1, access)
+        description = RegisterDescription(address, 1, access, min_value, max_value)
         super().__init__(description, ap)
 
 
@@ -166,17 +173,17 @@ class U16Register(NumberRegister[int]):
     """Unsigned 16-bit register."""
 
     datatype = ModbusClientMixin.DATATYPE.UINT16
-    min = 0
-    max = 2**16 - 1
 
-    def __init__(
+    def __init__(  # pylint: disable=too-many-arguments,too-many-positional-arguments
         self,
         ap: AiriosBaseProperty,
         address: int,
         access: RegisterAccess,
+        min_value=0,
+        max_value=2**16 - 1,
     ) -> None:
         """Initialize the U16Register instance."""
-        description = RegisterDescription(address, 1, access)
+        description = RegisterDescription(address, 1, access, min_value, max_value)
         super().__init__(description, ap)
 
 
@@ -184,17 +191,17 @@ class I16Register(NumberRegister[int]):
     """Signed 16-bit register."""
 
     datatype = ModbusClientMixin.DATATYPE.INT16
-    min = 2**15 * -1
-    max = 2**15 - 1
 
-    def __init__(
+    def __init__(  # pylint: disable=too-many-arguments,too-many-positional-arguments
         self,
         ap: AiriosBaseProperty,
         address: int,
         access: RegisterAccess,
+        min_value=2**15 * -1,
+        max_value=2**15 - 1,
     ) -> None:
         """Initialize the I16Register instance."""
-        description = RegisterDescription(address, 1, access)
+        description = RegisterDescription(address, 1, access, min_value, max_value)
         super().__init__(description, ap)
 
 
@@ -202,17 +209,17 @@ class U32Register(NumberRegister[int]):
     """Unsigned 32-bit register."""
 
     datatype = ModbusClientMixin.DATATYPE.UINT32
-    min = 0
-    max = 2**32 - 1
 
-    def __init__(
+    def __init__(  # pylint: disable=too-many-arguments,too-many-positional-arguments
         self,
         ap: AiriosBaseProperty,
         address: int,
         access: RegisterAccess,
+        min_value=0,
+        max_value=2**32 - 1,
     ) -> None:
         """Initialize the U32Register instance."""
-        description = RegisterDescription(address, 2, access)
+        description = RegisterDescription(address, 2, access, min_value, max_value)
         super().__init__(description, ap)
 
 
@@ -220,17 +227,17 @@ class FloatRegister(NumberRegister[float]):
     """Float register."""
 
     datatype = ModbusClientMixin.DATATYPE.FLOAT32
-    min = 0
-    max = 2**32 - 1
 
-    def __init__(
+    def __init__(  # pylint: disable=too-many-arguments,too-many-positional-arguments
         self,
         ap: AiriosBaseProperty,
         address: int,
         access: RegisterAccess,
+        min_value=0,
+        max_value=2**32 - 1,
     ) -> None:
         """Initialize the FloatRegister instance."""
-        description = RegisterDescription(address, 2, access)
+        description = RegisterDescription(address, 2, access, min_value, max_value)
         super().__init__(description, ap)
 
 
@@ -239,14 +246,16 @@ class DateRegister(RegisterBase[datetime.date]):
 
     datatype = ModbusClientMixin.DATATYPE.UINT32
 
-    def __init__(
+    def __init__(  # pylint: disable=too-many-arguments,too-many-positional-arguments
         self,
         ap: AiriosBaseProperty,
         address: int,
         access: RegisterAccess,
+        min_value=0,
+        max_value=2**32 - 1,
     ) -> None:
         """Initialize the DateRegister instance."""
-        description = RegisterDescription(address, 2, access)
+        description = RegisterDescription(address, 2, access, min_value, max_value)
         super().__init__(description, ap)
 
     def decode(self, registers: list[int]) -> datetime.date:
@@ -273,14 +282,16 @@ class DateTimeRegister(RegisterBase[datetime.datetime]):
 
     datatype = ModbusClientMixin.DATATYPE.UINT32
 
-    def __init__(
+    def __init__(  # pylint: disable=too-many-arguments,too-many-positional-arguments
         self,
         ap: AiriosBaseProperty,
         address: int,
         access: RegisterAccess,
+        min_value=0,
+        max_value=2**32 - 1,
     ) -> None:
         """Initialize the DateTimeRegister instance."""
-        description = RegisterDescription(address, 2, access)
+        description = RegisterDescription(address, 2, access, min_value, max_value)
         super().__init__(description, ap)
 
     def decode(self, registers: list[int]) -> datetime.datetime:
