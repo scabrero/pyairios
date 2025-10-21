@@ -104,9 +104,24 @@ class VMD02RPS78(AiriosDevice):
                 41500,
                 RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS,
             ),
-            U16Register(vp.OVERRIDE_TIME_SPEED_LOW, 41501, RegisterAccess.WRITE),
-            U16Register(vp.OVERRIDE_TIME_SPEED_MID, 41502, RegisterAccess.WRITE),
-            U16Register(vp.OVERRIDE_TIME_SPEED_HIGH, 41503, RegisterAccess.WRITE),
+            U16Register(
+                vp.OVERRIDE_TIME_SPEED_LOW,
+                41501,
+                RegisterAccess.WRITE,
+                max_value=18 * 60,
+            ),
+            U16Register(
+                vp.OVERRIDE_TIME_SPEED_MID,
+                41502,
+                RegisterAccess.WRITE,
+                max_value=18 * 60,
+            ),
+            U16Register(
+                vp.OVERRIDE_TIME_SPEED_HIGH,
+                41503,
+                RegisterAccess.WRITE,
+                max_value=18 * 60,
+            ),
             U16Register(
                 vp.REQUESTED_BYPASS_MODE,
                 41550,
@@ -117,41 +132,49 @@ class VMD02RPS78(AiriosDevice):
                 vp.FAN_SPEED_AWAY_SUPPLY,
                 42001,
                 RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS,
+                max_value=40,
             ),
             U16Register(
                 vp.FAN_SPEED_AWAY_EXHAUST,
                 42002,
                 RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS,
+                max_value=40,
             ),
             U16Register(
                 vp.FAN_SPEED_LOW_SUPPLY,
                 42003,
                 RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS,
+                max_value=80,
             ),
             U16Register(
                 vp.FAN_SPEED_LOW_EXHAUST,
                 42004,
                 RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS,
+                max_value=80,
             ),
             U16Register(
                 vp.FAN_SPEED_MID_SUPPLY,
                 42005,
                 RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS,
+                max_value=100,
             ),
             U16Register(
                 vp.FAN_SPEED_MID_EXHAUST,
                 42006,
                 RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS,
+                max_value=100,
             ),
             U16Register(
                 vp.FAN_SPEED_HIGH_SUPPLY,
                 42007,
                 RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS,
+                max_value=100,
             ),
             U16Register(
                 vp.FAN_SPEED_HIGH_EXHAUST,
                 42008,
                 RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS,
+                max_value=100,
             ),
             FloatRegister(
                 vp.FROST_PROTECTION_PREHEATER_SETPOINT,
@@ -201,8 +224,6 @@ class VMD02RPS78(AiriosDevice):
         self, speed: VMDRequestedVentilationSpeed, minutes: int
     ) -> bool:
         """Set the ventilation unit speed preset for a limited time."""
-        if minutes > 18 * 60:
-            raise AiriosInvalidArgumentException("Maximum speed override time is 18 hours")
         if speed == VMDRequestedVentilationSpeed.LOW:
             return await self.client.set_register(
                 self.regmap[vp.OVERRIDE_TIME_SPEED_LOW], minutes, self.slave_id
@@ -225,10 +246,6 @@ class VMD02RPS78(AiriosDevice):
 
     async def set_preset_away_fans_speed(self, supply: int, exhaust: int) -> bool:
         """Set the away ventilation speed preset fan speeds."""
-        if supply < 0 or exhaust < 0:
-            raise AiriosInvalidArgumentException("Speed must be in range 0-40 %")
-        if supply > 40 or exhaust > 40:
-            raise AiriosInvalidArgumentException("Speed must be in range 0-40 %")
         r1 = await self.client.set_register(
             self.regmap[vp.FAN_SPEED_AWAY_SUPPLY], supply, self.slave_id
         )
@@ -245,10 +262,6 @@ class VMD02RPS78(AiriosDevice):
 
     async def set_preset_low_fans_speed(self, supply: int, exhaust: int) -> bool:
         """Set the low ventilation speed preset fan speeds."""
-        if supply < 0 or exhaust < 0:
-            raise AiriosInvalidArgumentException("Speed must be in range 0-40 %")
-        if supply > 80 or exhaust > 80:
-            raise AiriosInvalidArgumentException("Speed must be in range 0-40 %")
         r1 = await self.client.set_register(
             self.regmap[vp.FAN_SPEED_LOW_SUPPLY], supply, self.slave_id
         )
@@ -265,10 +278,6 @@ class VMD02RPS78(AiriosDevice):
 
     async def set_preset_mid_fans_speed(self, supply: int, exhaust: int) -> bool:
         """Set the mid ventilation speed preset fan speeds."""
-        if supply < 0 or exhaust < 0:
-            raise AiriosInvalidArgumentException("Speed must be in range 0-40 %")
-        if supply > 100 or exhaust > 100:
-            raise AiriosInvalidArgumentException("Speed must be in range 0-40 %")
         r1 = await self.client.set_register(
             self.regmap[vp.FAN_SPEED_MID_SUPPLY], supply, self.slave_id
         )
@@ -285,10 +294,6 @@ class VMD02RPS78(AiriosDevice):
 
     async def set_preset_high_fans_speed(self, supply: int, exhaust: int) -> bool:
         """Set the high ventilation speed preset fan speeds."""
-        if supply < 0 or exhaust < 0:
-            raise AiriosInvalidArgumentException("Speed must be in range 0-40 %")
-        if supply > 100 or exhaust > 100:
-            raise AiriosInvalidArgumentException("Speed must be in range 0-40 %")
         r1 = await self.client.set_register(
             self.regmap[vp.FAN_SPEED_HIGH_SUPPLY], supply, self.slave_id
         )

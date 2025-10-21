@@ -76,7 +76,13 @@ class BRDG02R13(AiriosNode):
                 bp.BINDING_PRODUCT_SERIAL, 43002, RegisterAccess.READ | RegisterAccess.WRITE
             ),
             U16Register(bp.BINDING_COMMAND, 43004, RegisterAccess.WRITE),
-            U16Register(bp.CREATE_NODE, 43005, RegisterAccess.WRITE),
+            U16Register(
+                bp.CREATE_NODE,
+                43005,
+                RegisterAccess.WRITE,
+                min_value=2,
+                max_value=247,
+            ),
             U16Register(
                 bp.FIRST_ADDRESS_TO_ASSIGN, 43006, RegisterAccess.READ | RegisterAccess.WRITE
             ),
