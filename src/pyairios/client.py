@@ -244,6 +244,10 @@ class AsyncAiriosModbusClient:
         )
 
         value = regdesc.decode(response.registers)
+        if regdesc.result_adapter:
+            value = regdesc.result_adapter(value)
+        elif not isinstance(value, regdesc.result_type):
+            value = regdesc.result_type(value)
         value_status = None
 
         if RegisterAccess.STATUS in regdesc.description.access:

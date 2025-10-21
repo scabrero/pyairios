@@ -44,11 +44,21 @@ class RegisterBase(t.Generic[T]):
     description: RegisterDescription
     datatype: ModbusClientMixin.DATATYPE
     aproperty: AiriosBaseProperty
+    result_type: type
+    result_adapter: t.Callable[[t.Any], t.Any] | None
 
-    def __init__(self, description: RegisterDescription, ap: AiriosBaseProperty) -> None:
+    def __init__(
+        self,
+        description: RegisterDescription,
+        ap: AiriosBaseProperty,
+        result_type: type,
+        result_adapter: t.Callable[[t.Any], t.Any] | None,
+    ) -> None:
         """Initialize the register instance."""
         self.description = description
         self.aproperty = ap
+        self.result_type = result_type
+        self.result_adapter = result_adapter
 
     def decode(self, registers: list[int]) -> T:
         """Decode register bytes to value."""
@@ -85,7 +95,7 @@ class StringRegister(RegisterBase[str]):
             min_value=0,
             max_value=2**8 - 1,
         )
-        super().__init__(description, ap)
+        super().__init__(description, ap, str, None)
 
     def decode(self, registers: list[int]) -> str:
         """Decode register bytes to value."""
@@ -163,10 +173,12 @@ class U8Register(NumberRegister[int]):
         access: RegisterAccess,
         min_value=0,
         max_value=2**8 - 1,
+        result_type: type = int,
+        result_adapter: t.Callable[[t.Any], t.Any] | None = None,
     ) -> None:
         """Initialize the U8Register instance."""
         description = RegisterDescription(address, 1, access, min_value, max_value)
-        super().__init__(description, ap)
+        super().__init__(description, ap, result_type, result_adapter)
 
 
 class U16Register(NumberRegister[int]):
@@ -181,10 +193,12 @@ class U16Register(NumberRegister[int]):
         access: RegisterAccess,
         min_value=0,
         max_value=2**16 - 1,
+        result_type: type = int,
+        result_adapter: t.Callable[[t.Any], t.Any] | None = None,
     ) -> None:
         """Initialize the U16Register instance."""
         description = RegisterDescription(address, 1, access, min_value, max_value)
-        super().__init__(description, ap)
+        super().__init__(description, ap, result_type, result_adapter)
 
 
 class I16Register(NumberRegister[int]):
@@ -199,10 +213,12 @@ class I16Register(NumberRegister[int]):
         access: RegisterAccess,
         min_value=2**15 * -1,
         max_value=2**15 - 1,
+        result_type: type = int,
+        result_adapter: t.Callable[[t.Any], t.Any] | None = None,
     ) -> None:
         """Initialize the I16Register instance."""
         description = RegisterDescription(address, 1, access, min_value, max_value)
-        super().__init__(description, ap)
+        super().__init__(description, ap, result_type, result_adapter)
 
 
 class U32Register(NumberRegister[int]):
@@ -217,10 +233,12 @@ class U32Register(NumberRegister[int]):
         access: RegisterAccess,
         min_value=0,
         max_value=2**32 - 1,
+        result_type: type = int,
+        result_adapter: t.Callable[[t.Any], t.Any] | None = None,
     ) -> None:
         """Initialize the U32Register instance."""
         description = RegisterDescription(address, 2, access, min_value, max_value)
-        super().__init__(description, ap)
+        super().__init__(description, ap, result_type, result_adapter)
 
 
 class FloatRegister(NumberRegister[float]):
@@ -235,10 +253,12 @@ class FloatRegister(NumberRegister[float]):
         access: RegisterAccess,
         min_value=0,
         max_value=2**32 - 1,
+        result_type: type = float,
+        result_adapter: t.Callable[[t.Any], t.Any] | None = None,
     ) -> None:
         """Initialize the FloatRegister instance."""
         description = RegisterDescription(address, 2, access, min_value, max_value)
-        super().__init__(description, ap)
+        super().__init__(description, ap, result_type, result_adapter)
 
 
 class DateRegister(RegisterBase[datetime.date]):
@@ -256,7 +276,7 @@ class DateRegister(RegisterBase[datetime.date]):
     ) -> None:
         """Initialize the DateRegister instance."""
         description = RegisterDescription(address, 2, access, min_value, max_value)
-        super().__init__(description, ap)
+        super().__init__(description, ap, datetime.date, None)
 
     def decode(self, registers: list[int]) -> datetime.date:
         """Decode register bytes to value."""
@@ -292,7 +312,7 @@ class DateTimeRegister(RegisterBase[datetime.datetime]):
     ) -> None:
         """Initialize the DateTimeRegister instance."""
         description = RegisterDescription(address, 2, access, min_value, max_value)
-        super().__init__(description, ap)
+        super().__init__(description, ap, datetime.datetime, None)
 
     def decode(self, registers: list[int]) -> datetime.datetime:
         """Decode register bytes to value."""
