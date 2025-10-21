@@ -1,7 +1,8 @@
 """Airios BRDG-02R13 RF bridge implementation."""
 
 import logging
-from datetime import datetime, timedelta
+import datetime
+from datetime import timedelta
 from typing import List
 
 from pyairios.client import AsyncAiriosModbusClient
@@ -18,17 +19,16 @@ from pyairios.constants import (
     SerialConfig,
     StopBits,
 )
-from pyairios.data_model import AiriosBoundNodeInfo, BRDG02R13Data
+from pyairios.data_model import AiriosBoundNodeInfo
+from pyairios.device import AiriosDevice
 from pyairios.exceptions import (
     AiriosBindingException,
     AiriosException,
     AiriosInvalidArgumentException,
 )
-from pyairios.models.vmd_02rps78 import VMD02RPS78
-from pyairios.models.vmn_05lm02 import VMN05LM02
-from pyairios.node import AiriosNode
+from pyairios.models.factory import factory
 from pyairios.properties import AiriosBridgeProperty as bp
-from pyairios.properties import AiriosNodeProperty as np
+from pyairios.properties import AiriosDeviceProperty as dp
 from pyairios.registers import (
     DateTimeRegister,
     FloatRegister,
@@ -45,7 +45,7 @@ DEFAULT_SLAVE_ID = 207
 LOGGER = logging.getLogger(__name__)
 
 
-class BRDG02R13(AiriosNode):
+class BRDG02R13(AiriosDevice):
     """Represents a BRDG-02R13 RF bridge."""
 
     def __init__(self, slave_id: int, client: AsyncAiriosModbusClient) -> None:
@@ -87,7 +87,9 @@ class BRDG02R13(AiriosNode):
                 bp.FIRST_ADDRESS_TO_ASSIGN, 43006, RegisterAccess.READ | RegisterAccess.WRITE
             ),
             U16Register(bp.REMOVE_NODE, 43399, RegisterAccess.WRITE),
-            U16Register(bp.ACTUAL_BINDING_STATUS, 43900, RegisterAccess.READ),
+            U16Register(
+                bp.ACTUAL_BINDING_STATUS, 43900, RegisterAccess.READ, result_type=BindingStatus
+            ),
             U16Register(bp.NUMBER_OF_NODES, 43901, RegisterAccess.READ),
             U16Register(bp.ADDRESS_NODE_1, 43902, RegisterAccess.READ),
             U16Register(bp.ADDRESS_NODE_2, 43903, RegisterAccess.READ),
@@ -286,7 +288,7 @@ class BRDG02R13(AiriosNode):
             if slave_id == 0:
                 continue
 
-            result = await self.client.get_register(self.regmap[np.PRODUCT_ID], slave_id)
+            result = await self.client.get_register(self.regmap[dp.PRODUCT_ID], slave_id)
             if result is None or result.value is None:
                 continue
             try:
@@ -297,7 +299,7 @@ class BRDG02R13(AiriosNode):
             else:
                 product_id = ProductId(result.value)
 
-            result = await self.client.get_register(self.regmap[np.RF_ADDRESS], slave_id)
+            result = await self.client.get_register(self.regmap[dp.RF_ADDRESS], slave_id)
             if result is None or result.value is None:
                 continue
             rf_address = result.value
@@ -308,7 +310,7 @@ class BRDG02R13(AiriosNode):
             nodes.append(info)
         return nodes
 
-    async def node(self, slave_id: int) -> AiriosNode:
+    async def node(self, slave_id: int) -> AiriosDevice:
         """Get a node instance by its Modbus slave ID."""
 
         if slave_id == self.slave_id:
@@ -317,10 +319,7 @@ class BRDG02R13(AiriosNode):
         for node in await self.nodes():
             if node.slave_id != slave_id:
                 continue
-            if node.product_id == ProductId.VMD_02RPS78:
-                return VMD02RPS78(node.slave_id, self.client)
-            if node.product_id == ProductId.VMN_05LM02:
-                return VMN05LM02(node.slave_id, self.client)
+            return factory.get_device_by_product_id(node.product_id, node.slave_id, self.client)
 
         raise AiriosException(f"Node {slave_id} not found")
 
@@ -404,7 +403,7 @@ class BRDG02R13(AiriosNode):
         """Reset the bridge."""
         return await self.client.set_register(self.regmap[bp.RESET_DEVICE], mode, self.slave_id)
 
-    async def utc_time(self) -> Result[datetime]:
+    async def utc_time(self) -> Result[datetime.datetime]:
         """Get the UTC time."""
         return await self.client.get_register(self.regmap[bp.UTC_TIME], self.slave_id)
 
@@ -418,24 +417,3 @@ class BRDG02R13(AiriosNode):
         It must be set to the matching code before binding a product.
         """
         return await self.client.set_register(self.regmap[bp.OEM_CODE], code, self.slave_id)
-
-    async def fetch_bridge(self) -> BRDG02R13Data:  # pylint: disable=duplicate-code
-        """Fetch all bridge data at once."""
-
-        return BRDG02R13Data(
-            slave_id=self.slave_id,
-            rf_address=await self._safe_fetch(self.node_rf_address),
-            product_id=await self._safe_fetch(self.node_product_id),
-            sw_version=await self._safe_fetch(self.node_software_version),
-            product_name=await self._safe_fetch(self.node_product_name),
-            rf_comm_status=await self._safe_fetch(self.node_rf_comm_status),
-            battery_status=await self._safe_fetch(self.node_battery_status),
-            fault_status=await self._safe_fetch(self.node_fault_status),
-            rf_sent_messages_last_hour=await self._safe_fetch(self.rf_sent_messages_last_hour),
-            rf_sent_messages_current_hour=await self._safe_fetch(
-                self.rf_sent_messages_current_hour
-            ),
-            rf_load_last_hour=await self._safe_fetch(self.rf_load_last_hour),
-            rf_load_current_hour=await self._safe_fetch(self.rf_load_current_hour),
-            power_on_time=await self._safe_fetch(self.power_on_time),
-        )

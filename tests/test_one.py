@@ -7,7 +7,7 @@ import sys
 
 import pytest
 
-from cli.airios_cli import AiriosRootCLI
+from cli import AiriosRootCLI
 from pyairios import Airios, AiriosRtuTransport
 from pyairios.exceptions import AiriosConnectionException
 

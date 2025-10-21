@@ -24,9 +24,11 @@ jobs:
     - name: Install the project
       run: |
         uv sync --all-extras --dev
+    - name: Analysing the code with ruff
+      run: uv run ruff check $(git ls-files '*.py')
     - name: Analysing the code with pylint
       run: uv run pylint $(git ls-files '*.py')
     - name: Analysing the code with mypy
-      run: uv run mypy --follow-untyped-imports --pretty --show-error-codes --show-error-context ./src ./cli ./tests
+      run: uv run mypy --follow-untyped-imports --pretty --show-error-codes --show-error-context $(git ls-files '*.py')
     - name: Analysing the code with pyright
-      run: uv run pyright ./src ./cli ./tests
+      run: uv run pyright $(git ls-files '*.py')

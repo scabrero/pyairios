@@ -20,8 +20,7 @@ from pyairios.constants import (
     VMDTemperature,
     VMDVentilationSpeed,
 )
-from pyairios.data_model import VMD02RPS78Data
-from pyairios.device import AiriosDevice
+from pyairios.node import AiriosNode
 from pyairios.exceptions import AiriosInvalidArgumentException
 from pyairios.registers import (
     FloatRegister,
@@ -45,7 +44,7 @@ class VMDPresetFansSpeeds:
     """Supply fan speed (%)"""
 
 
-class VMD02RPS78(AiriosDevice):
+class VMD02RPS78(AiriosNode):
     """Represents a VMD-02RPS78 controller node."""
 
     def __init__(self, slave_id: int, client: AsyncAiriosModbusClient) -> None:
@@ -86,7 +85,7 @@ class VMD02RPS78(AiriosDevice):
             U16Register(vp.AIR_QUALITY, 41023, RegisterAccess.READ | RegisterAccess.STATUS),
             U16Register(vp.AIR_QUALITY_BASIS, 41024, RegisterAccess.READ | RegisterAccess.STATUS),
             U16Register(vp.CO2_LEVEL, 41025, RegisterAccess.READ | RegisterAccess.STATUS),
-            U16Register(vp.POST_HEATER, 41026, RegisterAccess.READ | RegisterAccess.STATUS),
+            U16Register(vp.POSTHEATER, 41026, RegisterAccess.READ | RegisterAccess.STATUS),
             U16Register(vp.CAPABILITIES, 41027, RegisterAccess.READ | RegisterAccess.STATUS),
             U16Register(
                 vp.FILTER_REMAINING_DAYS, 41040, RegisterAccess.READ | RegisterAccess.STATUS
@@ -454,7 +453,7 @@ class VMD02RPS78(AiriosDevice):
 
     async def postheater(self) -> Result[VMDHeater]:
         """Get the postheater level."""
-        regdesc = self.regmap[vp.POST_HEATER]
+        regdesc = self.regmap[vp.POSTHEATER]
         result = await self.client.get_register(regdesc, self.slave_id)
         status = VMDHeaterStatus.UNAVAILABLE if result.value == 0xEF else VMDHeaterStatus.OK
         return Result(VMDHeater(result.value, status), result.status)
@@ -583,66 +582,4 @@ class VMD02RPS78(AiriosDevice):
         """Set the exhaust fan speed for the standby preset."""
         return await self.client.set_register(
             self.regmap[vp.FAN_SPEED_AWAY_EXHAUST], value, self.slave_id
-        )
-
-    async def fetch_vmd_data(self) -> VMD02RPS78Data:  # pylint: disable=duplicate-code
-        """Fetch all controller data at once."""
-
-        return VMD02RPS78Data(
-            slave_id=self.slave_id,
-            rf_address=await self._safe_fetch(self.node_rf_address),
-            product_id=await self._safe_fetch(self.node_product_id),
-            sw_version=await self._safe_fetch(self.node_software_version),
-            product_name=await self._safe_fetch(self.node_product_name),
-            rf_comm_status=await self._safe_fetch(self.node_rf_comm_status),
-            battery_status=await self._safe_fetch(self.node_battery_status),
-            fault_status=await self._safe_fetch(self.node_fault_status),
-            bound_status=await self._safe_fetch(self.device_bound_status),
-            value_error_status=await self._safe_fetch(self.device_value_error_status),
-            error_code=await self._safe_fetch(self.error_code),
-            ventilation_speed=await self._safe_fetch(self.ventilation_speed),
-            exhaust_fan_speed=await self._safe_fetch(self.exhaust_fan_speed),
-            supply_fan_speed=await self._safe_fetch(self.supply_fan_speed),
-            exhaust_fan_rpm=await self._safe_fetch(self.exhaust_fan_rpm),
-            supply_fan_rpm=await self._safe_fetch(self.supply_fan_rpm),
-            override_remaining_time=await self._safe_fetch(self.override_remaining_time),
-            indoor_air_temperature=await self._safe_fetch(self.indoor_air_temperature),
-            outdoor_air_temperature=await self._safe_fetch(self.outdoor_air_temperature),
-            exhaust_air_temperature=await self._safe_fetch(self.exhaust_air_temperature),
-            supply_air_temperature=await self._safe_fetch(self.supply_air_temperature),
-            filter_dirty=await self._safe_fetch(self.filter_dirty),
-            filter_remaining_percent=await self._safe_fetch(self.filter_remaining),
-            filter_duration_days=await self._safe_fetch(self.filter_duration),
-            defrost=await self._safe_fetch(self.defrost),
-            bypass_position=await self._safe_fetch(self.bypass_position),
-            bypass_mode=await self._safe_fetch(self.bypass_mode),
-            bypass_status=await self._safe_fetch(self.bypass_status),
-            preheater=await self._safe_fetch(self.preheater),
-            postheater=await self._safe_fetch(self.postheater),
-            preheater_setpoint=await self._safe_fetch(self.preheater_setpoint),
-            free_ventilation_setpoint=await self._safe_fetch(self.free_ventilation_setpoint),
-            free_ventilation_cooling_offset=await self._safe_fetch(
-                self.free_ventilation_cooling_offset
-            ),
-            frost_protection_preheater_setpoint=await self._safe_fetch(
-                self.frost_protection_preheater_setpoint
-            ),
-            preset_high_fan_speed_supply=await self._safe_fetch(self.preset_high_fan_speed_supply),
-            preset_high_fan_speed_exhaust=await self._safe_fetch(
-                self.preset_high_fan_speed_exhaust
-            ),
-            preset_medium_fan_speed_supply=await self._safe_fetch(
-                self.preset_medium_fan_speed_supply
-            ),
-            preset_medium_fan_speed_exhaust=await self._safe_fetch(
-                self.preset_medium_fan_speed_exhaust
-            ),
-            preset_low_fan_speed_supply=await self._safe_fetch(self.preset_low_fan_speed_supply),
-            preset_low_fan_speed_exhaust=await self._safe_fetch(self.preset_low_fan_speed_exhaust),
-            preset_standby_fan_speed_supply=await self._safe_fetch(
-                self.preset_standby_fan_speed_supply
-            ),
-            preset_standby_fan_speed_exhaust=await self._safe_fetch(
-                self.preset_standby_fan_speed_exhaust
-            ),
         )

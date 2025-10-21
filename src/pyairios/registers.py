@@ -282,9 +282,6 @@ class DateRegister(RegisterBase[datetime.date]):
         """Decode register bytes to value."""
         value: int = t.cast(int, super().decode(registers))
 
-        if value == 0xFFFFFFFF:
-            return datetime.date.min
-
         buf = value.to_bytes(4, "big")
         (day, month, year) = struct.unpack(">BBH", buf)
         return datetime.date(year, month, day)

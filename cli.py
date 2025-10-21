@@ -5,6 +5,7 @@
 import argparse
 import asyncio
 import logging
+import pprint
 
 from aiocmd import aiocmd
 
@@ -35,6 +36,7 @@ from pyairios.constants import (
     VMDRequestedVentilationSpeed,
     VMDVentilationSpeed,
 )
+from pyairios.data_model import AiriosDeviceData
 from pyairios.exceptions import (
     AiriosConnectionException,
     AiriosInvalidArgumentException,
@@ -43,12 +45,50 @@ from pyairios.exceptions import (
 )
 from pyairios.models.brdg_02r13 import (
     BRDG02R13,
+)
+from pyairios.models.brdg_02r13 import (
     DEFAULT_SLAVE_ID as BRDG02R13_DEFAULT_SLAVE_ID,
 )
 from pyairios.models.vmd_02rps78 import VMD02RPS78
 from pyairios.models.vmn_05lm02 import VMN05LM02
+from pyairios.properties import AiriosBridgeProperty as bp
+from pyairios.properties import AiriosDeviceProperty as dp
+from pyairios.properties import AiriosNodeProperty as np
+from pyairios.properties import AiriosVMDProperty as vmdp
+from pyairios.properties import AiriosVMNProperty as vmnp
 
 LOGGER = logging.getLogger(__name__)
+
+
+def _print_device_data(res: AiriosDeviceData):
+    log = logging.getLogger()
+    if log.isEnabledFor(logging.DEBUG):
+        print("Raw data")
+        print("--------")
+        pprint.pprint(res)
+
+    print("Device data")
+    print("---------")
+    print(f"    {'Product ID:': <25}{res[dp.PRODUCT_ID]}")
+    print(f"    {'Product Name:': <25}{res[dp.PRODUCT_NAME]}")
+    if dp.SOFTWARE_VERSION in res:
+        print(f"    {'Software version:': <25}{res[dp.SOFTWARE_VERSION]}")
+    if dp.SOFTWARE_BUILD_DATE in res:
+        print(f"    {'Software build date:': <25}{res[dp.SOFTWARE_BUILD_DATE]}")
+    print(f"    {'RF address:': <25}{res[dp.RF_ADDRESS]}")
+    print(f"    {'RF comm status:': <25}{res[dp.RF_COMM_STATUS]}")
+    print(f"    {'Battery status:': <25}{res[dp.BATTERY_STATUS]}")
+    print(f"    {'Fault status:': <25}{res[dp.FAULT_STATUS]}")
+    print("")
+
+
+def _print_node_data(res: AiriosDeviceData):
+    _print_device_data(res)
+    print("Node data")
+    print("---------")
+    print(f"    {'Bound status:': <25}{res[np.BOUND_STATUS]}")
+    print(f"    {'Value error status:': <25}{res[np.VALUE_ERROR_STATUS]}")
+    print("")
 
 
 class AiriosVMN05LM02CLI(aiocmd.PromptToolkitCmd):
@@ -73,27 +113,16 @@ class AiriosVMN05LM02CLI(aiocmd.PromptToolkitCmd):
 
     async def do_status(self) -> None:
         """Print the device status."""
-        res = await self.vmn.fetch_vmn_data()
-        print("Node data")
-        print("---------")
-        print(f"    {'Product ID:': <25}{res['product_id']}")
-        print(f"    {'Product Name:': <25}{res['product_name']}")
-        print(f"    {'Software version:': <25}{res['sw_version']}")
-        print(f"    {'RF address:': <25}{res['rf_address']}")
-        print("")
+        res = await self.vmn.fetch()
 
-        print("Device data")
-        print("---------")
-        print(f"    {'RF comm status:': <25}{res['rf_comm_status']}")
-        print(f"    {'Battery status:': <25}{res['battery_status']}")
-        print(f"    {'Fault status:': <25}{res['fault_status']}")
-        print(f"    {'Bound status:': <25}{res['bound_status']}")
-        print(f"    {'Value error status:': <25}{res['value_error_status']}")
-        print("")
+        _print_node_data(res)
 
         print("VMN-02LM11 data")
         print("----------------")
-        print(f"    {'Requested ventilation speed:': <40}{res['requested_ventilation_speed']}")
+        if vmnp.REQUESTED_VENTILATION_SPEED in res:
+            print(
+                f"    {'Requested ventilation speed:': <40}{res[vmnp.REQUESTED_VENTILATION_SPEED]}"
+            )
 
 
 class AiriosVMD02RPS78CLI(aiocmd.PromptToolkitCmd):
@@ -111,75 +140,66 @@ class AiriosVMD02RPS78CLI(aiocmd.PromptToolkitCmd):
 
     async def do_status(self) -> None:  # pylint: disable=too-many-statements
         """Print the device status."""
-        res = await self.vmd.fetch_vmd_data()
-        print("Node data")
-        print("---------")
-        print(f"    {'Product ID:': <25}{res['product_id']}")
-        print(f"    {'Product Name:': <25}{res['product_name']}")
-        print(f"    {'Software version:': <25}{res['sw_version']}")
-        print(f"    {'RF address:': <25}{res['rf_address']}")
-        print("")
+        res = await self.vmd.fetch()
 
-        print("Device data")
-        print("---------")
-        print(f"    {'RF comm status:': <25}{res['rf_comm_status']}")
-        print(f"    {'Battery status:': <25}{res['battery_status']}")
-        print(f"    {'Fault status:': <25}{res['fault_status']}")
-        print(f"    {'Bound status:': <25}{res['bound_status']}")
-        print(f"    {'Value error status:': <25}{res['value_error_status']}")
-        print("")
+        _print_node_data(res)
 
         print("VMD-02RPS78 data")
         print("----------------")
-        print(f"    {'Error code:': <25}{res['error_code']}")
+        print(f"    {'Error code:': <25}{res[vmdp.ERROR_CODE]}")
 
-        print(f"    {'Ventilation speed:': <25}{res['ventilation_speed']}")
-        print(f"    {'Override remaining time:': <25}{res['override_remaining_time']}")
-
+        print(f"    {'Ventilation speed:': <25}{res[vmdp.CURRENT_VENTILATION_SPEED]}")
         print(
-            f"    {'Supply fan speed:': <25}{res['supply_fan_speed']}% "
-            f"({res['supply_fan_rpm']} RPM)"
-        )
-        print(
-            f"    {'Exhaust fan speed:': <25}{res['exhaust_fan_speed']}% "
-            f"({res['exhaust_fan_rpm']} RPM)"
+            (
+                f"    {'Override remaining time:': <25}"
+                f"{res[vmdp.VENTILATION_SPEED_OVERRIDE_REMAINING_TIME]}"
+            )
         )
 
-        print(f"    {'Indoor temperature:': <25}{res['indoor_air_temperature']}")
-        print(f"    {'Outdoor temperature:': <25}{res['outdoor_air_temperature']}")
-        print(f"    {'Exhaust temperature:': <25}{res['exhaust_air_temperature']}")
-        print(f"    {'Supply temperature:': <25}{res['supply_air_temperature']}")
+        print(
+            f"    {'Supply fan speed:': <25}{res[vmdp.FAN_SPEED_SUPPLY]}% "
+            f"({res[vmdp.FAN_RPM_SUPPLY]} RPM)"
+        )
+        print(
+            f"    {'Exhaust fan speed:': <25}{res[vmdp.FAN_SPEED_EXHAUST]}% "
+            f"({res[vmdp.FAN_RPM_EXHAUST]} RPM)"
+        )
 
-        print(f"    {'Filter dirty:': <25}{res['filter_dirty']}")
-        print(f"    {'Filter remaining:': <25}{res['filter_remaining_percent']} %")
-        print(f"    {'Filter duration:': <25}{res['filter_duration_days']} days")
+        print(f"    {'Indoor temperature:': <25}{res[vmdp.TEMPERATURE_INDOOR]}")
+        print(f"    {'Outdoor temperature:': <25}{res[vmdp.TEMPERATURE_OUTDOOR]}")
+        print(f"    {'Exhaust temperature:': <25}{res[vmdp.TEMPERATURE_EXHAUST]}")
+        print(f"    {'Supply temperature:': <25}{res[vmdp.TEMPERATURE_SUPPLY]}")
 
-        print(f"    {'Bypass position:': <25}{res['bypass_position']}")
-        print(f"    {'Bypass status:': <25}{res['bypass_status']}")
-        print(f"    {'Bypass mode:': <25}{res['bypass_mode']}")
+        print(f"    {'Filter dirty:': <25}{res[vmdp.FILTER_DIRTY]}")
+        print(f"    {'Filter remaining:': <25}{res[vmdp.FILTER_REMAINING_PERCENT]} %")
+        print(f"    {'Filter duration:': <25}{res[vmdp.FILTER_REMAINING_DAYS]} days")
 
-        print(f"    {'Defrost:': <25}{res['defrost']}")
-        print(f"    {'Preheater:': <25}{res['preheater']}")
-        print(f"    {'Postheater:': <25}{res['postheater']}")
+        print(f"    {'Bypass position:': <25}{res[vmdp.BYPASS_POSITION]}")
+        print(f"    {'Bypass status:': <25}{res[vmdp.BYPASS_STATUS]}")
+        print(f"    {'Bypass mode:': <25}{res[vmdp.BYPASS_MODE]}")
+
+        print(f"    {'Defrost:': <25}{res[vmdp.DEFROST]}")
+        print(f"    {'Preheater:': <25}{res[vmdp.PREHEATER]}")
+        print(f"    {'Postheater:': <25}{res[vmdp.POSTHEATER]}")
         print("")
 
         print(f"    {'Preset speeds':<25}{'Supply':<10}{'Exhaust':<10}")
         print(f"    {'-------------':<25}")
         print(
-            f"    {'High':<25}{str(res['preset_high_fan_speed_supply']) + ' %':<10}"
-            f"{str(res['preset_high_fan_speed_exhaust']) + ' %':<10}"
+            f"    {'High':<25}{str(res[vmdp.FAN_SPEED_HIGH_SUPPLY]) + ' %':<10}"
+            f"{str(res[vmdp.FAN_SPEED_HIGH_EXHAUST]) + ' %':<10}"
         )
         print(
-            f"    {'Mid':<25}{str(res['preset_medium_fan_speed_supply']) + ' %':<10}"
-            f"{str(res['preset_medium_fan_speed_exhaust']) + ' %':<10}"
+            f"    {'Mid':<25}{str(res[vmdp.FAN_SPEED_MID_SUPPLY]) + ' %':<10}"
+            f"{str(res[vmdp.FAN_SPEED_MID_EXHAUST]) + ' %':<10}"
         )
         print(
-            f"    {'Low':<25}{str(res['preset_low_fan_speed_supply']) + ' %':<10}"
-            f"{str(res['preset_low_fan_speed_exhaust']) + ' %':<10}"
+            f"    {'Low':<25}{str(res[vmdp.FAN_SPEED_LOW_SUPPLY]) + ' %':<10}"
+            f"{str(res[vmdp.FAN_SPEED_LOW_EXHAUST]) + ' %':<10}"
         )
         print(
-            f"    {'Standby':<25}{str(res['preset_standby_fan_speed_supply']) + ' %':<10}"
-            f"{str(res['preset_standby_fan_speed_exhaust']) + ' %':<10}"
+            f"    {'Away':<25}{str(res[vmdp.FAN_SPEED_AWAY_SUPPLY]) + ' %':<10}"
+            f"{str(res[vmdp.FAN_SPEED_AWAY_EXHAUST]) + ' %':<10}"
         )
         print("")
 
@@ -187,13 +207,18 @@ class AiriosVMD02RPS78CLI(aiocmd.PromptToolkitCmd):
         print("    ---------")
         print(
             f"    {'Frost protection preheater setpoint:':<40}"
-            f"{res['frost_protection_preheater_setpoint']} ºC"
+            f"{res[vmdp.FROST_PROTECTION_PREHEATER_SETPOINT]} ºC"
         )
-        print(f"    {'Preheater setpoint:': <40}{res['preheater_setpoint']} ºC")
-        print(f"    {'Free ventilation setpoint:':<40}{res['free_ventilation_setpoint']} ºC")
+        print(f"    {'Preheater setpoint:': <40}{res[vmdp.PREHEATER_SETPOINT]} ºC")
+        print(
+            (
+                f"    {'Free ventilation setpoint:':<40}"
+                f"{res[vmdp.FREE_VENTILATION_HEATING_SETPOINT]} ºC"
+            )
+        )
         print(
             f"    {'Free ventilation cooling offset:':<40}"
-            f"{res['free_ventilation_cooling_offset']} K"
+            f"{res[vmdp.FREE_VENTILATION_COOLING_OFFSET]} K"
         )
 
     async def do_error_code(self) -> None:
@@ -419,7 +444,7 @@ class AiriosBridgeCLI(aiocmd.PromptToolkitCmd):
 
     async def do_software_build_date(self) -> None:
         """Print the software build date."""
-        date = await self.bridge.node_software_build_date()
+        date = await self.bridge.device_software_build_date()
         print(date)
 
     async def do_utc_time(self) -> None:
@@ -429,7 +454,7 @@ class AiriosBridgeCLI(aiocmd.PromptToolkitCmd):
 
     async def do_node_oem_number(self) -> None:
         """Print the node OEM number."""
-        number = await self.bridge.node_oem_number()
+        number = await self.bridge.device_oem_number()
         print(number)
 
     async def do_oem_code(self) -> None:
@@ -443,29 +468,18 @@ class AiriosBridgeCLI(aiocmd.PromptToolkitCmd):
 
     async def do_status(self) -> None:
         """Print the device status."""
-        res = await self.bridge.fetch_bridge()
-        print("Node data")
-        print("---------")
-        print(f"    {'Product ID:': <25}{res['product_id']}")
-        print(f"    {'Product Name:': <25}{res['product_name']}")
-        print(f"    {'Software version:': <25}{res['sw_version']}")
-        print(f"    {'RF address:': <25}{res['rf_address']}")
-        print("")
+        res = await self.bridge.fetch()
 
-        print("Device data")
-        print("---------")
-        print(f"    {'RF comm status:': <25}{res['rf_comm_status']}")
-        print(f"    {'Battery status:': <25}{res['battery_status']}")
-        print(f"    {'Fault status:': <25}{res['fault_status']}")
-        print("")
+        _print_device_data(res)
 
         print("BRDG-02R13 data")
         print("----------------")
-        print(f"    {'RF sent messages last hour': <40}{res['rf_sent_messages_last_hour']}")
-        print(f"    {'RF sent messages current hour:': <40}{res['rf_sent_messages_current_hour']}")
-        print(f"    {'RF load last hour:': <40}{res['rf_load_last_hour']}")
-        print(f"    {'RF load current hour:': <40}{res['rf_load_current_hour']}")
-        print(f"    {'Uptime:': <40}{res['power_on_time']}")
+        print(f"    {'Customer product ID:': <40}0x{res[bp.CUSTOMER_PRODUCT_ID].value:08X}")
+        print(f"    {'RF sent messages last hour': <40}{res[bp.MESSAGES_SEND_LAST_HOUR]}")
+        print(f"    {'RF sent messages current hour:': <40}{res[bp.MESSAGES_SEND_CURRENT_HOUR]}")
+        print(f"    {'RF load last hour:': <40}{res[bp.RF_LOAD_LAST_HOUR]}")
+        print(f"    {'RF load current hour:': <40}{res[bp.RF_LOAD_CURRENT_HOUR]}")
+        print(f"    {'Uptime:': <40}{res[bp.UPTIME]}")
 
 
 class AiriosClientCLI(aiocmd.PromptToolkitCmd):  # pylint: disable=too-few-public-methods

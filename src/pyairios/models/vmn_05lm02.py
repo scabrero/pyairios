@@ -7,8 +7,7 @@ from typing import List
 
 from pyairios.client import AsyncAiriosModbusClient
 from pyairios.constants import VMDRequestedVentilationSpeed
-from pyairios.data_model import VMN05LM02Data
-from pyairios.device import AiriosDevice
+from pyairios.node import AiriosNode
 from pyairios.properties import AiriosVMNProperty as dp
 from pyairios.registers import (
     RegisterAccess,
@@ -20,7 +19,7 @@ from pyairios.registers import (
 LOGGER = logging.getLogger(__name__)
 
 
-class VMN05LM02(AiriosDevice):
+class VMN05LM02(AiriosNode):
     """Represents a VMN-05LM02 remote node."""
 
     def __init__(self, slave_id: int, client: AsyncAiriosModbusClient) -> None:
@@ -41,20 +40,3 @@ class VMN05LM02(AiriosDevice):
         regdesc = self.regmap[dp.REQUESTED_VENTILATION_SPEED]
         result = await self.client.get_register(regdesc, self.slave_id)
         return Result(VMDRequestedVentilationSpeed(result.value), result.status)
-
-    async def fetch_vmn_data(self) -> VMN05LM02Data:  # pylint: disable=duplicate-code
-        """Get the node device data at once."""
-
-        return VMN05LM02Data(
-            slave_id=self.slave_id,
-            rf_address=await self._safe_fetch(self.node_rf_address),
-            product_id=await self._safe_fetch(self.node_product_id),
-            sw_version=await self._safe_fetch(self.node_software_version),
-            product_name=await self._safe_fetch(self.node_product_name),
-            rf_comm_status=await self._safe_fetch(self.node_rf_comm_status),
-            battery_status=await self._safe_fetch(self.node_battery_status),
-            fault_status=await self._safe_fetch(self.node_fault_status),
-            bound_status=await self._safe_fetch(self.device_bound_status),
-            value_error_status=await self._safe_fetch(self.device_value_error_status),
-            requested_ventilation_speed=await self._safe_fetch(self.requested_ventilation_speed),
-        )

@@ -2,12 +2,7 @@
 
 import logging
 
-from pyairios.models.brdg_02r13 import BRDG02R13
-from pyairios.models.brdg_02r13 import DEFAULT_SLAVE_ID as BRDG02R13_DEFAULT_SLAVE_ID
-from pyairios.models.vmd_02rps78 import VMD02RPS78
-from pyairios.models.vmn_05lm02 import VMN05LM02
-
-from .client import (
+from pyairios.client import (
     AiriosBaseTransport,
     AiriosRtuTransport,
     AiriosTcpTransport,
@@ -15,10 +10,14 @@ from .client import (
     AsyncAiriosModbusRtuClient,
     AsyncAiriosModbusTcpClient,
 )
-from .constants import BindingStatus, ProductId
-from .data_model import AiriosBoundNodeInfo, AiriosData, AiriosNodeData
-from .exceptions import AiriosException
-from .node import AiriosNode
+from pyairios.constants import BindingStatus, ProductId
+from pyairios.data_model import AiriosBoundNodeInfo, AiriosData, AiriosDeviceData
+from pyairios.device import AiriosDevice
+from pyairios.exceptions import AiriosException
+from pyairios.models.brdg_02r13 import BRDG02R13
+from pyairios.models.brdg_02r13 import DEFAULT_SLAVE_ID as BRDG02R13_DEFAULT_SLAVE_ID
+from pyairios.models.factory import factory
+from pyairios.properties import AiriosBridgeProperty as bp
 
 LOGGER = logging.getLogger(__name__)
 
@@ -47,13 +46,13 @@ class Airios:
         """Get the list of bound nodes."""
         return await self.bridge.nodes()
 
-    async def node(self, slave_id: int) -> AiriosNode:
+    async def node(self, slave_id: int) -> AiriosDevice:
         """Get a node instance by its Modbus slave ID."""
         return await self.bridge.node(slave_id)
 
     async def bind_status(self) -> BindingStatus:
         """Get the bind status."""
-        return await self.bridge.bind_status()
+        return await self.bridge.get(bp.ACTUAL_BINDING_STATUS)
 
     async def bind_controller(
         self,
@@ -79,25 +78,19 @@ class Airios:
 
     async def fetch(self) -> AiriosData:
         """Get the data from all nodes at once."""
-        data: dict[int, AiriosNodeData] = {}
+        data: dict[int, AiriosDeviceData] = {}
 
-        brdg_data = await self.bridge.fetch_bridge()
-        if brdg_data["rf_address"] is None:
-            raise AiriosException("Failed to fetch node RF address")
-        bridge_rf_address = brdg_data["rf_address"].value
-        data[self.bridge.slave_id] = brdg_data
+        brdg_data = await self.bridge.fetch()
 
-        for node in await self.bridge.nodes():
-            if node.product_id == ProductId.VMD_02RPS78:
-                vmd = VMD02RPS78(node.slave_id, self.bridge.client)
-                vmd_data = await vmd.fetch_vmd_data()
-                data[node.slave_id] = vmd_data
-            if node.product_id == ProductId.VMN_05LM02:
-                vmn = VMN05LM02(node.slave_id, self.bridge.client)
-                vmn_data = await vmn.fetch_vmn_data()
-                data[node.slave_id] = vmn_data
+        for node_info in await self.bridge.nodes():
+            node = factory.get_device_by_product_id(
+                node_info.product_id,
+                node_info.slave_id,
+                self.bridge.client,
+            )
+            data[node_info.slave_id] = await node.fetch()
 
-        return AiriosData(bridge_rf_address=bridge_rf_address, nodes=data)
+        return AiriosData(bridge=brdg_data, nodes=data)
 
     async def connect(self) -> bool:
         """Establish underlying Modbus connection."""

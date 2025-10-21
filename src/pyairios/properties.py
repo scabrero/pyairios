@@ -7,8 +7,8 @@ class AiriosBaseProperty(Enum):
     """Base property class."""
 
 
-class AiriosNodeProperty(AiriosBaseProperty):
-    """Node properties."""
+class AiriosDeviceProperty(AiriosBaseProperty):
+    """Generic device properties."""
 
     # The RAMSES-II RF address, also used as node serial number.
     RF_ADDRESS = auto()
@@ -36,24 +36,21 @@ class AiriosNodeProperty(AiriosBaseProperty):
     # The node product name.
     PRODUCT_NAME = auto()
 
+    RF_LAST_SEEN = auto()
+    RF_COMM_STATUS = auto()
+    BATTERY_STATUS = auto()
+    FAULT_STATUS = auto()
+
+
+class AiriosNodeProperty(AiriosBaseProperty):
+    """Node properties."""
+
     # This is the value received from the bound node. If it does not match register
     # NODE_PRODUCT_ID a wrong product is bound.
     RECEIVED_PRODUCT_ID = auto()
-
-    # The node RF communication status.
-    RF_COMM_STATUS = auto()
-
-    # The node battery status.
-    BATTERY_STATUS = auto()
-
-    # The node fault status.
-    FAULT_STATUS = auto()
-
-    # RF statistics.
-    RF_STATS = auto()
-
-    # Fault history.
-    FAULT_HISTORY = auto()
+    VALUE_ERROR_STATUS = auto()
+    RF_LAST_RSSI = auto()
+    BOUND_STATUS = auto()
 
 
 class AiriosBridgeProperty(AiriosBaseProperty):
@@ -119,15 +116,6 @@ class AiriosBridgeProperty(AiriosBaseProperty):
     ADDRESS_NODE_32 = auto()
 
 
-class AiriosDeviceProperty(AiriosBaseProperty):
-    """Generic device properties."""
-
-    RF_LAST_SEEN = auto()
-    VALUE_ERROR_STATUS = auto()
-    RF_LAST_RSSI = auto()
-    BOUND_STATUS = auto()
-
-
 class AiriosVMDProperty(AiriosBaseProperty):
     """VMD devices properties."""
 
@@ -151,7 +139,7 @@ class AiriosVMDProperty(AiriosBaseProperty):
     AIR_QUALITY = auto()
     AIR_QUALITY_BASIS = auto()
     CO2_LEVEL = auto()
-    POST_HEATER = auto()
+    POSTHEATER = auto()
     CAPABILITIES = auto()
     FILTER_REMAINING_DAYS = auto()
     FILTER_DURATION = auto()

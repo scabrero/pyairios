@@ -1,60 +1,265 @@
-"""RF device implementation."""
+"""Airios device base class."""
 
 from __future__ import annotations
 
-from typing import List
+import datetime
+import logging
+from enum import auto
+from typing import Any, Dict, List
 
+from pyairios.client import AsyncAiriosModbusClient
+from pyairios.constants import BatteryStatus, FaultStatus, ProductId, RFCommStatus, RFStats
+from pyairios.data_model import AiriosDeviceData
+from pyairios.exceptions import AiriosAcknowledgeException, AiriosPropertyNotSupported
+from pyairios.properties import AiriosBaseProperty
 from pyairios.properties import AiriosDeviceProperty as dp
-
-from .client import AsyncAiriosModbusClient
-from .constants import BoundStatus, ValueErrorStatus
-from .data_model import AiriosDeviceData
-from .node import AiriosNode
-from .registers import (
-    I16Register,
+from pyairios.registers import (
+    DateRegister,
+    FloatRegister,
     RegisterAccess,
     RegisterBase,
     Result,
+    StringRegister,
     U16Register,
+    U32Register,
 )
 
+LOGGER = logging.getLogger(__name__)
 
-class AiriosDevice(AiriosNode):
-    """Represents a RF device."""
+
+class PrivProp(AiriosBaseProperty):
+    """Private properties, not exposed to external API."""
+
+    RF_STATS_INDEX = auto()
+    RF_STATS_LENGTH = auto()
+    RF_STATS_DEVICE = auto()
+    RF_STATS_AVERAGE = auto()
+    RF_STATS_STDDEV = auto()
+    RF_STATS_MIN = auto()
+    RF_STATS_MAX = auto()
+    RF_STATS_MISSED = auto()
+    RF_STATS_RECEIVED = auto()
+    RF_STATS_AGE = auto()
+
+
+def battery_status(value: Any) -> BatteryStatus:
+    """Get the node battery status."""
+    available = value != 0xFFFF
+    low = False
+    if available:
+        low = value != 0
+    return BatteryStatus(available, low)
+
+
+def fault_status(value: Any) -> FaultStatus:
+    """Get the node fault status."""
+    available = value != 0xFFFF
+    fault = value != 0
+    return FaultStatus(available=available, fault=fault)
+
+
+class AiriosDevice:
+    """Airios device base class."""
+
+    client: AsyncAiriosModbusClient
+    slave_id: int
+    registers: List[RegisterBase]
+    regmap: Dict[AiriosBaseProperty, RegisterBase]
 
     def __init__(self, slave_id: int, client: AsyncAiriosModbusClient) -> None:
-        """Initialize the device class instance."""
-        super().__init__(slave_id, client)
+        """Initialize the class instance."""
+        self.client = client
+        self.slave_id = int(slave_id)
+        self.registers = []
+        self.regmap = {}
+
         dev_registers: List[RegisterBase] = [
+            U32Register(dp.RF_ADDRESS, 40000, RegisterAccess.READ),
+            U32Register(dp.PRODUCT_ID, 40002, RegisterAccess.READ, result_type=ProductId),
+            U16Register(dp.SOFTWARE_VERSION, 40004, RegisterAccess.READ),
+            U16Register(dp.OEM_NUMBER, 40005, RegisterAccess.READ),
+            U16Register(dp.RF_CAPABILITIES, 40006, RegisterAccess.READ),
+            DateRegister(dp.MANUFACTURE_DATE, 40007, RegisterAccess.READ),
+            DateRegister(dp.SOFTWARE_BUILD_DATE, 40009, RegisterAccess.READ),
+            StringRegister(dp.PRODUCT_NAME, 40011, 10, RegisterAccess.READ),
             U16Register(dp.RF_LAST_SEEN, 40100, RegisterAccess.READ),
-            U16Register(dp.VALUE_ERROR_STATUS, 40104, RegisterAccess.READ),
-            I16Register(dp.RF_LAST_RSSI, 40109, RegisterAccess.READ),
-            U16Register(dp.BOUND_STATUS, 40110, RegisterAccess.READ),
+            U16Register(dp.RF_COMM_STATUS, 40101, RegisterAccess.READ, result_type=RFCommStatus),
+            U16Register(
+                dp.BATTERY_STATUS,
+                40102,
+                RegisterAccess.READ,
+                result_adapter=battery_status,
+            ),
+            U16Register(
+                dp.FAULT_STATUS,
+                40103,
+                RegisterAccess.READ,
+                result_adapter=fault_status,
+            ),
+            U16Register(PrivProp.RF_STATS_INDEX, 40120, RegisterAccess.READ | RegisterAccess.WRITE),
+            U16Register(PrivProp.RF_STATS_LENGTH, 40121, RegisterAccess.READ),
+            U32Register(PrivProp.RF_STATS_DEVICE, 40122, RegisterAccess.READ),
+            U16Register(PrivProp.RF_STATS_AVERAGE, 40124, RegisterAccess.READ),
+            FloatRegister(PrivProp.RF_STATS_STDDEV, 40125, RegisterAccess.READ),
+            U16Register(PrivProp.RF_STATS_MIN, 40127, RegisterAccess.READ),
+            U16Register(PrivProp.RF_STATS_MAX, 40128, RegisterAccess.READ),
+            U16Register(PrivProp.RF_STATS_MISSED, 40129, RegisterAccess.READ),
+            U16Register(PrivProp.RF_STATS_RECEIVED, 40130, RegisterAccess.READ),
+            U16Register(PrivProp.RF_STATS_AGE, 40131, RegisterAccess.READ),
         ]
         self._add_registers(dev_registers)
 
-    async def device_bound_status(self) -> Result[BoundStatus]:
-        """Get the device bound status."""
-        result = await self.client.get_register(self.regmap[dp.BOUND_STATUS], self.slave_id)
-        return Result(BoundStatus(result.value), result.status)
+    def _add_registers(self, reglist: List[RegisterBase]):
+        self.registers.extend(reglist)
+        self.regmap: Dict[AiriosBaseProperty, RegisterBase] = {
+            regdesc.aproperty: regdesc for regdesc in self.registers
+        }
 
-    async def device_value_error_status(self) -> Result[ValueErrorStatus]:
-        """Get the device value error status."""
-        result = await self.client.get_register(self.regmap[dp.VALUE_ERROR_STATUS], self.slave_id)
-        return Result(ValueErrorStatus(result.value), result.status)
+    async def get(self, ap: AiriosBaseProperty) -> Any:
+        """Get an Airios property."""
+        if ap not in self.regmap:
+            raise AiriosPropertyNotSupported(ap)
+        regdesc = self.regmap[ap]
+        return await self.client.get_register(regdesc, self.slave_id)
 
-    async def fetch_device(self) -> AiriosDeviceData:  # pylint: disable=duplicate-code
-        """Fetch the device data."""
+    async def set(self, ap: AiriosBaseProperty, value: Any) -> bool:
+        """Set an Airios property."""
+        if ap not in self.regmap:
+            raise AiriosPropertyNotSupported(ap)
+        regdesc = self.regmap[ap]
+        return await self.client.set_register(regdesc, value, self.slave_id)
 
-        return AiriosDeviceData(
-            slave_id=self.slave_id,
-            rf_address=await self._safe_fetch(self.node_rf_address),
-            product_id=await self._safe_fetch(self.node_product_id),
-            sw_version=await self._safe_fetch(self.node_software_version),
-            product_name=await self._safe_fetch(self.node_product_name),
-            rf_comm_status=await self._safe_fetch(self.node_rf_comm_status),
-            battery_status=await self._safe_fetch(self.node_battery_status),
-            fault_status=await self._safe_fetch(self.node_fault_status),
-            bound_status=await self._safe_fetch(self.device_bound_status),
-            value_error_status=await self._safe_fetch(self.device_value_error_status),
+    async def fetch(self) -> AiriosDeviceData:
+        """Fetch all data."""
+        data: Dict[AiriosBaseProperty, Any] = {}
+        for reg in self.registers:
+            if RegisterAccess.READ not in reg.description.access:
+                continue
+            try:
+                data[reg.aproperty] = await self.client.get_register(reg, self.slave_id)
+            except AiriosAcknowledgeException as ex:
+                msg = f"Failed to fetch register {reg.aproperty}: {ex}"
+                LOGGER.info(msg)
+                continue
+            except ValueError as ex:
+                msg = f"Failed to fetch register {reg.aproperty}: {ex}"
+                LOGGER.info(msg)
+                continue
+        return data
+
+    async def device_rf_address(self) -> Result[int]:
+        """Get the device RF address, also used as node serial number."""
+        return await self.client.get_register(self.regmap[dp.RF_ADDRESS], self.slave_id)
+
+    async def device_product_id(self) -> Result[ProductId]:
+        """Get the device product ID.
+
+        This is the value assigned to the virtual device instance created by the bridge when
+        a device is bound. The actual received product ID from the real RF device can is
+        available in the RECEIVED_PRODUCT_ID register.
+        """
+        result = await self.client.get_register(self.regmap[dp.PRODUCT_ID], self.slave_id)
+        return Result(ProductId(result.value), None)
+
+    async def device_software_version(self) -> Result[int]:
+        """Get the device software version."""
+        return await self.client.get_register(self.regmap[dp.SOFTWARE_VERSION], self.slave_id)
+
+    async def device_oem_number(self) -> Result[int]:
+        """Get the device OEM number.
+
+        It is 0x00 or 0xFF when not used.
+        """
+        return await self.client.get_register(self.regmap[dp.OEM_NUMBER], self.slave_id)
+
+    async def device_rf_capabilities(self) -> Result[int]:
+        """Get the device RF capabilities.
+
+        The value depends on the specific device.
+        """
+        return await self.client.get_register(self.regmap[dp.RF_CAPABILITIES], self.slave_id)
+
+    async def device_manufacture_date(self) -> Result[datetime.date]:
+        """Get the device manufacture date."""
+        return await self.client.get_register(self.regmap[dp.MANUFACTURE_DATE], self.slave_id)
+
+    async def device_software_build_date(self) -> Result[datetime.date]:
+        """Get the device software build date."""
+        return await self.client.get_register(self.regmap[dp.SOFTWARE_BUILD_DATE], self.slave_id)
+
+    async def device_product_name(self) -> Result[str]:
+        """Get the device product name."""
+        return await self.client.get_register(self.regmap[dp.PRODUCT_NAME], self.slave_id)
+
+    async def device_rf_comm_status(self) -> Result[RFCommStatus]:
+        """Get the device RF communication status."""
+        return await self.client.get_register(self.regmap[dp.RF_COMM_STATUS], self.slave_id)
+
+    async def device_battery_status(self) -> Result[BatteryStatus]:
+        """Get the device battery status."""
+        regdesc = self.regmap[dp.BATTERY_STATUS]
+        result = await self.client.get_register(regdesc, self.slave_id)
+        available = result.value != 0xFFFF
+        low = False
+        if available:
+            low = result.value != 0
+        status = BatteryStatus(available, low)
+        return Result(status, result.status)
+
+    async def device_fault_status(self) -> Result[FaultStatus]:
+        """Get the device fault status."""
+        result = await self.client.get_register(self.regmap[dp.FAULT_STATUS], self.slave_id)
+        available = result.value != 0xFFFF
+        fault = result.value != 0
+        return Result(FaultStatus(available=available, fault=fault), result.status)
+
+    async def device_clear_rf_stats(self) -> bool:
+        """Clears the node RF stats."""
+        return await self.client.set_register(
+            self.regmap[PrivProp.RF_STATS_INDEX], 255, self.slave_id
         )
+
+    async def device_rf_stats(self) -> RFStats:
+        """Get the node RF stats."""
+        r = await self.client.get_register(self.regmap[PrivProp.RF_STATS_LENGTH], self.slave_id)
+        nrecs = r.value
+        recs: list[RFStats.Record] = []
+        for i in range(0, nrecs):
+            ok = await self.client.set_register(
+                self.regmap[PrivProp.RF_STATS_INDEX], i, self.slave_id
+            )
+            if not ok:
+                LOGGER.warning("Failed to write %d to RF stats index register", i)
+                continue
+            r = await self.client.get_register(self.regmap[PrivProp.RF_STATS_DEVICE], self.slave_id)
+            device_id: int = r.value
+            r = await self.client.get_register(
+                self.regmap[PrivProp.RF_STATS_AVERAGE], self.slave_id
+            )
+            averate: int = r.value
+            r = await self.client.get_register(self.regmap[PrivProp.RF_STATS_STDDEV], self.slave_id)
+            stddev: float = r.value
+            r = await self.client.get_register(self.regmap[PrivProp.RF_STATS_MIN], self.slave_id)
+            minimum: int = r.value
+            r = await self.client.get_register(self.regmap[PrivProp.RF_STATS_MAX], self.slave_id)
+            maximum: int = r.value
+            r = await self.client.get_register(self.regmap[PrivProp.RF_STATS_MISSED], self.slave_id)
+            missed: int = r.value
+            r = await self.client.get_register(
+                self.regmap[PrivProp.RF_STATS_RECEIVED], self.slave_id
+            )
+            received: int = r.value
+            r = await self.client.get_register(self.regmap[PrivProp.RF_STATS_AGE], self.slave_id)
+            age = datetime.timedelta(minutes=r.value)
+            rec = RFStats.Record(
+                device_id=device_id,
+                averate=averate,
+                stddev=stddev,
+                minimum=minimum,
+                maximum=maximum,
+                missed=missed,
+                received=received,
+                age=age,
+            )
+            recs.append(rec)
+        return RFStats(records=recs)

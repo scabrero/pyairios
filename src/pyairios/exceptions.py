@@ -1,5 +1,7 @@
 """Exceptions from the Airios library."""
 
+from pyairios.properties import AiriosBaseProperty
+
 
 class AiriosException(Exception):
     """Base class for Airios exceptions."""
@@ -70,3 +72,12 @@ class AiriosIOException(AiriosException):
 
 class AiriosUnknownProductException(AiriosException):
     """Unknown product exception."""
+
+
+class AiriosPropertyNotSupported(AiriosException):
+    """The node does not support the property."""
+
+    property: AiriosBaseProperty
+
+    def __init__(self, p: AiriosBaseProperty):
+        self.property = p
