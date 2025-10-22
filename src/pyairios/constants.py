@@ -19,16 +19,16 @@ class ProductId(IntEnum):
 
     def __str__(self) -> str:
         if self.value == self.BRDG_02R13:
-            return "BRDG-02R13"
+            return f"0x{self.value:08X} (BRDG-02R13)"
         if self.value == self.VMD_02RPS78:
-            return "VMD-02RPS78"
+            return f"0x{self.value:08X} (VMD-02RPS78)"
         if self.value == self.VMN_05LM02:
-            return "VMN-05LM02"
+            return f"0x{self.value:08X} (VMN-05LM02)"
         if self.value == self.VMN_02LM11:
-            return "VMN-02LM11"
+            return f"0x{self.value:08X} (VMN-02LM11)"
         if self.value == self.VMD_07RPS13:
-            return "VMD-07RPS13"
-        raise ValueError(f"Unknown product ID value {self.value}")
+            return f"0x{self.value:08X} (VMD-07RPS13)"
+        raise ValueError(f"Unknown product ID value {self.value:08X}")
 
 
 class BoundStatus(IntEnum):
