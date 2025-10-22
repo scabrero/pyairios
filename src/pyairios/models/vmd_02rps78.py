@@ -101,6 +101,12 @@ def _co2_adapter(value: int) -> VMDCO2Level:
     return VMDCO2Level(value, status)
 
 
+def _bypass_position_adapter(value) -> VMDBypassPosition:
+    """Get the bypass position."""
+    error = value > 120
+    return VMDBypassPosition(value, error)
+
+
 class VMD02RPS78(AiriosNode):
     """Represents a VMD-02RPS78 controller node."""
 
@@ -146,7 +152,12 @@ class VMD02RPS78(AiriosNode):
             U16Register(vp.PREHEATER, 41013, RegisterAccess.READ | RegisterAccess.STATUS),
             U16Register(vp.FILTER_DIRTY, 41014, RegisterAccess.READ | RegisterAccess.STATUS),
             U16Register(vp.DEFROST, 41015, RegisterAccess.READ | RegisterAccess.STATUS),
-            U16Register(vp.BYPASS_POSITION, 41016, RegisterAccess.READ | RegisterAccess.STATUS),
+            U16Register(
+                vp.BYPASS_POSITION,
+                41016,
+                RegisterAccess.READ | RegisterAccess.STATUS,
+                result_adapter=_bypass_position_adapter,
+            ),
             U16Register(
                 vp.HUMIDITY_INDOOR,
                 41017,
@@ -410,9 +421,7 @@ class VMD02RPS78(AiriosNode):
     async def bypass_position(self) -> Result[VMDBypassPosition]:
         """Get the bypass position."""
         regdesc = self.regmap[vp.BYPASS_POSITION]
-        result = await self.client.get_register(regdesc, self.device_id)
-        error = result.value > 120
-        return Result(VMDBypassPosition(result.value, error), result.status)
+        return await self.client.get_register(regdesc, self.device_id)
 
     async def filter_duration(self) -> Result[int]:
         """Get the filter duration (in days)."""
