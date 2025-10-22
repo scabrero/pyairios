@@ -410,6 +410,14 @@ class VMDCO2Level:
 
 
 @dataclass
+class VMDFlowLevel:
+    """VMD flow level sample."""
+
+    flow: int
+    status: VMDSensorStatus
+
+
+@dataclass
 class VMDHeater:
     """VMD heater state sample."""
 

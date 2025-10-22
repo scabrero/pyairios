@@ -14,6 +14,7 @@ from pyairios.constants import (
     VMDCO2Level,
     VMDCapabilities,
     VMDErrorCode,
+    VMDFlowLevel,
     VMDHeater,
     VMDHeaterStatus,
     VMDHumidity,
@@ -101,10 +102,23 @@ def _co2_adapter(value: int) -> VMDCO2Level:
     return VMDCO2Level(value, status)
 
 
+def _flow_adapter(value: int) -> VMDFlowLevel:
+    status = VMDSensorStatus.OK
+    if value == 0x7FFF:
+        status = VMDSensorStatus.UNAVAILABLE
+    elif 0x8000 <= value <= 0x85FF:
+        status = VMDSensorStatus.ERROR
+    return VMDFlowLevel(value, status)
+
+
 def _bypass_position_adapter(value) -> VMDBypassPosition:
-    """Get the bypass position."""
     error = value > 120
     return VMDBypassPosition(value, error)
+
+
+def _heater_adapter(value) -> VMDHeater:
+    status = VMDHeaterStatus.UNAVAILABLE if value == 0xEF else VMDHeaterStatus.OK
+    return VMDHeater(value, status)
 
 
 class VMD02RPS78(AiriosNode):
@@ -149,7 +163,12 @@ class VMD02RPS78(AiriosNode):
                 RegisterAccess.READ | RegisterAccess.STATUS,
                 result_adapter=_temperature_adapter,
             ),
-            U16Register(vp.PREHEATER, 41013, RegisterAccess.READ | RegisterAccess.STATUS),
+            U16Register(
+                vp.PREHEATER,
+                41013,
+                RegisterAccess.READ | RegisterAccess.STATUS,
+                result_adapter=_heater_adapter,
+            ),
             U16Register(vp.FILTER_DIRTY, 41014, RegisterAccess.READ | RegisterAccess.STATUS),
             U16Register(vp.DEFROST, 41015, RegisterAccess.READ | RegisterAccess.STATUS),
             U16Register(
@@ -170,8 +189,18 @@ class VMD02RPS78(AiriosNode):
                 RegisterAccess.READ | RegisterAccess.STATUS,
                 result_adapter=_humidity_adapter,
             ),
-            FloatRegister(vp.FLOW_INLET, 41019, RegisterAccess.READ | RegisterAccess.STATUS),
-            FloatRegister(vp.FLOW_OUTLET, 41021, RegisterAccess.READ | RegisterAccess.STATUS),
+            FloatRegister(
+                vp.FLOW_INLET,
+                41019,
+                RegisterAccess.READ | RegisterAccess.STATUS,
+                result_adapter=_flow_adapter,
+            ),
+            FloatRegister(
+                vp.FLOW_OUTLET,
+                41021,
+                RegisterAccess.READ | RegisterAccess.STATUS,
+                result_adapter=_flow_adapter,
+            ),
             U16Register(vp.AIR_QUALITY, 41023, RegisterAccess.READ | RegisterAccess.STATUS),
             U16Register(vp.AIR_QUALITY_BASIS, 41024, RegisterAccess.READ | RegisterAccess.STATUS),
             U16Register(
@@ -180,7 +209,12 @@ class VMD02RPS78(AiriosNode):
                 RegisterAccess.READ | RegisterAccess.STATUS,
                 result_adapter=_co2_adapter,
             ),
-            U16Register(vp.POSTHEATER, 41026, RegisterAccess.READ | RegisterAccess.STATUS),
+            U16Register(
+                vp.POSTHEATER,
+                41026,
+                RegisterAccess.READ | RegisterAccess.STATUS,
+                result_adapter=_heater_adapter,
+            ),
             U16Register(vp.CAPABILITIES, 41027, RegisterAccess.READ | RegisterAccess.STATUS),
             U16Register(
                 vp.FILTER_REMAINING_DAYS, 41040, RegisterAccess.READ | RegisterAccess.STATUS
@@ -512,16 +546,12 @@ class VMD02RPS78(AiriosNode):
     async def preheater(self) -> Result[VMDHeater]:
         """Get the preheater level."""
         regdesc = self.regmap[vp.PREHEATER]
-        result = await self.client.get_register(regdesc, self.device_id)
-        status = VMDHeaterStatus.UNAVAILABLE if result.value == 0xEF else VMDHeaterStatus.OK
-        return Result(VMDHeater(result.value, status), result.status)
+        return await self.client.get_register(regdesc, self.device_id)
 
     async def postheater(self) -> Result[VMDHeater]:
         """Get the postheater level."""
         regdesc = self.regmap[vp.POSTHEATER]
-        result = await self.client.get_register(regdesc, self.device_id)
-        status = VMDHeaterStatus.UNAVAILABLE if result.value == 0xEF else VMDHeaterStatus.OK
-        return Result(VMDHeater(result.value, status), result.status)
+        return await self.client.get_register(regdesc, self.device_id)
 
     async def preheater_setpoint(self) -> Result[float]:
         """Get the preheater setpoint."""
@@ -656,4 +686,14 @@ class VMD02RPS78(AiriosNode):
     async def co2_level(self) -> Result[VMDCO2Level]:
         """Get the CO2 level (in ppm)."""
         regdesc = self.regmap[vp.CO2_LEVEL]
+        return await self.client.get_register(regdesc, self.device_id)
+
+    async def inlet_flow(self) -> Result[VMDFlowLevel]:
+        """Get the inlet flow level (in m3/h)"""
+        regdesc = self.regmap[vp.FLOW_INLET]
+        return await self.client.get_register(regdesc, self.device_id)
+
+    async def outlet_flow(self) -> Result[VMDFlowLevel]:
+        """Get the outlet flow level (in m3/h)"""
+        regdesc = self.regmap[vp.FLOW_OUTLET]
         return await self.client.get_register(regdesc, self.device_id)
