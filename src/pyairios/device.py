@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import datetime
 import logging
+import struct
 from enum import auto
 from typing import Any, Dict, List
 
@@ -14,7 +15,6 @@ from pyairios.exceptions import AiriosAcknowledgeException, AiriosPropertyNotSup
 from pyairios.properties import AiriosBaseProperty
 from pyairios.properties import AiriosDeviceProperty as dp
 from pyairios.registers import (
-    DateRegister,
     FloatRegister,
     RegisterAccess,
     RegisterBase,
@@ -58,6 +58,15 @@ def fault_status(value: Any) -> FaultStatus:
     return FaultStatus(available=available, fault=fault)
 
 
+def date_register(value: int) -> datetime.date:
+    """Decode register bytes to value."""
+    if value == 0xFFFFFFFF:
+        raise ValueError("Unknown")
+    buf = value.to_bytes(4, "big")
+    (day, month, year) = struct.unpack(">BBH", buf)
+    return datetime.date(year, month, day)
+
+
 class AiriosDevice:
     """Airios device base class."""
 
@@ -79,8 +88,18 @@ class AiriosDevice:
             U16Register(dp.SOFTWARE_VERSION, 40004, RegisterAccess.READ),
             U16Register(dp.OEM_NUMBER, 40005, RegisterAccess.READ),
             U16Register(dp.RF_CAPABILITIES, 40006, RegisterAccess.READ),
-            DateRegister(dp.MANUFACTURE_DATE, 40007, RegisterAccess.READ),
-            DateRegister(dp.SOFTWARE_BUILD_DATE, 40009, RegisterAccess.READ),
+            U32Register(
+                dp.MANUFACTURE_DATE,
+                40007,
+                RegisterAccess.READ,
+                result_adapter=date_register,
+            ),
+            U32Register(
+                dp.SOFTWARE_BUILD_DATE,
+                40009,
+                RegisterAccess.READ,
+                result_adapter=date_register,
+            ),
             StringRegister(dp.PRODUCT_NAME, 40011, 10, RegisterAccess.READ),
             U16Register(dp.RF_LAST_SEEN, 40100, RegisterAccess.READ),
             U16Register(dp.RF_COMM_STATUS, 40101, RegisterAccess.READ, result_type=RFCommStatus),

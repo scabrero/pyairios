@@ -2,7 +2,6 @@
 
 import datetime
 import logging
-import struct
 import typing as t
 from dataclasses import dataclass
 from enum import Flag, auto
@@ -259,39 +258,6 @@ class FloatRegister(NumberRegister[float]):
         """Initialize the FloatRegister instance."""
         description = RegisterDescription(address, 2, access, min_value, max_value)
         super().__init__(description, ap, result_type, result_adapter)
-
-
-class DateRegister(RegisterBase[datetime.date]):
-    """Date register."""
-
-    datatype = ModbusClientMixin.DATATYPE.UINT32
-
-    def __init__(  # pylint: disable=too-many-arguments,too-many-positional-arguments
-        self,
-        ap: AiriosBaseProperty,
-        address: int,
-        access: RegisterAccess,
-        min_value=0,
-        max_value=2**32 - 1,
-    ) -> None:
-        """Initialize the DateRegister instance."""
-        description = RegisterDescription(address, 2, access, min_value, max_value)
-        super().__init__(description, ap, datetime.date, None)
-
-    def decode(self, registers: list[int]) -> datetime.date:
-        """Decode register bytes to value."""
-        value: int = t.cast(int, super().decode(registers))
-
-        buf = value.to_bytes(4, "big")
-        (day, month, year) = struct.unpack(">BBH", buf)
-        return datetime.date(year, month, day)
-
-    def encode(self, value: datetime.date) -> list[int]:
-        """Encode value to register bytes."""
-
-        buf = struct.pack(">BBH", value.day, value.month, value.year)
-        ival = int.from_bytes(buf, byteorder="big")
-        return ModbusClientMixin.convert_to_registers(ival, self.datatype, word_order="little")
 
 
 class DateTimeRegister(RegisterBase[datetime.datetime]):
