@@ -125,6 +125,12 @@ class AiriosVMN05LM02CLI(aiocmd.PromptToolkitCmd):
                 f"    {'Requested ventilation speed:': <40}{res[vmnp.REQUESTED_VENTILATION_SPEED]}"
             )
 
+    async def do_properties(self, status: bool) -> None:
+        """Print all device properties."""
+        _status = status in (1, "y", "yes")
+        res = await self.vmn.fetch(_status)
+        pprint.pprint(res)
+
 
 class AiriosVMD02RPS78CLI(aiocmd.PromptToolkitCmd):
     """The VMD02RPS78 CLI interface."""
@@ -330,6 +336,12 @@ class AiriosVMD02RPS78CLI(aiocmd.PromptToolkitCmd):
         """Reset the filter change timer."""
         await self.vmd.filter_reset()
 
+    async def do_properties(self, status: bool) -> None:
+        """Print all device properties."""
+        _status = status in (1, "y", "yes")
+        res = await self.vmd.fetch(_status)
+        pprint.pprint(res)
+
 
 class AiriosBridgeCLI(aiocmd.PromptToolkitCmd):
     """The bridge CLI interface."""
@@ -484,6 +496,12 @@ class AiriosBridgeCLI(aiocmd.PromptToolkitCmd):
         print(f"    {'RF load last hour:': <40}{res[bp.RF_LOAD_LAST_HOUR]}")
         print(f"    {'RF load current hour:': <40}{res[bp.RF_LOAD_CURRENT_HOUR]}")
         print(f"    {'Uptime:': <40}{res[bp.UPTIME]}")
+
+    async def do_properties(self, status: bool) -> None:
+        """Print all device properties."""
+        _status = status in (1, "y", "yes")
+        res = await self.bridge.fetch(_status)
+        pprint.pprint(res)
 
 
 class AiriosClientCLI(aiocmd.PromptToolkitCmd):  # pylint: disable=too-few-public-methods
