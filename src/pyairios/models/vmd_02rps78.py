@@ -76,13 +76,11 @@ class VMD02RPS78(AiriosNode):
                 RegisterAccess.READ | RegisterAccess.STATUS,
             ),
             FloatRegister(
-                vp.TEMPERATURE_INDOOR, 41005, RegisterAccess.READ | RegisterAccess.STATUS
+                vp.TEMPERATURE_EXHAUST, 41005, RegisterAccess.READ | RegisterAccess.STATUS
             ),
+            FloatRegister(vp.TEMPERATURE_INLET, 41007, RegisterAccess.READ | RegisterAccess.STATUS),
             FloatRegister(
-                vp.TEMPERATURE_OUTDOOR, 41007, RegisterAccess.READ | RegisterAccess.STATUS
-            ),
-            FloatRegister(
-                vp.TEMPERATURE_EXHAUST, 41009, RegisterAccess.READ | RegisterAccess.STATUS
+                vp.TEMPERATURE_OUTLET, 41009, RegisterAccess.READ | RegisterAccess.STATUS
             ),
             FloatRegister(
                 vp.TEMPERATURE_SUPPLY, 41011, RegisterAccess.READ | RegisterAccess.STATUS
@@ -398,7 +396,7 @@ class VMD02RPS78(AiriosNode):
 
         This is exhaust flow before the heat exchanger.
         """
-        regdesc = self.regmap[vp.TEMPERATURE_INDOOR]
+        regdesc = self.regmap[vp.TEMPERATURE_EXHAUST]
         result = await self.client.get_register(regdesc, self.device_id)
         if math.isnan(result.value):
             status = VMDSensorStatus.UNAVAILABLE
@@ -413,7 +411,7 @@ class VMD02RPS78(AiriosNode):
 
         This is the supply flow before the heat exchanger.
         """
-        regdesc = self.regmap[vp.TEMPERATURE_OUTDOOR]
+        regdesc = self.regmap[vp.TEMPERATURE_INLET]
         result = await self.client.get_register(regdesc, self.device_id)
         if math.isnan(result.value):
             status = VMDSensorStatus.UNAVAILABLE
@@ -428,7 +426,7 @@ class VMD02RPS78(AiriosNode):
 
         This is the exhaust flow after the heat exchanger.
         """
-        regdesc = self.regmap[vp.TEMPERATURE_EXHAUST]
+        regdesc = self.regmap[vp.TEMPERATURE_OUTLET]
         result = await self.client.get_register(regdesc, self.device_id)
         if math.isnan(result.value):
             status = VMDSensorStatus.UNAVAILABLE

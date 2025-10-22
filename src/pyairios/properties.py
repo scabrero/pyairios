@@ -124,10 +124,19 @@ class AiriosVMDProperty(AiriosBaseProperty):
     FAN_SPEED_SUPPLY = auto()
     ERROR_CODE = auto()
     VENTILATION_SPEED_OVERRIDE_REMAINING_TIME = auto()
-    TEMPERATURE_INDOOR = auto()
-    TEMPERATURE_OUTDOOR = auto()
+
+    TEMPERATURE_INLET = auto()
+    """Incoming air temperature before heat exchanger."""
+
+    TEMPERATURE_OUTLET = auto()
+    """Outgoing air temperature after the heat exchanger."""
+
     TEMPERATURE_EXHAUST = auto()
+    """Outgoing air temperature before the heat exchanger."""
+
     TEMPERATURE_SUPPLY = auto()
+    """Incoming air temperature after heat exchanger."""
+
     PREHEATER = auto()
     FILTER_DIRTY = auto()
     DEFROST = auto()

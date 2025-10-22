@@ -174,10 +174,10 @@ class AiriosVMD02RPS78CLI(aiocmd.PromptToolkitCmd):
             f"({res[vmdp.FAN_RPM_EXHAUST]} RPM)"
         )
 
-        print(f"    {'Indoor temperature:': <25}{res[vmdp.TEMPERATURE_INDOOR]}")
-        print(f"    {'Outdoor temperature:': <25}{res[vmdp.TEMPERATURE_OUTDOOR]}")
-        print(f"    {'Exhaust temperature:': <25}{res[vmdp.TEMPERATURE_EXHAUST]}")
+        print(f"    {'Inlet temperature:': <25}{res[vmdp.TEMPERATURE_INLET]}")
         print(f"    {'Supply temperature:': <25}{res[vmdp.TEMPERATURE_SUPPLY]}")
+        print(f"    {'Exhaust temperature:': <25}{res[vmdp.TEMPERATURE_EXHAUST]}")
+        print(f"    {'Outlet temperature:': <25}{res[vmdp.TEMPERATURE_OUTLET]}")
 
         print(f"    {'Filter dirty:': <25}{res[vmdp.FILTER_DIRTY]}")
         print(f"    {'Filter remaining:': <25}{res[vmdp.FILTER_REMAINING_PERCENT]} %")
