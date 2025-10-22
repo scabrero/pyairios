@@ -15,7 +15,7 @@ class ProductId(IntEnum):
     VMD_02RPS78 = 0x0001C892
     VMN_05LM02 = 0x0001C83E
     VMN_02LM11 = 0x0001C852
-    VMD_07RPS13 = 0x0001C883  # ClimaRad VenturaV1X
+    VMD_07RPS13 = 0x0001C883
 
     def __str__(self) -> str:
         if self.value == self.BRDG_02R13:
