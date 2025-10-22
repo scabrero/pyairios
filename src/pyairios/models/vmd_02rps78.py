@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import logging
 import math
-from dataclasses import dataclass
 from typing import List
 
 from pyairios.client import AsyncAiriosModbusClient
@@ -19,6 +18,7 @@ from pyairios.constants import (
     VMDSensorStatus,
     VMDTemperature,
     VMDVentilationSpeed,
+    VMDPresetFansSpeeds,
 )
 from pyairios.node import AiriosNode
 from pyairios.exceptions import AiriosInvalidArgumentException
@@ -32,16 +32,6 @@ from pyairios.registers import (
 from pyairios.properties import AiriosVMDProperty as vp
 
 LOGGER = logging.getLogger(__name__)
-
-
-@dataclass
-class VMDPresetFansSpeeds:
-    """Preset fan speeds."""
-
-    exhaust_fan_speed: Result[int]
-    """Exhaust fan speed (%)"""
-    supply_fan_speed: Result[int]
-    """Supply fan speed (%)"""
 
 
 class VMD02RPS78(AiriosNode):
@@ -241,7 +231,7 @@ class VMD02RPS78(AiriosNode):
         """Get the away ventilation speed preset fan speeds."""
         r1 = await self.client.get_register(self.regmap[vp.FAN_SPEED_AWAY_SUPPLY], self.device_id)
         r2 = await self.client.get_register(self.regmap[vp.FAN_SPEED_AWAY_EXHAUST], self.device_id)
-        return VMDPresetFansSpeeds(supply_fan_speed=r1, exhaust_fan_speed=r2)
+        return VMDPresetFansSpeeds(supply_fan_speed=r1.value, exhaust_fan_speed=r2.value)
 
     async def set_preset_away_fans_speed(self, supply: int, exhaust: int) -> bool:
         """Set the away ventilation speed preset fan speeds."""
@@ -257,7 +247,7 @@ class VMD02RPS78(AiriosNode):
         """Get the low ventilation speed preset fan speeds."""
         r1 = await self.client.get_register(self.regmap[vp.FAN_SPEED_LOW_SUPPLY], self.device_id)
         r2 = await self.client.get_register(self.regmap[vp.FAN_SPEED_LOW_EXHAUST], self.device_id)
-        return VMDPresetFansSpeeds(supply_fan_speed=r1, exhaust_fan_speed=r2)
+        return VMDPresetFansSpeeds(supply_fan_speed=r1.value, exhaust_fan_speed=r2.value)
 
     async def set_preset_low_fans_speed(self, supply: int, exhaust: int) -> bool:
         """Set the low ventilation speed preset fan speeds."""
@@ -273,7 +263,7 @@ class VMD02RPS78(AiriosNode):
         """Get the mid ventilation speed preset fan speeds."""
         r1 = await self.client.get_register(self.regmap[vp.FAN_SPEED_MID_SUPPLY], self.device_id)
         r2 = await self.client.get_register(self.regmap[vp.FAN_SPEED_MID_EXHAUST], self.device_id)
-        return VMDPresetFansSpeeds(supply_fan_speed=r1, exhaust_fan_speed=r2)
+        return VMDPresetFansSpeeds(supply_fan_speed=r1.value, exhaust_fan_speed=r2.value)
 
     async def set_preset_mid_fans_speed(self, supply: int, exhaust: int) -> bool:
         """Set the mid ventilation speed preset fan speeds."""
@@ -289,7 +279,7 @@ class VMD02RPS78(AiriosNode):
         """Get the high ventilation speed preset fan speeds."""
         r1 = await self.client.get_register(self.regmap[vp.FAN_SPEED_HIGH_SUPPLY], self.device_id)
         r2 = await self.client.get_register(self.regmap[vp.FAN_SPEED_HIGH_EXHAUST], self.device_id)
-        return VMDPresetFansSpeeds(supply_fan_speed=r1, exhaust_fan_speed=r2)
+        return VMDPresetFansSpeeds(supply_fan_speed=r1.value, exhaust_fan_speed=r2.value)
 
     async def set_preset_high_fans_speed(self, supply: int, exhaust: int) -> bool:
         """Set the high ventilation speed preset fan speeds."""

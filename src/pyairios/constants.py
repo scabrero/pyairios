@@ -621,3 +621,13 @@ class VMDBypassPosition:
 
     position: int
     error: bool
+
+
+@dataclass
+class VMDPresetFansSpeeds:
+    """Preset fan speeds."""
+
+    exhaust_fan_speed: int
+    """Exhaust fan speed (%)"""
+    supply_fan_speed: int
+    """Supply fan speed (%)"""
