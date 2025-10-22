@@ -57,6 +57,16 @@ def pr_instantiate(device_id: int, client: AsyncAiriosModbusClient) -> VMD02RPS7
     return VMD02RPS78(device_id, client)
 
 
+def _temperature_adapter(value: float) -> VMDTemperature:
+    if math.isnan(value):
+        status = VMDSensorStatus.UNAVAILABLE
+    elif value < -273.0:
+        status = VMDSensorStatus.ERROR
+    else:
+        status = VMDSensorStatus.OK
+    return VMDTemperature(value, status)
+
+
 class VMD02RPS78(AiriosNode):
     """Represents a VMD-02RPS78 controller node."""
 
@@ -76,14 +86,28 @@ class VMD02RPS78(AiriosNode):
                 RegisterAccess.READ | RegisterAccess.STATUS,
             ),
             FloatRegister(
-                vp.TEMPERATURE_EXHAUST, 41005, RegisterAccess.READ | RegisterAccess.STATUS
+                vp.TEMPERATURE_EXHAUST,
+                41005,
+                RegisterAccess.READ | RegisterAccess.STATUS,
+                result_adapter=_temperature_adapter,
             ),
-            FloatRegister(vp.TEMPERATURE_INLET, 41007, RegisterAccess.READ | RegisterAccess.STATUS),
             FloatRegister(
-                vp.TEMPERATURE_OUTLET, 41009, RegisterAccess.READ | RegisterAccess.STATUS
+                vp.TEMPERATURE_INLET,
+                41007,
+                RegisterAccess.READ | RegisterAccess.STATUS,
+                result_adapter=_temperature_adapter,
             ),
             FloatRegister(
-                vp.TEMPERATURE_SUPPLY, 41011, RegisterAccess.READ | RegisterAccess.STATUS
+                vp.TEMPERATURE_OUTLET,
+                41009,
+                RegisterAccess.READ | RegisterAccess.STATUS,
+                result_adapter=_temperature_adapter,
+            ),
+            FloatRegister(
+                vp.TEMPERATURE_SUPPLY,
+                41011,
+                RegisterAccess.READ | RegisterAccess.STATUS,
+                result_adapter=_temperature_adapter,
             ),
             U16Register(vp.PREHEATER, 41013, RegisterAccess.READ | RegisterAccess.STATUS),
             U16Register(vp.FILTER_DIRTY, 41014, RegisterAccess.READ | RegisterAccess.STATUS),
@@ -397,14 +421,7 @@ class VMD02RPS78(AiriosNode):
         This is exhaust flow before the heat exchanger.
         """
         regdesc = self.regmap[vp.TEMPERATURE_EXHAUST]
-        result = await self.client.get_register(regdesc, self.device_id)
-        if math.isnan(result.value):
-            status = VMDSensorStatus.UNAVAILABLE
-        elif result.value < -273.0:
-            status = VMDSensorStatus.ERROR
-        else:
-            status = VMDSensorStatus.OK
-        return Result(VMDTemperature(result.value, status), result.status)
+        return await self.client.get_register(regdesc, self.device_id)
 
     async def outdoor_air_temperature(self) -> Result[VMDTemperature]:
         """Get the outdoor air temperature.
@@ -412,14 +429,7 @@ class VMD02RPS78(AiriosNode):
         This is the supply flow before the heat exchanger.
         """
         regdesc = self.regmap[vp.TEMPERATURE_INLET]
-        result = await self.client.get_register(regdesc, self.device_id)
-        if math.isnan(result.value):
-            status = VMDSensorStatus.UNAVAILABLE
-        elif result.value < -273.0:
-            status = VMDSensorStatus.ERROR
-        else:
-            status = VMDSensorStatus.OK
-        return Result(VMDTemperature(result.value, status), result.status)
+        return await self.client.get_register(regdesc, self.device_id)
 
     async def exhaust_air_temperature(self) -> Result[VMDTemperature]:
         """Get the exhaust air temperature.
@@ -427,14 +437,7 @@ class VMD02RPS78(AiriosNode):
         This is the exhaust flow after the heat exchanger.
         """
         regdesc = self.regmap[vp.TEMPERATURE_OUTLET]
-        result = await self.client.get_register(regdesc, self.device_id)
-        if math.isnan(result.value):
-            status = VMDSensorStatus.UNAVAILABLE
-        elif result.value < -273.0:
-            status = VMDSensorStatus.ERROR
-        else:
-            status = VMDSensorStatus.OK
-        return Result(VMDTemperature(result.value, status), result.status)
+        return await self.client.get_register(regdesc, self.device_id)
 
     async def supply_air_temperature(self) -> Result[VMDTemperature]:
         """Get the supply air temperature.
@@ -442,14 +445,7 @@ class VMD02RPS78(AiriosNode):
         This is the supply flow after the heat exchanger.
         """
         regdesc = self.regmap[vp.TEMPERATURE_SUPPLY]
-        result = await self.client.get_register(regdesc, self.device_id)
-        if math.isnan(result.value):
-            status = VMDSensorStatus.UNAVAILABLE
-        elif result.value < -273.0:
-            status = VMDSensorStatus.ERROR
-        else:
-            status = VMDSensorStatus.OK
-        return Result(VMDTemperature(result.value, status), result.status)
+        return await self.client.get_register(regdesc, self.device_id)
 
     async def defrost(self) -> Result[int]:
         """Get if defrost is active."""
