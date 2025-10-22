@@ -133,7 +133,12 @@ class VMD02RPS78(AiriosNode):
             ),
             U16Register(vp.FAN_SPEED_EXHAUST, 41001, RegisterAccess.READ | RegisterAccess.STATUS),
             U16Register(vp.FAN_SPEED_SUPPLY, 41002, RegisterAccess.READ | RegisterAccess.STATUS),
-            U16Register(vp.ERROR_CODE, 41003, RegisterAccess.READ | RegisterAccess.STATUS),
+            U16Register(
+                vp.ERROR_CODE,
+                41003,
+                RegisterAccess.READ | RegisterAccess.STATUS,
+                result_type=VMDErrorCode,
+            ),
             U16Register(
                 vp.VENTILATION_SPEED_OVERRIDE_REMAINING_TIME,
                 41004,
@@ -482,8 +487,7 @@ class VMD02RPS78(AiriosNode):
     async def error_code(self) -> Result[VMDErrorCode]:
         """Get the ventilation unit error code."""
         regdesc = self.regmap[vp.ERROR_CODE]
-        result = await self.client.get_register(regdesc, self.device_id)
-        return Result(VMDErrorCode(result.value), result.status)
+        return await self.client.get_register(regdesc, self.device_id)
 
     async def exhaust_fan_speed(self) -> Result[int]:
         """Get the exhaust fan speed (%)"""
