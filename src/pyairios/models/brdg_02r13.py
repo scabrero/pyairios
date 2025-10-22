@@ -322,12 +322,11 @@ class BRDG02R13(AiriosDevice):
             self.regmap[bp.ADDRESS_NODE_32],
         ]
 
+        values = await self.client.get_multiple(reg_descs, self.device_id)
+
         nodes: List[AiriosBoundNodeInfo] = []
-        for item in reg_descs:
-            result = await self.client.get_register(item, self.device_id)
-            if result is None or result.value is None:
-                continue
-            device_id = result.value
+        for item in values.values():
+            device_id = item.value
             if device_id == 0:
                 continue
 

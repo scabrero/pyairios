@@ -20,6 +20,8 @@ from pymodbus.pdu.register_message import (
     WriteSingleRegisterResponse,
 )
 
+from pyairios.data_model import AiriosDeviceData
+
 from .constants import ValueStatusFlags, ValueStatusSource
 from .exceptions import (
     AiriosAcknowledgeException,
@@ -27,6 +29,7 @@ from .exceptions import (
     AiriosConnectionInterruptedException,
     AiriosException,
     AiriosIOException,
+    AiriosInvalidArgumentException,
     AiriosReadException,
     AiriosSlaveBusyException,
     AiriosSlaveFailureException,
@@ -275,6 +278,98 @@ class AsyncAiriosModbusClient:
                 value_status = ResultStatus(delta, source, flags)
 
         return Result(value, value_status)
+
+    async def get_multiple(
+        self,
+        regdesc: t.List[RegisterBase[T]],
+        device_id: int,
+    ) -> AiriosDeviceData:
+        """Read multiple registers in one transaction. Does not fill Result.status"""
+        if len(regdesc) == 0:
+            msg = "Expected at least one register"
+            raise AiriosInvalidArgumentException(msg)
+
+        for r in regdesc:
+            if RegisterAccess.READ not in r.description.access:
+                LOGGER.warning("Attempt to read not readable register %s", r)
+                raise ValueError(f"Attempt to read not readable register {r}")
+
+        chunks = []
+        chunk = [regdesc[0]]
+        for i in range(1, len(regdesc)):
+            prev = regdesc[i - 1].description
+            curr = regdesc[i].description
+            if prev.address + prev.length == curr.address:
+                chunk.append(regdesc[i])
+            else:
+                chunks.append(chunk)
+                chunk = [regdesc[i]]
+        chunks.append(chunk)
+
+        retval: AiriosDeviceData = {}
+        for chunk in chunks:
+            try:
+                chunk_data = await self._get_chunk(chunk, device_id)
+                retval.update(chunk_data)
+            except AiriosAcknowledgeException as ex:
+                msg = f"Failed to fetch registers chunk: {ex}"
+                LOGGER.info(msg)
+                continue
+        return retval
+
+    async def _get_chunk(
+        self,
+        chunk: t.List[RegisterBase[T]],
+        device_id: int,
+    ) -> AiriosDeviceData:
+        retval: AiriosDeviceData = {}
+        values = await self._get_multiple(chunk, device_id)
+        for r, value in zip(chunk, values, strict=True):
+            try:
+                if r.result_adapter:
+                    value = r.result_adapter(value)
+                elif not isinstance(value, r.result_type):
+                    value = r.result_type(value)
+            except ValueError as ex:
+                msg = f"Failed to fetch register {r.aproperty}: {ex}"
+                LOGGER.info(msg)
+                continue
+            retval[r.aproperty] = Result(value, None)
+        return retval
+
+    async def _get_multiple(
+        self,
+        regdesc: t.List[RegisterBase[T]],
+        device_id: int,
+    ) -> t.List[T]:
+        for i in range(1, len(regdesc)):
+            prev = regdesc[i - 1].description
+            curr = regdesc[i].description
+            if prev.address + prev.length != curr.address:
+                msg = (
+                    f"Requested registers must be in monotonically increasing order, "
+                    f"but {prev.address} + {prev.length} != {curr.address}!"
+                )
+                raise AiriosInvalidArgumentException(msg)
+
+        start = regdesc[0].description
+        end = regdesc[-1].description
+        total_length = end.address + end.length - start.address
+        LOGGER.debug("Reading %s registers starting from %s", total_length, start.address)
+
+        response = await self._read_registers(start.address, total_length, device_id)
+
+        values = []
+        for r in regdesc:
+            value = r.decode(
+                response.registers[
+                    r.description.address - start.address : r.description.address
+                    - start.address
+                    + r.description.length
+                ]
+            )
+            values.append(value)
+        return values
 
     async def set_register(self, register: RegisterBase[T], value: t.Any, device_id: int) -> bool:
         """Write a register to the device."""
