@@ -130,6 +130,7 @@ class AiriosDevice:
 
     def _add_registers(self, reglist: List[RegisterBase]):
         self.registers.extend(reglist)
+        self.registers.sort(key=lambda x: x.description.address)
         self.regmap: Dict[AiriosBaseProperty, RegisterBase] = {
             regdesc.aproperty: regdesc for regdesc in self.registers
         }
