@@ -219,11 +219,11 @@ class ModbusEvents(IntEnum):
     NO_EVENTS = 0
     """No modbus events are generated."""
     BRIDGE_EVENTS = 1
-    """Modbus function 'bridge event' is sent to master when a value is changed."""
+    """Modbus function 'bridge event' is sent to client when a value is changed."""
     NODE_EVENTS = 2
-    """Modbus function 'node event' is sent to master when a value is changed."""
+    """Modbus function 'node event' is sent to client when a value is changed."""
     DATA_EVENTS = 3
-    """Modbus function 'data event' is sent to master when a value is changed."""
+    """Modbus function 'data event' is sent to client when a value is changed."""
 
     def __str__(self):
         if self.value == self.NO_EVENTS:
