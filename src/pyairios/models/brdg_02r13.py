@@ -1,7 +1,9 @@
 """Airios BRDG-02R13 RF bridge implementation."""
 
-import logging
+from __future__ import annotations
+
 import datetime
+import logging
 from datetime import timedelta
 from typing import List
 
@@ -43,6 +45,29 @@ from pyairios.registers import (
 DEFAULT_DEVICE_ID = 207
 
 LOGGER = logging.getLogger(__name__)
+
+
+def pr_id() -> ProductId:
+    """
+    Get product_id for model BRDG-02R13.
+    Named as is to discern from product_id register.
+    :return: unique int
+    """
+    return ProductId.BRDG_02R13
+
+
+def pr_description() -> str | tuple[str, ...]:
+    """
+    Get description of product(s) using BRDG-02R13.
+    Human-readable text, used in e.g. HomeAssistant Binding UI.
+    :return: string or tuple of strings, starting with manufacturer
+    """
+    return "Airios RS485 RF Gateway"
+
+
+def pr_instantiate(device_id: int, client: AsyncAiriosModbusClient) -> BRDG02R13:
+    """Get a new device instance. Used by the device factory to instantiate by product ID."""
+    return BRDG02R13(device_id, client)
 
 
 class BRDG02R13(AiriosDevice):
@@ -321,7 +346,9 @@ class BRDG02R13(AiriosDevice):
         for node in await self.nodes():
             if node.device_id != device_id:
                 continue
-            return factory.get_device_by_product_id(node.product_id, node.device_id, self.client)
+            return await factory.get_device_by_product_id(
+                node.product_id, node.device_id, self.client
+            )
 
         raise AiriosException(f"Node {device_id} not found")
 

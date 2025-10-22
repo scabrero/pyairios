@@ -8,20 +8,22 @@ from typing import List
 
 from pyairios.client import AsyncAiriosModbusClient
 from pyairios.constants import (
+    ProductId,
     VMDBypassMode,
     VMDBypassPosition,
     VMDCapabilities,
     VMDErrorCode,
     VMDHeater,
     VMDHeaterStatus,
+    VMDPresetFansSpeeds,
     VMDRequestedVentilationSpeed,
     VMDSensorStatus,
     VMDTemperature,
     VMDVentilationSpeed,
-    VMDPresetFansSpeeds,
 )
-from pyairios.node import AiriosNode
 from pyairios.exceptions import AiriosInvalidArgumentException
+from pyairios.node import AiriosNode
+from pyairios.properties import AiriosVMDProperty as vp
 from pyairios.registers import (
     FloatRegister,
     RegisterAccess,
@@ -29,9 +31,30 @@ from pyairios.registers import (
     Result,
     U16Register,
 )
-from pyairios.properties import AiriosVMDProperty as vp
 
 LOGGER = logging.getLogger(__name__)
+
+
+def pr_id() -> ProductId:
+    """
+    Get product_id for model VMD_02RPS78.
+    Named as is to discern from product_id register.
+    """
+    return ProductId.VMD_02RPS78
+
+
+def pr_description() -> str | tuple[str, ...]:
+    """
+    Get description of product(s) using VMD_02RPS78.
+    Human-readable text, used in e.g. HomeAssistant Binding UI.
+    :return: string or tuple of strings, starting with manufacturer
+    """
+    return ("Siber DF Evo", "Siber DF Optima 2")
+
+
+def pr_instantiate(device_id: int, client: AsyncAiriosModbusClient) -> VMD02RPS78:
+    """Get a new device instance. Used by the device factory to instantiate by product ID."""
+    return VMD02RPS78(device_id, client)
 
 
 class VMD02RPS78(AiriosNode):

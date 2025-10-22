@@ -6,6 +6,7 @@ import argparse
 import asyncio
 import logging
 import pprint
+from typing import cast
 
 from aiocmd import aiocmd
 
@@ -37,16 +38,16 @@ from pyairios.constants import (
     VMDVentilationSpeed,
 )
 from pyairios.data_model import AiriosDeviceData
+from pyairios.device import AiriosDevice
 from pyairios.exceptions import (
     AiriosConnectionException,
     AiriosInvalidArgumentException,
     AiriosIOException,
     AiriosNotImplemented,
 )
-from pyairios.models.brdg_02r13 import (
-    BRDG02R13,
-    DEFAULT_DEVICE_ID as BRDG02R13_DEFAULT_DEVICE_ID,
-)
+from pyairios.models.brdg_02r13 import BRDG02R13
+from pyairios.models.brdg_02r13 import DEFAULT_DEVICE_ID as BRDG02R13_DEFAULT_DEVICE_ID
+from pyairios.models.factory import factory
 from pyairios.models.vmd_02rps78 import VMD02RPS78
 from pyairios.models.vmn_05lm02 import VMN05LM02
 from pyairios.properties import AiriosBridgeProperty as bp
@@ -92,10 +93,12 @@ def _print_node_data(res: AiriosDeviceData):
 class AiriosVMN05LM02CLI(aiocmd.PromptToolkitCmd):
     """The VMN05LM02 CLI interface."""
 
-    def __init__(self, vmn: VMN05LM02) -> None:
+    vmn: VMN05LM02
+
+    def __init__(self, vmn: AiriosDevice) -> None:
         super().__init__()
         self.prompt = f"[VMN-05LM02@{vmn.device_id}]>> "
-        self.vmn = vmn
+        self.vmn = cast(VMN05LM02, vmn)
 
     async def do_received_product_id(self) -> None:
         """Print the received product ID from the device."""
@@ -126,10 +129,12 @@ class AiriosVMN05LM02CLI(aiocmd.PromptToolkitCmd):
 class AiriosVMD02RPS78CLI(aiocmd.PromptToolkitCmd):
     """The VMD02RPS78 CLI interface."""
 
-    def __init__(self, vmd: VMD02RPS78) -> None:
+    vmd: VMD02RPS78
+
+    def __init__(self, vmd: AiriosDevice) -> None:
         super().__init__()
         self.prompt = f"[VMD-02RPS78@{vmd.device_id}]>> "
-        self.vmd = vmd
+        self.vmd = cast(VMD02RPS78, vmd)
 
     async def do_capabilities(self) -> None:
         """Print the device RF capabilities."""
@@ -352,17 +357,18 @@ class AiriosBridgeCLI(aiocmd.PromptToolkitCmd):
         if node_info is None:
             raise AiriosIOException(f"Node with address {device_id} not bound")
 
+        dev = await factory.get_device_by_product_id(
+            node_info.product_id,
+            node_info.device_id,
+            self.bridge.client,
+        )
+
         if node_info.product_id == ProductId.VMD_02RPS78:
-            vmd = VMD02RPS78(node_info.device_id, self.bridge.client)
-            await AiriosVMD02RPS78CLI(vmd).run()
-            return
-
-        if node_info.product_id == ProductId.VMN_05LM02:
-            vmn = VMN05LM02(node_info.device_id, self.bridge.client)
-            await AiriosVMN05LM02CLI(vmn).run()
-            return
-
-        raise AiriosNotImplemented(f"{node_info.product_id} not implemented")
+            await AiriosVMD02RPS78CLI(dev).run()
+        elif node_info.product_id == ProductId.VMN_05LM02:
+            await AiriosVMN05LM02CLI(dev).run()
+        else:
+            raise AiriosNotImplemented(f"{node_info.product_id} not implemented")
 
     async def do_rf_sent_messages(self) -> None:
         """Print the RF sent messages."""
@@ -499,7 +505,7 @@ class AiriosClientCLI(aiocmd.PromptToolkitCmd):  # pylint: disable=too-few-publi
             )
         else:
             _address = int(address)
-        bridge = BRDG02R13(_address, self.client)
+        bridge = await factory.get_device_by_product_id(ProductId.BRDG_02R13, _address, self.client)
         await AiriosBridgeCLI(bridge).run()
 
 

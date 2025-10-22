@@ -83,7 +83,7 @@ class Airios:
         brdg_data = await self.bridge.fetch()
 
         for node_info in await self.bridge.nodes():
-            node = factory.get_device_by_product_id(
+            node = await factory.get_device_by_product_id(
                 node_info.product_id,
                 node_info.device_id,
                 self.bridge.client,
