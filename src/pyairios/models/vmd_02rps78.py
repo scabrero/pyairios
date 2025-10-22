@@ -11,10 +11,12 @@ from pyairios.constants import (
     ProductId,
     VMDBypassMode,
     VMDBypassPosition,
+    VMDCO2Level,
     VMDCapabilities,
     VMDErrorCode,
     VMDHeater,
     VMDHeaterStatus,
+    VMDHumidity,
     VMDPresetFansSpeeds,
     VMDRequestedVentilationSpeed,
     VMDSensorStatus,
@@ -67,6 +69,38 @@ def _temperature_adapter(value: float) -> VMDTemperature:
     return VMDTemperature(value, status)
 
 
+def _humidity_adapter(value: int) -> VMDHumidity:
+    status = VMDSensorStatus.OK
+    if value == 0xEF:
+        status = VMDSensorStatus.UNAVAILABLE
+    elif value == 0xF0:
+        status = VMDSensorStatus.SHORT_CIRCUIT
+    elif value == 0xF1:
+        status = VMDSensorStatus.OPEN_CIRCUIT
+    elif value == 0xF2:
+        status = VMDSensorStatus.ERROR_UNAVAILABLE
+    elif value == 0xF3:
+        status = VMDSensorStatus.OVERFLOW
+    elif value == 0xF4:
+        status = VMDSensorStatus.UNDERFLOW
+    elif value == 0xF5:
+        status = VMDSensorStatus.UNRELIABLE
+    elif 0xF6 <= value <= 0xFE:
+        status = VMDSensorStatus.ERROR_RESERVED
+    elif value == 0xFF:
+        status = VMDSensorStatus.ERROR
+    return VMDHumidity(value, status)
+
+
+def _co2_adapter(value: int) -> VMDCO2Level:
+    status = VMDSensorStatus.OK
+    if value == 0x7FFF:
+        status = VMDSensorStatus.UNAVAILABLE
+    elif 0x8000 <= value <= 0xFFFF:
+        status = VMDSensorStatus.ERROR
+    return VMDCO2Level(value, status)
+
+
 class VMD02RPS78(AiriosNode):
     """Represents a VMD-02RPS78 controller node."""
 
@@ -113,13 +147,28 @@ class VMD02RPS78(AiriosNode):
             U16Register(vp.FILTER_DIRTY, 41014, RegisterAccess.READ | RegisterAccess.STATUS),
             U16Register(vp.DEFROST, 41015, RegisterAccess.READ | RegisterAccess.STATUS),
             U16Register(vp.BYPASS_POSITION, 41016, RegisterAccess.READ | RegisterAccess.STATUS),
-            U16Register(vp.HUMIDITY_INDOOR, 41017, RegisterAccess.READ | RegisterAccess.STATUS),
-            U16Register(vp.HUMIDITY_OUTDOOR, 41018, RegisterAccess.READ | RegisterAccess.STATUS),
+            U16Register(
+                vp.HUMIDITY_INDOOR,
+                41017,
+                RegisterAccess.READ | RegisterAccess.STATUS,
+                result_adapter=_humidity_adapter,
+            ),
+            U16Register(
+                vp.HUMIDITY_OUTDOOR,
+                41018,
+                RegisterAccess.READ | RegisterAccess.STATUS,
+                result_adapter=_humidity_adapter,
+            ),
             FloatRegister(vp.FLOW_INLET, 41019, RegisterAccess.READ | RegisterAccess.STATUS),
             FloatRegister(vp.FLOW_OUTLET, 41021, RegisterAccess.READ | RegisterAccess.STATUS),
             U16Register(vp.AIR_QUALITY, 41023, RegisterAccess.READ | RegisterAccess.STATUS),
             U16Register(vp.AIR_QUALITY_BASIS, 41024, RegisterAccess.READ | RegisterAccess.STATUS),
-            U16Register(vp.CO2_LEVEL, 41025, RegisterAccess.READ | RegisterAccess.STATUS),
+            U16Register(
+                vp.CO2_LEVEL,
+                41025,
+                RegisterAccess.READ | RegisterAccess.STATUS,
+                result_adapter=_co2_adapter,
+            ),
             U16Register(vp.POSTHEATER, 41026, RegisterAccess.READ | RegisterAccess.STATUS),
             U16Register(vp.CAPABILITIES, 41027, RegisterAccess.READ | RegisterAccess.STATUS),
             U16Register(
@@ -594,3 +643,8 @@ class VMD02RPS78(AiriosNode):
         return await self.client.set_register(
             self.regmap[vp.FAN_SPEED_AWAY_EXHAUST], value, self.device_id
         )
+
+    async def co2_level(self) -> Result[VMDCO2Level]:
+        """Get the CO2 level (in ppm)."""
+        regdesc = self.regmap[vp.CO2_LEVEL]
+        return await self.client.get_register(regdesc, self.device_id)

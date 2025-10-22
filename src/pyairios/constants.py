@@ -368,6 +368,13 @@ class VMDSensorStatus(IntEnum):
 
     UNAVAILABLE = auto()
     OK = auto()
+    SHORT_CIRCUIT = auto()
+    OPEN_CIRCUIT = auto()
+    OVERFLOW = auto()
+    UNDERFLOW = auto()
+    UNRELIABLE = auto()
+    ERROR_UNAVAILABLE = auto()
+    ERROR_RESERVED = auto()
     ERROR = auto()
 
 
@@ -383,6 +390,22 @@ class VMDTemperature:
     """VMD temperature sample."""
 
     temperature: float
+    status: VMDSensorStatus
+
+
+@dataclass
+class VMDHumidity:
+    """VMD humidity sample."""
+
+    humidity: int
+    status: VMDSensorStatus
+
+
+@dataclass
+class VMDCO2Level:
+    """VMD CO2 level sample."""
+
+    co2: int
     status: VMDSensorStatus
 
 
