@@ -12,7 +12,7 @@ from pyairios.properties import AiriosBaseProperty
 class AiriosBoundNodeInfo:
     """Bridge bound node information."""
 
-    slave_id: int
+    device_id: int
     product_id: ProductId
     rf_address: int
 

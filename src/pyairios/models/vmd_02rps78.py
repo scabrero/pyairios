@@ -47,9 +47,9 @@ class VMDPresetFansSpeeds:
 class VMD02RPS78(AiriosNode):
     """Represents a VMD-02RPS78 controller node."""
 
-    def __init__(self, slave_id: int, client: AsyncAiriosModbusClient) -> None:
+    def __init__(self, device_id: int, client: AsyncAiriosModbusClient) -> None:
         """Initialize the VMD-02RPS78 controller node instance."""
-        super().__init__(slave_id, client)
+        super().__init__(device_id, client)
         vmd_registers: List[RegisterBase] = [
             U16Register(
                 vp.CURRENT_VENTILATION_SPEED, 41000, RegisterAccess.READ | RegisterAccess.STATUS
@@ -199,24 +199,24 @@ class VMD02RPS78(AiriosNode):
         self._add_registers(vmd_registers)
 
     def __str__(self) -> str:
-        return f"VMD-02RPS78@{self.slave_id}"
+        return f"VMD-02RPS78@{self.device_id}"
 
     async def capabilities(self) -> Result[VMDCapabilities]:
         """Get the ventilation unit capabilities."""
         regdesc = self.regmap[vp.CAPABILITIES]
-        result = await self.client.get_register(regdesc, self.slave_id)
+        result = await self.client.get_register(regdesc, self.device_id)
         return Result(VMDCapabilities(result.value), result.status)
 
     async def ventilation_speed(self) -> Result[VMDVentilationSpeed]:
         """Get the ventilation unit active speed preset."""
         regdesc = self.regmap[vp.CURRENT_VENTILATION_SPEED]
-        result = await self.client.get_register(regdesc, self.slave_id)
+        result = await self.client.get_register(regdesc, self.device_id)
         return Result(VMDVentilationSpeed(result.value), result.status)
 
     async def set_ventilation_speed(self, speed: VMDRequestedVentilationSpeed) -> bool:
         """Set the ventilation unit speed preset."""
         return await self.client.set_register(
-            self.regmap[vp.REQUESTED_VENTILATION_SPEED], speed, self.slave_id
+            self.regmap[vp.REQUESTED_VENTILATION_SPEED], speed, self.device_id
         )
 
     async def set_ventilation_speed_override_time(
@@ -225,86 +225,86 @@ class VMD02RPS78(AiriosNode):
         """Set the ventilation unit speed preset for a limited time."""
         if speed == VMDRequestedVentilationSpeed.LOW:
             return await self.client.set_register(
-                self.regmap[vp.OVERRIDE_TIME_SPEED_LOW], minutes, self.slave_id
+                self.regmap[vp.OVERRIDE_TIME_SPEED_LOW], minutes, self.device_id
             )
         if speed == VMDRequestedVentilationSpeed.MID:
             return await self.client.set_register(
-                self.regmap[vp.OVERRIDE_TIME_SPEED_MID], minutes, self.slave_id
+                self.regmap[vp.OVERRIDE_TIME_SPEED_MID], minutes, self.device_id
             )
         if speed == VMDRequestedVentilationSpeed.HIGH:
             return await self.client.set_register(
-                self.regmap[vp.OVERRIDE_TIME_SPEED_HIGH], minutes, self.slave_id
+                self.regmap[vp.OVERRIDE_TIME_SPEED_HIGH], minutes, self.device_id
             )
         raise AiriosInvalidArgumentException(f"Invalid temporary override speed {speed}")
 
     async def preset_away_fans_speed(self) -> VMDPresetFansSpeeds:
         """Get the away ventilation speed preset fan speeds."""
-        r1 = await self.client.get_register(self.regmap[vp.FAN_SPEED_AWAY_SUPPLY], self.slave_id)
-        r2 = await self.client.get_register(self.regmap[vp.FAN_SPEED_AWAY_EXHAUST], self.slave_id)
+        r1 = await self.client.get_register(self.regmap[vp.FAN_SPEED_AWAY_SUPPLY], self.device_id)
+        r2 = await self.client.get_register(self.regmap[vp.FAN_SPEED_AWAY_EXHAUST], self.device_id)
         return VMDPresetFansSpeeds(supply_fan_speed=r1, exhaust_fan_speed=r2)
 
     async def set_preset_away_fans_speed(self, supply: int, exhaust: int) -> bool:
         """Set the away ventilation speed preset fan speeds."""
         r1 = await self.client.set_register(
-            self.regmap[vp.FAN_SPEED_AWAY_SUPPLY], supply, self.slave_id
+            self.regmap[vp.FAN_SPEED_AWAY_SUPPLY], supply, self.device_id
         )
         r2 = await self.client.set_register(
-            self.regmap[vp.FAN_SPEED_AWAY_EXHAUST], exhaust, self.slave_id
+            self.regmap[vp.FAN_SPEED_AWAY_EXHAUST], exhaust, self.device_id
         )
         return r1 and r2
 
     async def preset_low_fans_speed(self) -> VMDPresetFansSpeeds:
         """Get the low ventilation speed preset fan speeds."""
-        r1 = await self.client.get_register(self.regmap[vp.FAN_SPEED_LOW_SUPPLY], self.slave_id)
-        r2 = await self.client.get_register(self.regmap[vp.FAN_SPEED_LOW_EXHAUST], self.slave_id)
+        r1 = await self.client.get_register(self.regmap[vp.FAN_SPEED_LOW_SUPPLY], self.device_id)
+        r2 = await self.client.get_register(self.regmap[vp.FAN_SPEED_LOW_EXHAUST], self.device_id)
         return VMDPresetFansSpeeds(supply_fan_speed=r1, exhaust_fan_speed=r2)
 
     async def set_preset_low_fans_speed(self, supply: int, exhaust: int) -> bool:
         """Set the low ventilation speed preset fan speeds."""
         r1 = await self.client.set_register(
-            self.regmap[vp.FAN_SPEED_LOW_SUPPLY], supply, self.slave_id
+            self.regmap[vp.FAN_SPEED_LOW_SUPPLY], supply, self.device_id
         )
         r2 = await self.client.set_register(
-            self.regmap[vp.FAN_SPEED_LOW_EXHAUST], exhaust, self.slave_id
+            self.regmap[vp.FAN_SPEED_LOW_EXHAUST], exhaust, self.device_id
         )
         return r1 and r2
 
     async def preset_mid_fans_speed(self) -> VMDPresetFansSpeeds:
         """Get the mid ventilation speed preset fan speeds."""
-        r1 = await self.client.get_register(self.regmap[vp.FAN_SPEED_MID_SUPPLY], self.slave_id)
-        r2 = await self.client.get_register(self.regmap[vp.FAN_SPEED_MID_EXHAUST], self.slave_id)
+        r1 = await self.client.get_register(self.regmap[vp.FAN_SPEED_MID_SUPPLY], self.device_id)
+        r2 = await self.client.get_register(self.regmap[vp.FAN_SPEED_MID_EXHAUST], self.device_id)
         return VMDPresetFansSpeeds(supply_fan_speed=r1, exhaust_fan_speed=r2)
 
     async def set_preset_mid_fans_speed(self, supply: int, exhaust: int) -> bool:
         """Set the mid ventilation speed preset fan speeds."""
         r1 = await self.client.set_register(
-            self.regmap[vp.FAN_SPEED_MID_SUPPLY], supply, self.slave_id
+            self.regmap[vp.FAN_SPEED_MID_SUPPLY], supply, self.device_id
         )
         r2 = await self.client.set_register(
-            self.regmap[vp.FAN_SPEED_MID_EXHAUST], exhaust, self.slave_id
+            self.regmap[vp.FAN_SPEED_MID_EXHAUST], exhaust, self.device_id
         )
         return r1 and r2
 
     async def preset_high_fans_speed(self) -> VMDPresetFansSpeeds:
         """Get the high ventilation speed preset fan speeds."""
-        r1 = await self.client.get_register(self.regmap[vp.FAN_SPEED_HIGH_SUPPLY], self.slave_id)
-        r2 = await self.client.get_register(self.regmap[vp.FAN_SPEED_HIGH_EXHAUST], self.slave_id)
+        r1 = await self.client.get_register(self.regmap[vp.FAN_SPEED_HIGH_SUPPLY], self.device_id)
+        r2 = await self.client.get_register(self.regmap[vp.FAN_SPEED_HIGH_EXHAUST], self.device_id)
         return VMDPresetFansSpeeds(supply_fan_speed=r1, exhaust_fan_speed=r2)
 
     async def set_preset_high_fans_speed(self, supply: int, exhaust: int) -> bool:
         """Set the high ventilation speed preset fan speeds."""
         r1 = await self.client.set_register(
-            self.regmap[vp.FAN_SPEED_HIGH_SUPPLY], supply, self.slave_id
+            self.regmap[vp.FAN_SPEED_HIGH_SUPPLY], supply, self.device_id
         )
         r2 = await self.client.set_register(
-            self.regmap[vp.FAN_SPEED_HIGH_EXHAUST], exhaust, self.slave_id
+            self.regmap[vp.FAN_SPEED_HIGH_EXHAUST], exhaust, self.device_id
         )
         return r1 and r2
 
     async def bypass_mode(self) -> Result[VMDBypassMode]:
         """Get the bypass mode."""
         regdesc = self.regmap[vp.BYPASS_MODE]
-        result = await self.client.get_register(regdesc, self.slave_id)
+        result = await self.client.get_register(regdesc, self.device_id)
         try:
             mode = VMDBypassMode(result.value)
         except ValueError:
@@ -316,68 +316,68 @@ class VMD02RPS78(AiriosNode):
         if mode == VMDBypassMode.UNKNOWN:
             raise AiriosInvalidArgumentException(f"Invalid bypass mode {mode}")
         return await self.client.set_register(
-            self.regmap[vp.REQUESTED_BYPASS_MODE], mode, self.slave_id
+            self.regmap[vp.REQUESTED_BYPASS_MODE], mode, self.device_id
         )
 
     async def bypass_status(self) -> Result[int]:
         """Get the bypass status."""
-        return await self.client.get_register(self.regmap[vp.BYPASS_STATUS], self.slave_id)
+        return await self.client.get_register(self.regmap[vp.BYPASS_STATUS], self.device_id)
 
     async def bypass_position(self) -> Result[VMDBypassPosition]:
         """Get the bypass position."""
         regdesc = self.regmap[vp.BYPASS_POSITION]
-        result = await self.client.get_register(regdesc, self.slave_id)
+        result = await self.client.get_register(regdesc, self.device_id)
         error = result.value > 120
         return Result(VMDBypassPosition(result.value, error), result.status)
 
     async def filter_duration(self) -> Result[int]:
         """Get the filter duration (in days)."""
-        return await self.client.get_register(self.regmap[vp.FILTER_DURATION], self.slave_id)
+        return await self.client.get_register(self.regmap[vp.FILTER_DURATION], self.device_id)
 
     async def filter_remaining_days(self) -> Result[int]:
         """Get the filter remaining lifetime (in days)."""
-        return await self.client.get_register(self.regmap[vp.FILTER_REMAINING_DAYS], self.slave_id)
+        return await self.client.get_register(self.regmap[vp.FILTER_REMAINING_DAYS], self.device_id)
 
     async def filter_remaining(self) -> Result[int]:
         """Get the filter remaining lifetime (in %)."""
         return await self.client.get_register(
-            self.regmap[vp.FILTER_REMAINING_PERCENT], self.slave_id
+            self.regmap[vp.FILTER_REMAINING_PERCENT], self.device_id
         )
 
     async def filter_reset(self) -> bool:
         """Reset the filter dirty status."""
-        return await self.client.set_register(self.regmap[vp.FILTER_RESET], 0, self.slave_id)
+        return await self.client.set_register(self.regmap[vp.FILTER_RESET], 0, self.device_id)
 
     async def filter_dirty(self) -> Result[int]:
         """Get the filter dirty status."""
-        return await self.client.get_register(self.regmap[vp.FILTER_DIRTY], self.slave_id)
+        return await self.client.get_register(self.regmap[vp.FILTER_DIRTY], self.device_id)
 
     async def error_code(self) -> Result[VMDErrorCode]:
         """Get the ventilation unit error code."""
         regdesc = self.regmap[vp.ERROR_CODE]
-        result = await self.client.get_register(regdesc, self.slave_id)
+        result = await self.client.get_register(regdesc, self.device_id)
         return Result(VMDErrorCode(result.value), result.status)
 
     async def exhaust_fan_speed(self) -> Result[int]:
         """Get the exhaust fan speed (%)"""
-        return await self.client.get_register(self.regmap[vp.FAN_SPEED_EXHAUST], self.slave_id)
+        return await self.client.get_register(self.regmap[vp.FAN_SPEED_EXHAUST], self.device_id)
 
     async def supply_fan_speed(self) -> Result[int]:
         """Get the supply fan speed (%)"""
-        return await self.client.get_register(self.regmap[vp.FAN_SPEED_SUPPLY], self.slave_id)
+        return await self.client.get_register(self.regmap[vp.FAN_SPEED_SUPPLY], self.device_id)
 
     async def exhaust_fan_rpm(self) -> Result[int]:
         """Get the exhaust fan speed (RPM)"""
-        return await self.client.get_register(self.regmap[vp.FAN_RPM_EXHAUST], self.slave_id)
+        return await self.client.get_register(self.regmap[vp.FAN_RPM_EXHAUST], self.device_id)
 
     async def supply_fan_rpm(self) -> Result[int]:
         """Get the supply fan speed (RPM)"""
-        return await self.client.get_register(self.regmap[vp.FAN_RPM_SUPPLY], self.slave_id)
+        return await self.client.get_register(self.regmap[vp.FAN_RPM_SUPPLY], self.device_id)
 
     async def override_remaining_time(self) -> Result[int]:
         """Get the ventilation speed override remaining time."""
         return await self.client.get_register(
-            self.regmap[vp.VENTILATION_SPEED_OVERRIDE_REMAINING_TIME], self.slave_id
+            self.regmap[vp.VENTILATION_SPEED_OVERRIDE_REMAINING_TIME], self.device_id
         )
 
     async def indoor_air_temperature(self) -> Result[VMDTemperature]:
@@ -386,7 +386,7 @@ class VMD02RPS78(AiriosNode):
         This is exhaust flow before the heat exchanger.
         """
         regdesc = self.regmap[vp.TEMPERATURE_INDOOR]
-        result = await self.client.get_register(regdesc, self.slave_id)
+        result = await self.client.get_register(regdesc, self.device_id)
         if math.isnan(result.value):
             status = VMDSensorStatus.UNAVAILABLE
         elif result.value < -273.0:
@@ -401,7 +401,7 @@ class VMD02RPS78(AiriosNode):
         This is the supply flow before the heat exchanger.
         """
         regdesc = self.regmap[vp.TEMPERATURE_OUTDOOR]
-        result = await self.client.get_register(regdesc, self.slave_id)
+        result = await self.client.get_register(regdesc, self.device_id)
         if math.isnan(result.value):
             status = VMDSensorStatus.UNAVAILABLE
         elif result.value < -273.0:
@@ -416,7 +416,7 @@ class VMD02RPS78(AiriosNode):
         This is the exhaust flow after the heat exchanger.
         """
         regdesc = self.regmap[vp.TEMPERATURE_EXHAUST]
-        result = await self.client.get_register(regdesc, self.slave_id)
+        result = await self.client.get_register(regdesc, self.device_id)
         if math.isnan(result.value):
             status = VMDSensorStatus.UNAVAILABLE
         elif result.value < -273.0:
@@ -431,7 +431,7 @@ class VMD02RPS78(AiriosNode):
         This is the supply flow after the heat exchanger.
         """
         regdesc = self.regmap[vp.TEMPERATURE_SUPPLY]
-        result = await self.client.get_register(regdesc, self.slave_id)
+        result = await self.client.get_register(regdesc, self.device_id)
         if math.isnan(result.value):
             status = VMDSensorStatus.UNAVAILABLE
         elif result.value < -273.0:
@@ -442,144 +442,148 @@ class VMD02RPS78(AiriosNode):
 
     async def defrost(self) -> Result[int]:
         """Get if defrost is active."""
-        return await self.client.get_register(self.regmap[vp.DEFROST], self.slave_id)
+        return await self.client.get_register(self.regmap[vp.DEFROST], self.device_id)
 
     async def preheater(self) -> Result[VMDHeater]:
         """Get the preheater level."""
         regdesc = self.regmap[vp.PREHEATER]
-        result = await self.client.get_register(regdesc, self.slave_id)
+        result = await self.client.get_register(regdesc, self.device_id)
         status = VMDHeaterStatus.UNAVAILABLE if result.value == 0xEF else VMDHeaterStatus.OK
         return Result(VMDHeater(result.value, status), result.status)
 
     async def postheater(self) -> Result[VMDHeater]:
         """Get the postheater level."""
         regdesc = self.regmap[vp.POSTHEATER]
-        result = await self.client.get_register(regdesc, self.slave_id)
+        result = await self.client.get_register(regdesc, self.device_id)
         status = VMDHeaterStatus.UNAVAILABLE if result.value == 0xEF else VMDHeaterStatus.OK
         return Result(VMDHeater(result.value, status), result.status)
 
     async def preheater_setpoint(self) -> Result[float]:
         """Get the preheater setpoint."""
-        return await self.client.get_register(self.regmap[vp.PREHEATER_SETPOINT], self.slave_id)
+        return await self.client.get_register(self.regmap[vp.PREHEATER_SETPOINT], self.device_id)
 
     async def set_preheater_setpoint(self, value: float) -> bool:
         """Set the preheater setpoint."""
         return await self.client.set_register(
-            self.regmap[vp.PREHEATER_SETPOINT], value, self.slave_id
+            self.regmap[vp.PREHEATER_SETPOINT], value, self.device_id
         )
 
     async def free_ventilation_setpoint(self) -> Result[float]:
         """Get the free ventilation setpoint."""
         return await self.client.get_register(
-            self.regmap[vp.FREE_VENTILATION_HEATING_SETPOINT], self.slave_id
+            self.regmap[vp.FREE_VENTILATION_HEATING_SETPOINT], self.device_id
         )
 
     async def set_free_ventilation_setpoint(self, value: float) -> bool:
         """Set the free ventilation setpoint."""
         return await self.client.set_register(
-            self.regmap[vp.FREE_VENTILATION_HEATING_SETPOINT], value, self.slave_id
+            self.regmap[vp.FREE_VENTILATION_HEATING_SETPOINT], value, self.device_id
         )
 
     async def free_ventilation_cooling_offset(self) -> Result[float]:
         """Get the free ventilation cooling offset."""
         return await self.client.get_register(
-            self.regmap[vp.FREE_VENTILATION_COOLING_OFFSET], self.slave_id
+            self.regmap[vp.FREE_VENTILATION_COOLING_OFFSET], self.device_id
         )
 
     async def set_free_ventilation_cooling_offset(self, value: float) -> bool:
         """Set the free ventilation cooling offset."""
         return await self.client.set_register(
-            self.regmap[vp.FREE_VENTILATION_COOLING_OFFSET], value, self.slave_id
+            self.regmap[vp.FREE_VENTILATION_COOLING_OFFSET], value, self.device_id
         )
 
     async def frost_protection_preheater_setpoint(self) -> Result[float]:
         """Get the frost protection preheater setpoint."""
         return await self.client.get_register(
-            self.regmap[vp.FROST_PROTECTION_PREHEATER_SETPOINT], self.slave_id
+            self.regmap[vp.FROST_PROTECTION_PREHEATER_SETPOINT], self.device_id
         )
 
     async def set_frost_protection_preheater_setpoint(self, value: float) -> bool:
         """Set the frost protection preheater setpoint."""
         return await self.client.set_register(
-            self.regmap[vp.FROST_PROTECTION_PREHEATER_SETPOINT], value, self.slave_id
+            self.regmap[vp.FROST_PROTECTION_PREHEATER_SETPOINT], value, self.device_id
         )
 
     async def preset_high_fan_speed_supply(self) -> Result[int]:
         """Get the supply fan speed for the high preset."""
-        return await self.client.get_register(self.regmap[vp.FAN_SPEED_HIGH_SUPPLY], self.slave_id)
+        return await self.client.get_register(self.regmap[vp.FAN_SPEED_HIGH_SUPPLY], self.device_id)
 
     async def set_preset_high_fan_speed_supply(self, value: int) -> bool:
         """Set the supply fan speed for the high preset."""
         return await self.client.set_register(
-            self.regmap[vp.FAN_SPEED_HIGH_SUPPLY], value, self.slave_id
+            self.regmap[vp.FAN_SPEED_HIGH_SUPPLY], value, self.device_id
         )
 
     async def preset_high_fan_speed_exhaust(self) -> Result[int]:
         """Get the exhaust fan speed for the high preset."""
-        return await self.client.get_register(self.regmap[vp.FAN_SPEED_HIGH_EXHAUST], self.slave_id)
+        return await self.client.get_register(
+            self.regmap[vp.FAN_SPEED_HIGH_EXHAUST], self.device_id
+        )
 
     async def set_preset_high_fan_speed_exhaust(self, value: int) -> bool:
         """Set the exhaust fan speed for the high preset."""
         return await self.client.set_register(
-            self.regmap[vp.FAN_SPEED_HIGH_EXHAUST], value, self.slave_id
+            self.regmap[vp.FAN_SPEED_HIGH_EXHAUST], value, self.device_id
         )
 
     async def preset_medium_fan_speed_supply(self) -> Result[int]:
         """Get the supply fan speed for the medium preset."""
-        return await self.client.get_register(self.regmap[vp.FAN_SPEED_MID_SUPPLY], self.slave_id)
+        return await self.client.get_register(self.regmap[vp.FAN_SPEED_MID_SUPPLY], self.device_id)
 
     async def set_preset_medium_fan_speed_supply(self, value: int) -> bool:
         """Set the supply fan speed for the medium preset."""
         return await self.client.set_register(
-            self.regmap[vp.FAN_SPEED_MID_SUPPLY], value, self.slave_id
+            self.regmap[vp.FAN_SPEED_MID_SUPPLY], value, self.device_id
         )
 
     async def preset_medium_fan_speed_exhaust(self) -> Result[int]:
         """Get the exhaust fan speed for the medium preset."""
-        return await self.client.get_register(self.regmap[vp.FAN_SPEED_MID_EXHAUST], self.slave_id)
+        return await self.client.get_register(self.regmap[vp.FAN_SPEED_MID_EXHAUST], self.device_id)
 
     async def set_preset_medium_fan_speed_exhaust(self, value: int) -> bool:
         """Set the exhaust fan speed for the medium preset."""
         return await self.client.set_register(
-            self.regmap[vp.FAN_SPEED_MID_EXHAUST], value, self.slave_id
+            self.regmap[vp.FAN_SPEED_MID_EXHAUST], value, self.device_id
         )
 
     async def preset_low_fan_speed_supply(self) -> Result[int]:
         """Get the supply fan speed for the low preset."""
-        return await self.client.get_register(self.regmap[vp.FAN_SPEED_LOW_SUPPLY], self.slave_id)
+        return await self.client.get_register(self.regmap[vp.FAN_SPEED_LOW_SUPPLY], self.device_id)
 
     async def set_preset_low_fan_speed_supply(self, value: int) -> bool:
         """Set the supply fan speed for the low preset."""
         return await self.client.set_register(
-            self.regmap[vp.FAN_SPEED_LOW_SUPPLY], value, self.slave_id
+            self.regmap[vp.FAN_SPEED_LOW_SUPPLY], value, self.device_id
         )
 
     async def preset_low_fan_speed_exhaust(self) -> Result[int]:
         """Get the exhaust fan speed for the low preset."""
-        return await self.client.get_register(self.regmap[vp.FAN_SPEED_LOW_EXHAUST], self.slave_id)
+        return await self.client.get_register(self.regmap[vp.FAN_SPEED_LOW_EXHAUST], self.device_id)
 
     async def set_preset_low_fan_speed_exhaust(self, value: int) -> bool:
         """Set the exhaust fan speed for the low preset."""
         return await self.client.set_register(
-            self.regmap[vp.FAN_SPEED_LOW_EXHAUST], value, self.slave_id
+            self.regmap[vp.FAN_SPEED_LOW_EXHAUST], value, self.device_id
         )
 
     async def preset_standby_fan_speed_supply(self) -> Result[int]:
         """Get the supply fan speed for the standby preset."""
-        return await self.client.get_register(self.regmap[vp.FAN_SPEED_AWAY_SUPPLY], self.slave_id)
+        return await self.client.get_register(self.regmap[vp.FAN_SPEED_AWAY_SUPPLY], self.device_id)
 
     async def set_preset_standby_fan_speed_supply(self, value: int) -> bool:
         """Set the supply fan speed for the standby preset."""
         return await self.client.set_register(
-            self.regmap[vp.FAN_SPEED_AWAY_SUPPLY], value, self.slave_id
+            self.regmap[vp.FAN_SPEED_AWAY_SUPPLY], value, self.device_id
         )
 
     async def preset_standby_fan_speed_exhaust(self) -> Result[int]:
         """Get the exhaust fan speed for the standby preset."""
-        return await self.client.get_register(self.regmap[vp.FAN_SPEED_AWAY_EXHAUST], self.slave_id)
+        return await self.client.get_register(
+            self.regmap[vp.FAN_SPEED_AWAY_EXHAUST], self.device_id
+        )
 
     async def set_preset_standby_fan_speed_exhaust(self, value: int) -> bool:
         """Set the exhaust fan speed for the standby preset."""
         return await self.client.set_register(
-            self.regmap[vp.FAN_SPEED_AWAY_EXHAUST], value, self.slave_id
+            self.regmap[vp.FAN_SPEED_AWAY_EXHAUST], value, self.device_id
         )

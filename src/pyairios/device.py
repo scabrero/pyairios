@@ -62,14 +62,14 @@ class AiriosDevice:
     """Airios device base class."""
 
     client: AsyncAiriosModbusClient
-    slave_id: int
+    device_id: int
     registers: List[RegisterBase]
     regmap: Dict[AiriosBaseProperty, RegisterBase]
 
-    def __init__(self, slave_id: int, client: AsyncAiriosModbusClient) -> None:
+    def __init__(self, device_id: int, client: AsyncAiriosModbusClient) -> None:
         """Initialize the class instance."""
         self.client = client
-        self.slave_id = int(slave_id)
+        self.device_id = int(device_id)
         self.registers = []
         self.regmap = {}
 
@@ -120,14 +120,14 @@ class AiriosDevice:
         if ap not in self.regmap:
             raise AiriosPropertyNotSupported(ap)
         regdesc = self.regmap[ap]
-        return await self.client.get_register(regdesc, self.slave_id)
+        return await self.client.get_register(regdesc, self.device_id)
 
     async def set(self, ap: AiriosBaseProperty, value: Any) -> bool:
         """Set an Airios property."""
         if ap not in self.regmap:
             raise AiriosPropertyNotSupported(ap)
         regdesc = self.regmap[ap]
-        return await self.client.set_register(regdesc, value, self.slave_id)
+        return await self.client.set_register(regdesc, value, self.device_id)
 
     async def fetch(self) -> AiriosDeviceData:
         """Fetch all data."""
@@ -136,7 +136,7 @@ class AiriosDevice:
             if RegisterAccess.READ not in reg.description.access:
                 continue
             try:
-                data[reg.aproperty] = await self.client.get_register(reg, self.slave_id)
+                data[reg.aproperty] = await self.client.get_register(reg, self.device_id)
             except AiriosAcknowledgeException as ex:
                 msg = f"Failed to fetch register {reg.aproperty}: {ex}"
                 LOGGER.info(msg)
@@ -149,7 +149,7 @@ class AiriosDevice:
 
     async def device_rf_address(self) -> Result[int]:
         """Get the device RF address, also used as node serial number."""
-        return await self.client.get_register(self.regmap[dp.RF_ADDRESS], self.slave_id)
+        return await self.client.get_register(self.regmap[dp.RF_ADDRESS], self.device_id)
 
     async def device_product_id(self) -> Result[ProductId]:
         """Get the device product ID.
@@ -158,47 +158,47 @@ class AiriosDevice:
         a device is bound. The actual received product ID from the real RF device can is
         available in the RECEIVED_PRODUCT_ID register.
         """
-        result = await self.client.get_register(self.regmap[dp.PRODUCT_ID], self.slave_id)
+        result = await self.client.get_register(self.regmap[dp.PRODUCT_ID], self.device_id)
         return Result(ProductId(result.value), None)
 
     async def device_software_version(self) -> Result[int]:
         """Get the device software version."""
-        return await self.client.get_register(self.regmap[dp.SOFTWARE_VERSION], self.slave_id)
+        return await self.client.get_register(self.regmap[dp.SOFTWARE_VERSION], self.device_id)
 
     async def device_oem_number(self) -> Result[int]:
         """Get the device OEM number.
 
         It is 0x00 or 0xFF when not used.
         """
-        return await self.client.get_register(self.regmap[dp.OEM_NUMBER], self.slave_id)
+        return await self.client.get_register(self.regmap[dp.OEM_NUMBER], self.device_id)
 
     async def device_rf_capabilities(self) -> Result[int]:
         """Get the device RF capabilities.
 
         The value depends on the specific device.
         """
-        return await self.client.get_register(self.regmap[dp.RF_CAPABILITIES], self.slave_id)
+        return await self.client.get_register(self.regmap[dp.RF_CAPABILITIES], self.device_id)
 
     async def device_manufacture_date(self) -> Result[datetime.date]:
         """Get the device manufacture date."""
-        return await self.client.get_register(self.regmap[dp.MANUFACTURE_DATE], self.slave_id)
+        return await self.client.get_register(self.regmap[dp.MANUFACTURE_DATE], self.device_id)
 
     async def device_software_build_date(self) -> Result[datetime.date]:
         """Get the device software build date."""
-        return await self.client.get_register(self.regmap[dp.SOFTWARE_BUILD_DATE], self.slave_id)
+        return await self.client.get_register(self.regmap[dp.SOFTWARE_BUILD_DATE], self.device_id)
 
     async def device_product_name(self) -> Result[str]:
         """Get the device product name."""
-        return await self.client.get_register(self.regmap[dp.PRODUCT_NAME], self.slave_id)
+        return await self.client.get_register(self.regmap[dp.PRODUCT_NAME], self.device_id)
 
     async def device_rf_comm_status(self) -> Result[RFCommStatus]:
         """Get the device RF communication status."""
-        return await self.client.get_register(self.regmap[dp.RF_COMM_STATUS], self.slave_id)
+        return await self.client.get_register(self.regmap[dp.RF_COMM_STATUS], self.device_id)
 
     async def device_battery_status(self) -> Result[BatteryStatus]:
         """Get the device battery status."""
         regdesc = self.regmap[dp.BATTERY_STATUS]
-        result = await self.client.get_register(regdesc, self.slave_id)
+        result = await self.client.get_register(regdesc, self.device_id)
         available = result.value != 0xFFFF
         low = False
         if available:
@@ -208,7 +208,7 @@ class AiriosDevice:
 
     async def device_fault_status(self) -> Result[FaultStatus]:
         """Get the device fault status."""
-        result = await self.client.get_register(self.regmap[dp.FAULT_STATUS], self.slave_id)
+        result = await self.client.get_register(self.regmap[dp.FAULT_STATUS], self.device_id)
         available = result.value != 0xFFFF
         fault = result.value != 0
         return Result(FaultStatus(available=available, fault=fault), result.status)
@@ -216,40 +216,46 @@ class AiriosDevice:
     async def device_clear_rf_stats(self) -> bool:
         """Clears the node RF stats."""
         return await self.client.set_register(
-            self.regmap[PrivProp.RF_STATS_INDEX], 255, self.slave_id
+            self.regmap[PrivProp.RF_STATS_INDEX], 255, self.device_id
         )
 
     async def device_rf_stats(self) -> RFStats:
         """Get the node RF stats."""
-        r = await self.client.get_register(self.regmap[PrivProp.RF_STATS_LENGTH], self.slave_id)
+        r = await self.client.get_register(self.regmap[PrivProp.RF_STATS_LENGTH], self.device_id)
         nrecs = r.value
         recs: list[RFStats.Record] = []
         for i in range(0, nrecs):
             ok = await self.client.set_register(
-                self.regmap[PrivProp.RF_STATS_INDEX], i, self.slave_id
+                self.regmap[PrivProp.RF_STATS_INDEX], i, self.device_id
             )
             if not ok:
                 LOGGER.warning("Failed to write %d to RF stats index register", i)
                 continue
-            r = await self.client.get_register(self.regmap[PrivProp.RF_STATS_DEVICE], self.slave_id)
+            r = await self.client.get_register(
+                self.regmap[PrivProp.RF_STATS_DEVICE], self.device_id
+            )
             device_id: int = r.value
             r = await self.client.get_register(
-                self.regmap[PrivProp.RF_STATS_AVERAGE], self.slave_id
+                self.regmap[PrivProp.RF_STATS_AVERAGE], self.device_id
             )
             averate: int = r.value
-            r = await self.client.get_register(self.regmap[PrivProp.RF_STATS_STDDEV], self.slave_id)
+            r = await self.client.get_register(
+                self.regmap[PrivProp.RF_STATS_STDDEV], self.device_id
+            )
             stddev: float = r.value
-            r = await self.client.get_register(self.regmap[PrivProp.RF_STATS_MIN], self.slave_id)
+            r = await self.client.get_register(self.regmap[PrivProp.RF_STATS_MIN], self.device_id)
             minimum: int = r.value
-            r = await self.client.get_register(self.regmap[PrivProp.RF_STATS_MAX], self.slave_id)
+            r = await self.client.get_register(self.regmap[PrivProp.RF_STATS_MAX], self.device_id)
             maximum: int = r.value
-            r = await self.client.get_register(self.regmap[PrivProp.RF_STATS_MISSED], self.slave_id)
+            r = await self.client.get_register(
+                self.regmap[PrivProp.RF_STATS_MISSED], self.device_id
+            )
             missed: int = r.value
             r = await self.client.get_register(
-                self.regmap[PrivProp.RF_STATS_RECEIVED], self.slave_id
+                self.regmap[PrivProp.RF_STATS_RECEIVED], self.device_id
             )
             received: int = r.value
-            r = await self.client.get_register(self.regmap[PrivProp.RF_STATS_AGE], self.slave_id)
+            r = await self.client.get_register(self.regmap[PrivProp.RF_STATS_AGE], self.device_id)
             age = datetime.timedelta(minutes=r.value)
             rec = RFStats.Record(
                 device_id=device_id,

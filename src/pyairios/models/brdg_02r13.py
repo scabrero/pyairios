@@ -40,7 +40,7 @@ from pyairios.registers import (
     U32Register,
 )
 
-DEFAULT_SLAVE_ID = 207
+DEFAULT_DEVICE_ID = 207
 
 LOGGER = logging.getLogger(__name__)
 
@@ -48,10 +48,10 @@ LOGGER = logging.getLogger(__name__)
 class BRDG02R13(AiriosDevice):
     """Represents a BRDG-02R13 RF bridge."""
 
-    def __init__(self, slave_id: int, client: AsyncAiriosModbusClient) -> None:
+    def __init__(self, device_id: int, client: AsyncAiriosModbusClient) -> None:
         """Initialize the BRDG-02R13 RF bridge instance."""
 
-        super().__init__(slave_id, client)
+        super().__init__(device_id, client)
         brdg_registers: List[RegisterBase] = [
             U16Register(bp.CUSTOMER_PRODUCT_ID, 40023, RegisterAccess.READ | RegisterAccess.WRITE),
             DateTimeRegister(bp.UTC_TIME, 41015, RegisterAccess.READ | RegisterAccess.WRITE),
@@ -66,7 +66,7 @@ class BRDG02R13(AiriosDevice):
             U16Register(bp.SERIAL_PARITY, 41998, RegisterAccess.READ | RegisterAccess.WRITE),
             U16Register(bp.SERIAL_STOP_BITS, 41999, RegisterAccess.READ | RegisterAccess.WRITE),
             U16Register(bp.SERIAL_BAUDRATE, 42000, RegisterAccess.READ | RegisterAccess.WRITE),
-            U16Register(bp.SLAVE_ADDRESS, 42001, RegisterAccess.READ | RegisterAccess.WRITE),
+            U16Register(bp.MODBUS_DEVICE_ID, 42001, RegisterAccess.READ | RegisterAccess.WRITE),
             U16Register(bp.MESSAGES_SEND_CURRENT_HOUR, 42100, RegisterAccess.READ),
             U16Register(bp.MESSAGES_SEND_LAST_HOUR, 42101, RegisterAccess.READ),
             FloatRegister(bp.RF_LOAD_CURRENT_HOUR, 42102, RegisterAccess.READ),
@@ -127,30 +127,28 @@ class BRDG02R13(AiriosDevice):
         self._add_registers(brdg_registers)
 
     def __str__(self) -> str:
-        return f"BRDG-02R13@{self.slave_id}"
+        return f"BRDG-02R13@{self.device_id}"
 
     async def bind_controller(
         self,
-        slave_id: int,
+        device_id: int,
         product_id: ProductId,
         product_serial: int | None = None,
     ) -> bool:
         """Bind a new controller to the bridge."""
-        if slave_id < 2 or slave_id > 247:
-            raise AiriosInvalidArgumentException(
-                f"Modbus slave address {slave_id} out of range 2-247"
-            )
+        if device_id < 2 or device_id > 247:
+            raise AiriosInvalidArgumentException(f"Modbus device id {device_id} out of range 2-247")
 
-        if slave_id == self.slave_id:
-            raise AiriosInvalidArgumentException(f"Modbus slave address {slave_id} already in use")
+        if device_id == self.device_id:
+            raise AiriosInvalidArgumentException(f"Modbus device id {device_id} already in use")
 
         mode = BindingMode.ABORT
-        ok = await self.client.set_register(self.regmap[bp.BINDING_COMMAND], mode, self.slave_id)
+        ok = await self.client.set_register(self.regmap[bp.BINDING_COMMAND], mode, self.device_id)
         if not ok:
             raise AiriosBindingException("Failed to reset binding status")
 
         result = await self.client.get_register(
-            self.regmap[bp.ACTUAL_BINDING_STATUS], self.slave_id
+            self.regmap[bp.ACTUAL_BINDING_STATUS], self.device_id
         )
         if result is None or result.value is None:
             raise AiriosBindingException("Failed to determine current binding status")
@@ -162,65 +160,67 @@ class BRDG02R13(AiriosDevice):
             mode = BindingMode.OUTGOING_SINGLE_PRODUCT_PLUS_SERIAL
 
         ok = await self.client.set_register(
-            self.regmap[bp.BINDING_PRODUCT_ID], product_id, self.slave_id
+            self.regmap[bp.BINDING_PRODUCT_ID], product_id, self.device_id
         )
         if not ok:
             raise AiriosBindingException("Failed to configure binding product ID")
 
-        ok = await self.client.set_register(self.regmap[bp.CREATE_NODE], slave_id, self.slave_id)
+        ok = await self.client.set_register(self.regmap[bp.CREATE_NODE], device_id, self.device_id)
         if not ok:
-            raise AiriosBindingException(f"Failed to create node for slave id {slave_id}")
+            raise AiriosBindingException(f"Failed to create node for device id {device_id}")
 
         if product_serial is not None:
             ok = await self.client.set_register(
-                self.regmap[bp.BINDING_PRODUCT_SERIAL], product_serial, self.slave_id
+                self.regmap[bp.BINDING_PRODUCT_SERIAL], product_serial, self.device_id
             )
             if not ok:
                 raise AiriosBindingException("Failed to configure binding product serial")
 
-        value = ((slave_id & 0xFF) << 8) | mode
-        return await self.client.set_register(self.regmap[bp.BINDING_COMMAND], value, self.slave_id)
+        value = ((device_id & 0xFF) << 8) | mode
+        return await self.client.set_register(
+            self.regmap[bp.BINDING_COMMAND], value, self.device_id
+        )
 
     async def bind_status(self) -> BindingStatus:
         """Get the bind status."""
         result = await self.client.get_register(
-            self.regmap[bp.ACTUAL_BINDING_STATUS], self.slave_id
+            self.regmap[bp.ACTUAL_BINDING_STATUS], self.device_id
         )
         if result is None or result.value is None:
             return BindingStatus.NOT_AVAILABLE
         return BindingStatus(result.value)
 
-    async def unbind(self, slave_id: int) -> bool:
-        """Remove a bound node from the bridge by its Modbus slave ID."""
-        return await self.client.set_register(self.regmap[bp.REMOVE_NODE], slave_id, self.slave_id)
+    async def unbind(self, device_id: int) -> bool:
+        """Remove a bound node from the bridge by its Modbus device ID."""
+        return await self.client.set_register(
+            self.regmap[bp.REMOVE_NODE], device_id, self.device_id
+        )
 
     async def bind_accessory(
         self,
-        controller_slave_id: int,
-        slave_id: int,
+        controller_device_id: int,
+        device_id: int,
         product_id: ProductId,
     ) -> bool:
         """Bind a new accessory to the bridge."""
-        if controller_slave_id < 2 or controller_slave_id > 247:
+        if controller_device_id < 2 or controller_device_id > 247:
             raise AiriosInvalidArgumentException(
-                f"Modbus slave address {controller_slave_id} out of range 2-247"
+                f"Modbus device id {controller_device_id} out of range 2-247"
             )
 
-        if slave_id < 2 or slave_id > 247:
-            raise AiriosInvalidArgumentException(
-                f"Modbus slave address {slave_id} out of range 2-247"
-            )
+        if device_id < 2 or device_id > 247:
+            raise AiriosInvalidArgumentException(f"Modbus device id {device_id} out of range 2-247")
 
-        if slave_id == self.slave_id:
-            raise AiriosInvalidArgumentException(f"Modbus slave address {slave_id} already in use")
+        if device_id == self.device_id:
+            raise AiriosInvalidArgumentException(f"Modbus device id {device_id} already in use")
 
         mode: BindingMode = BindingMode.ABORT
-        ok = await self.client.set_register(self.regmap[bp.BINDING_COMMAND], mode, self.slave_id)
+        ok = await self.client.set_register(self.regmap[bp.BINDING_COMMAND], mode, self.device_id)
         if not ok:
             raise AiriosBindingException("Failed to reset binding status")
 
         result = await self.client.get_register(
-            self.regmap[bp.ACTUAL_BINDING_STATUS], self.slave_id
+            self.regmap[bp.ACTUAL_BINDING_STATUS], self.device_id
         )
         if result is None or result.value is None:
             raise AiriosBindingException("Failed to determine current binding status")
@@ -228,18 +228,20 @@ class BRDG02R13(AiriosDevice):
             raise AiriosBindingException(f"Bridge not ready for binding: {result.value}")
 
         ok = await self.client.set_register(
-            self.regmap[bp.BINDING_PRODUCT_ID], product_id, self.slave_id
+            self.regmap[bp.BINDING_PRODUCT_ID], product_id, self.device_id
         )
         if not ok:
             raise AiriosBindingException("Failed to configure binding product ID")
 
-        ok = await self.client.set_register(self.regmap[bp.CREATE_NODE], slave_id, self.slave_id)
+        ok = await self.client.set_register(self.regmap[bp.CREATE_NODE], device_id, self.device_id)
         if not ok:
-            raise AiriosBindingException(f"Failed to create node for slave id {slave_id}")
+            raise AiriosBindingException(f"Failed to create node for device id {device_id}")
 
         mode = BindingMode.INCOMING_ON_EXISTING_NODE
-        value = ((slave_id & 0xFF) << 8) | mode
-        return await self.client.set_register(self.regmap[bp.BINDING_COMMAND], value, self.slave_id)
+        value = ((device_id & 0xFF) << 8) | mode
+        return await self.client.set_register(
+            self.regmap[bp.BINDING_COMMAND], value, self.device_id
+        )
 
     async def nodes(self) -> List[AiriosBoundNodeInfo]:
         """Get the list of bound nodes."""
@@ -281,14 +283,14 @@ class BRDG02R13(AiriosDevice):
 
         nodes: List[AiriosBoundNodeInfo] = []
         for item in reg_descs:
-            result = await self.client.get_register(item, self.slave_id)
+            result = await self.client.get_register(item, self.device_id)
             if result is None or result.value is None:
                 continue
-            slave_id = result.value
-            if slave_id == 0:
+            device_id = result.value
+            if device_id == 0:
                 continue
 
-            result = await self.client.get_register(self.regmap[dp.PRODUCT_ID], slave_id)
+            result = await self.client.get_register(self.regmap[dp.PRODUCT_ID], device_id)
             if result is None or result.value is None:
                 continue
             try:
@@ -299,37 +301,37 @@ class BRDG02R13(AiriosDevice):
             else:
                 product_id = ProductId(result.value)
 
-            result = await self.client.get_register(self.regmap[dp.RF_ADDRESS], slave_id)
+            result = await self.client.get_register(self.regmap[dp.RF_ADDRESS], device_id)
             if result is None or result.value is None:
                 continue
             rf_address = result.value
 
             info = AiriosBoundNodeInfo(
-                slave_id=slave_id, product_id=product_id, rf_address=rf_address
+                device_id=device_id, product_id=product_id, rf_address=rf_address
             )
             nodes.append(info)
         return nodes
 
-    async def node(self, slave_id: int) -> AiriosDevice:
-        """Get a node instance by its Modbus slave ID."""
+    async def node(self, device_id: int) -> AiriosDevice:
+        """Get a node instance by its Modbus device ID."""
 
-        if slave_id == self.slave_id:
+        if device_id == self.device_id:
             return self
 
         for node in await self.nodes():
-            if node.slave_id != slave_id:
+            if node.device_id != device_id:
                 continue
-            return factory.get_device_by_product_id(node.product_id, node.slave_id, self.client)
+            return factory.get_device_by_product_id(node.product_id, node.device_id, self.client)
 
-        raise AiriosException(f"Node {slave_id} not found")
+        raise AiriosException(f"Node {device_id} not found")
 
     async def rf_load_current_hour(self) -> Result[float]:
         """Get the RF load in the current hour (%)."""
-        return await self.client.get_register(self.regmap[bp.RF_LOAD_CURRENT_HOUR], self.slave_id)
+        return await self.client.get_register(self.regmap[bp.RF_LOAD_CURRENT_HOUR], self.device_id)
 
     async def rf_load_last_hour(self) -> Result[float]:
         """Get the RF load in the last hour (%)."""
-        return await self.client.get_register(self.regmap[bp.RF_LOAD_LAST_HOUR], self.slave_id)
+        return await self.client.get_register(self.regmap[bp.RF_LOAD_LAST_HOUR], self.device_id)
 
     async def rf_load(self) -> RFLoad:
         """Get the RF load."""
@@ -340,13 +342,13 @@ class BRDG02R13(AiriosDevice):
     async def rf_sent_messages_current_hour(self) -> Result[int]:
         """Get the RF sent messages in the current hour."""
         return await self.client.get_register(
-            self.regmap[bp.MESSAGES_SEND_CURRENT_HOUR], self.slave_id
+            self.regmap[bp.MESSAGES_SEND_CURRENT_HOUR], self.device_id
         )
 
     async def rf_sent_messages_last_hour(self) -> Result[int]:
         """Get the RF sent messages in the last hour."""
         return await self.client.get_register(
-            self.regmap[bp.MESSAGES_SEND_LAST_HOUR], self.slave_id
+            self.regmap[bp.MESSAGES_SEND_LAST_HOUR], self.device_id
         )
 
     async def rf_sent_messages(self) -> RFSentMessages:
@@ -357,11 +359,11 @@ class BRDG02R13(AiriosDevice):
 
     async def serial_config(self) -> SerialConfig:
         """Get the serial configuration."""
-        result = await self.client.get_register(self.regmap[bp.SERIAL_BAUDRATE], self.slave_id)
+        result = await self.client.get_register(self.regmap[bp.SERIAL_BAUDRATE], self.device_id)
         baudrate: Baudrate = Baudrate(result.value)
-        result = await self.client.get_register(self.regmap[bp.SERIAL_PARITY], self.slave_id)
+        result = await self.client.get_register(self.regmap[bp.SERIAL_PARITY], self.device_id)
         parity: Parity = Parity(result.value)
-        result = await self.client.get_register(self.regmap[bp.SERIAL_STOP_BITS], self.slave_id)
+        result = await self.client.get_register(self.regmap[bp.SERIAL_STOP_BITS], self.device_id)
         stopbits: StopBits = StopBits(result.value)
         return SerialConfig(baudrate=baudrate, stop_bits=stopbits, parity=parity)
 
@@ -371,49 +373,49 @@ class BRDG02R13(AiriosDevice):
             await self.client.set_register(
                 self.regmap[bp.SERIAL_BAUDRATE],
                 config.baudrate,
-                self.slave_id,
+                self.device_id,
             )
             and await self.client.set_register(
                 self.regmap[bp.SERIAL_PARITY],
                 config.parity,
-                self.slave_id,
+                self.device_id,
             )
             and await self.client.set_register(
                 self.regmap[bp.SERIAL_STOP_BITS],
                 config.stop_bits,
-                self.slave_id,
+                self.device_id,
             )
         )
 
     async def modbus_events(self) -> Result[ModbusEvents]:
         """Modbus event responses via special Modbus functions."""
-        result = await self.client.get_register(self.regmap[bp.MODBUS_EVENTS], self.slave_id)
+        result = await self.client.get_register(self.regmap[bp.MODBUS_EVENTS], self.device_id)
         return Result(ModbusEvents(result.value), result.status)
 
     async def set_modbus_events(self, value: ModbusEvents) -> bool:
         """Set Modbus event responses via special Modbus functions."""
-        return await self.client.set_register(self.regmap[bp.MODBUS_EVENTS], value, self.slave_id)
+        return await self.client.set_register(self.regmap[bp.MODBUS_EVENTS], value, self.device_id)
 
     async def power_on_time(self) -> Result[timedelta]:
         """Time since last power on or reset."""
-        res = await self.client.get_register(self.regmap[bp.UPTIME], self.slave_id)
+        res = await self.client.get_register(self.regmap[bp.UPTIME], self.device_id)
         return Result(timedelta(seconds=res.value), res.status)
 
     async def reset(self, mode: ResetMode) -> bool:
         """Reset the bridge."""
-        return await self.client.set_register(self.regmap[bp.RESET_DEVICE], mode, self.slave_id)
+        return await self.client.set_register(self.regmap[bp.RESET_DEVICE], mode, self.device_id)
 
     async def utc_time(self) -> Result[datetime.datetime]:
         """Get the UTC time."""
-        return await self.client.get_register(self.regmap[bp.UTC_TIME], self.slave_id)
+        return await self.client.get_register(self.regmap[bp.UTC_TIME], self.device_id)
 
     async def oem_code(self) -> Result[int]:
         """Set the bridge OEM code."""
-        return await self.client.get_register(self.regmap[bp.OEM_CODE], self.slave_id)
+        return await self.client.get_register(self.regmap[bp.OEM_CODE], self.device_id)
 
     async def set_oem_code(self, code: int) -> bool:
         """Set the OEM code.
 
         It must be set to the matching code before binding a product.
         """
-        return await self.client.set_register(self.regmap[bp.OEM_CODE], code, self.slave_id)
+        return await self.client.set_register(self.regmap[bp.OEM_CODE], code, self.device_id)

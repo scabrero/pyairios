@@ -69,7 +69,7 @@ class AiriosBridgeProperty(AiriosBaseProperty):
     SERIAL_PARITY = auto()
     SERIAL_STOP_BITS = auto()
     SERIAL_BAUDRATE = auto()
-    SLAVE_ADDRESS = auto()
+    MODBUS_DEVICE_ID = auto()
     MESSAGES_SEND_CURRENT_HOUR = auto()
     MESSAGES_SEND_LAST_HOUR = auto()
     RF_LOAD_CURRENT_HOUR = auto()

@@ -37,9 +37,9 @@ class PrivProp(AiriosBaseProperty):
 class AiriosNode(AiriosDevice):
     """Represents a RF node."""
 
-    def __init__(self, slave_id: int, client: AsyncAiriosModbusClient) -> None:
+    def __init__(self, device_id: int, client: AsyncAiriosModbusClient) -> None:
         """Initialize the node class instance."""
-        super().__init__(slave_id, client)
+        super().__init__(device_id, client)
         node_registers: List[RegisterBase] = [
             U32Register(np.RECEIVED_PRODUCT_ID, 40021, RegisterAccess.READ, result_type=ProductId),
             U16Register(np.VALUE_ERROR_STATUS, 40104, RegisterAccess.READ),
@@ -68,5 +68,5 @@ class AiriosNode(AiriosDevice):
         This is the value received from the bound node. If it does not match register
         NODE_PRODUCT_ID a wrong product is bound.
         """
-        result = await self.client.get_register(self.regmap[np.RECEIVED_PRODUCT_ID], self.slave_id)
+        result = await self.client.get_register(self.regmap[np.RECEIVED_PRODUCT_ID], self.device_id)
         return Result(ProductId(result.value), result.status)

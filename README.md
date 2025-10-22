@@ -23,7 +23,7 @@ Each device in the RF network is called a node and nodes must be bound together 
 * Controllers (typically ventilation units). Binding mode is enabled for a fixed period after power cycle.
 * Accessories (remote controls or sensors). They bind to a controller in a device-specific way, e.g., pressing a combination of buttons.
 
-The bridge is an accessory with special features. It can bind to multiple controllers and at the same time it can "intercept" the accessories binding procedure so they are bound to the controller and the bridge at the same time. Each bound device to the bridge creates a new virtual Modbus slave with its own address and register set. The register set depends on the bounded product.
+The bridge is an accessory with special features. It can bind to multiple controllers and at the same time it can "intercept" the accessories binding procedure so they are bound to the controller and the bridge at the same time. Each bound device to the bridge creates a new virtual Modbus server with its own address and register set. The register set depends on the bounded product.
 
 NOTE:
 Binding is only possible when products have the same *OEM code*. The RF bridge has a registry to change it if necessary.
@@ -48,7 +48,7 @@ The library offers a high level and easy to use API:
 ```
 transport = AiriosModbusRTUTransport(device="/dev/ttyACM0")
 api = Airios(transport)
-vmd = api.node(<slave id>)
+vmd = api.node(<Modbus device id>)
 ```
 
 A command line interface is also included in the library for testing purposes. Use the `help` or `?` command to get the list of available commands in each context.

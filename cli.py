@@ -45,9 +45,7 @@ from pyairios.exceptions import (
 )
 from pyairios.models.brdg_02r13 import (
     BRDG02R13,
-)
-from pyairios.models.brdg_02r13 import (
-    DEFAULT_SLAVE_ID as BRDG02R13_DEFAULT_SLAVE_ID,
+    DEFAULT_DEVICE_ID as BRDG02R13_DEFAULT_DEVICE_ID,
 )
 from pyairios.models.vmd_02rps78 import VMD02RPS78
 from pyairios.models.vmn_05lm02 import VMN05LM02
@@ -96,7 +94,7 @@ class AiriosVMN05LM02CLI(aiocmd.PromptToolkitCmd):
 
     def __init__(self, vmn: VMN05LM02) -> None:
         super().__init__()
-        self.prompt = f"[VMN-05LM02@{vmn.slave_id}]>> "
+        self.prompt = f"[VMN-05LM02@{vmn.device_id}]>> "
         self.vmn = vmn
 
     async def do_received_product_id(self) -> None:
@@ -130,7 +128,7 @@ class AiriosVMD02RPS78CLI(aiocmd.PromptToolkitCmd):
 
     def __init__(self, vmd: VMD02RPS78) -> None:
         super().__init__()
-        self.prompt = f"[VMD-02RPS78@{vmd.slave_id}]>> "
+        self.prompt = f"[VMD-02RPS78@{vmd.device_id}]>> "
         self.vmd = vmd
 
     async def do_capabilities(self) -> None:
@@ -333,7 +331,7 @@ class AiriosBridgeCLI(aiocmd.PromptToolkitCmd):
 
     def __init__(self, bridge: BRDG02R13) -> None:
         super().__init__()
-        self.prompt = f"[BRDG-02R13@{bridge.slave_id}]>> "
+        self.prompt = f"[BRDG-02R13@{bridge.device_id}]>> "
         self.bridge = bridge
 
     async def do_nodes(self) -> None:
@@ -342,25 +340,25 @@ class AiriosBridgeCLI(aiocmd.PromptToolkitCmd):
         for n in res:
             print(f"{n}")
 
-    async def do_node(self, slave_id: str) -> None:
+    async def do_node(self, device_id: str) -> None:
         """Manage a bound node."""
         nodes = await self.bridge.nodes()
         node_info = None
         for n in nodes:
-            if int(slave_id) == int(n.slave_id):
+            if int(device_id) == int(n.device_id):
                 node_info = n
                 break
 
         if node_info is None:
-            raise AiriosIOException(f"Node with address {slave_id} not bound")
+            raise AiriosIOException(f"Node with address {device_id} not bound")
 
         if node_info.product_id == ProductId.VMD_02RPS78:
-            vmd = VMD02RPS78(node_info.slave_id, self.bridge.client)
+            vmd = VMD02RPS78(node_info.device_id, self.bridge.client)
             await AiriosVMD02RPS78CLI(vmd).run()
             return
 
         if node_info.product_id == ProductId.VMN_05LM02:
-            vmn = VMN05LM02(node_info.slave_id, self.bridge.client)
+            vmn = VMN05LM02(node_info.device_id, self.bridge.client)
             await AiriosVMN05LM02CLI(vmn).run()
             return
 
@@ -414,10 +412,10 @@ class AiriosBridgeCLI(aiocmd.PromptToolkitCmd):
             mode = ResetMode.FACTORY_RESET
         await self.bridge.reset(mode)
 
-    async def do_unbind(self, slave_id) -> None:
+    async def do_unbind(self, device_id) -> None:
         """Remove a bound node."""
-        slave_id = int(slave_id)
-        await self.bridge.unbind(slave_id)
+        device_id = int(device_id)
+        await self.bridge.unbind(device_id)
 
     async def do_bind_status(self) -> None:
         """Print bind status."""
@@ -425,22 +423,22 @@ class AiriosBridgeCLI(aiocmd.PromptToolkitCmd):
         print(f"Bind status: {res}")
 
     async def do_bind_controller(
-        self, slave_id, product_id, product_serial: str | None = None
+        self, device_id, product_id, product_serial: str | None = None
     ) -> None:
         """Bind a new controller."""
-        slave_id = int(slave_id)
+        device_id = int(device_id)
         pid = ProductId(int(product_id))
         psn = None
         if product_serial is not None:
             psn = int(product_serial)
-        await self.bridge.bind_controller(slave_id, pid, psn)
+        await self.bridge.bind_controller(device_id, pid, psn)
 
-    async def do_bind_accessory(self, ctrl_slave_id, slave_id, product_id) -> None:
+    async def do_bind_accessory(self, ctrl_device_id, device_id, product_id) -> None:
         """Bind a new accessory."""
-        ctrl_slave_id = int(ctrl_slave_id)
-        slave_id = int(slave_id)
+        ctrl_device_id = int(ctrl_device_id)
+        device_id = int(device_id)
         pid = ProductId(int(product_id))
-        await self.bridge.bind_accessory(ctrl_slave_id, slave_id, pid)
+        await self.bridge.bind_accessory(ctrl_device_id, device_id, pid)
 
     async def do_software_build_date(self) -> None:
         """Print the software build date."""
@@ -495,7 +493,7 @@ class AiriosClientCLI(aiocmd.PromptToolkitCmd):  # pylint: disable=too-few-publi
         """Manage the bridge."""
         if address is None:
             _address = (
-                BRDG02R13_DEFAULT_SLAVE_ID
+                BRDG02R13_DEFAULT_DEVICE_ID
                 if isinstance(self.client, AsyncAiriosModbusRtuClient)
                 else 1
             )
