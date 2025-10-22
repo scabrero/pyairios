@@ -105,7 +105,10 @@ class AsyncAiriosModbusClient:
 
         async with self.lock:
             LOGGER.debug(
-                "Reading register %s with length %s from device id %s", register, length, device_id
+                "Reading register %s with length %s from device id %s",
+                register,
+                length,
+                device_id,
             )
 
             await self._reconnect()
@@ -255,7 +258,9 @@ class AsyncAiriosModbusClient:
             tmp: int = t.cast(
                 int,
                 ModbusClientMixin.convert_from_registers(
-                    response.registers, ModbusClientMixin.DATATYPE.UINT16, word_order="little"
+                    response.registers,
+                    ModbusClientMixin.DATATYPE.UINT16,
+                    word_order="little",
                 ),
             )
             if tmp is not None:
