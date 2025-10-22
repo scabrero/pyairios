@@ -482,11 +482,22 @@ class VMD02RPS78(AiriosNode):
 
     async def filter_dirty(self) -> Result[int]:
         """Get the filter dirty status."""
-        return await self.client.get_register(self.regmap[vp.FILTER_DIRTY], self.device_id)
+        regdesc = self.regmap[vp.FILTER_DIRTY]
+        return await self.client.get_register(regdesc, self.device_id)
 
     async def error_code(self) -> Result[VMDErrorCode]:
         """Get the ventilation unit error code."""
         regdesc = self.regmap[vp.ERROR_CODE]
+        return await self.client.get_register(regdesc, self.device_id)
+
+    async def indoor_humidity(self) -> Result[VMDHumidity]:
+        """Get the indoor humidity (%)"""
+        regdesc = self.regmap[vp.HUMIDITY_INDOOR]
+        return await self.client.get_register(regdesc, self.device_id)
+
+    async def outdoor_humidity(self) -> Result[VMDHumidity]:
+        """Get the outdoor humidity (%)"""
+        regdesc = self.regmap[vp.HUMIDITY_OUTDOOR]
         return await self.client.get_register(regdesc, self.device_id)
 
     async def exhaust_fan_speed(self) -> Result[int]:
@@ -687,11 +698,6 @@ class VMD02RPS78(AiriosNode):
             self.regmap[vp.FAN_SPEED_AWAY_EXHAUST], value, self.device_id
         )
 
-    async def co2_level(self) -> Result[VMDCO2Level]:
-        """Get the CO2 level (in ppm)."""
-        regdesc = self.regmap[vp.CO2_LEVEL]
-        return await self.client.get_register(regdesc, self.device_id)
-
     async def inlet_flow(self) -> Result[VMDFlowLevel]:
         """Get the inlet flow level (in m3/h)"""
         regdesc = self.regmap[vp.FLOW_INLET]
@@ -700,4 +706,9 @@ class VMD02RPS78(AiriosNode):
     async def outlet_flow(self) -> Result[VMDFlowLevel]:
         """Get the outlet flow level (in m3/h)"""
         regdesc = self.regmap[vp.FLOW_OUTLET]
+        return await self.client.get_register(regdesc, self.device_id)
+
+    async def co2_level(self) -> Result[VMDCO2Level]:
+        """Get the CO2 level (in ppm)."""
+        regdesc = self.regmap[vp.CO2_LEVEL]
         return await self.client.get_register(regdesc, self.device_id)
