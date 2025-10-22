@@ -260,40 +260,6 @@ class FloatRegister(NumberRegister[float]):
         super().__init__(description, ap, result_type, result_adapter)
 
 
-class DateTimeRegister(RegisterBase[datetime.datetime]):
-    """DateTime register."""
-
-    datatype = ModbusClientMixin.DATATYPE.UINT32
-
-    def __init__(  # pylint: disable=too-many-arguments,too-many-positional-arguments
-        self,
-        ap: AiriosBaseProperty,
-        address: int,
-        access: RegisterAccess,
-        min_value=0,
-        max_value=2**32 - 1,
-    ) -> None:
-        """Initialize the DateTimeRegister instance."""
-        description = RegisterDescription(address, 2, access, min_value, max_value)
-        super().__init__(description, ap, datetime.datetime, None)
-
-    def decode(self, registers: list[int]) -> datetime.datetime:
-        """Decode register bytes to value."""
-        value: int = t.cast(int, super().decode(registers))
-
-        if value == 0xFFFFFFFF:
-            return datetime.datetime.min
-
-        return datetime.datetime.fromtimestamp(value, tz=datetime.timezone.utc)
-
-    def encode(self, value: datetime.datetime) -> list[int]:
-        """Encode value to register bytes."""
-
-        ts: float = value.replace(tzinfo=datetime.timezone.utc).timestamp()
-        ival: int = int(ts)
-        return ModbusClientMixin.convert_to_registers(ival, self.datatype, word_order="little")
-
-
 @dataclass
 class ResultStatus:
     """Metadata associated to a register value."""

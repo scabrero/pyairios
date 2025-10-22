@@ -1,6 +1,7 @@
 """RF node implementation."""
 
 import logging
+import datetime
 from enum import auto
 from typing import List
 
@@ -10,7 +11,6 @@ from pyairios.device import AiriosDevice
 from pyairios.properties import AiriosBaseProperty
 from pyairios.properties import AiriosNodeProperty as np
 from pyairios.registers import (
-    DateTimeRegister,
     I16Register,
     RegisterAccess,
     RegisterBase,
@@ -34,6 +34,13 @@ class PrivProp(AiriosBaseProperty):
     FAULT_HISTORY_COMM_STATUS = auto()
 
 
+def datetime_register(value: int) -> datetime.datetime:
+    """Decode register bytes to value."""
+    if value == 0xFFFFFFFF:
+        raise ValueError("Unknown")
+    return datetime.datetime.fromtimestamp(value, tz=datetime.timezone.utc)
+
+
 class AiriosNode(AiriosDevice):
     """Represents a RF node."""
 
@@ -55,7 +62,12 @@ class AiriosNode(AiriosDevice):
                 40301,
                 RegisterAccess.READ | RegisterAccess.WRITE,
             ),
-            DateTimeRegister(PrivProp.FAULT_HISTORY_TIMESTAMP, 40302, RegisterAccess.READ),
+            U32Register(
+                PrivProp.FAULT_HISTORY_TIMESTAMP,
+                40302,
+                RegisterAccess.READ,
+                result_adapter=datetime_register,
+            ),
             U16Register(PrivProp.FAULT_HISTORY_FAULTCODE, 40304, RegisterAccess.READ),
             U32Register(PrivProp.FAULT_HISTORY_STATUS_INFO, 40305, RegisterAccess.READ),
             U16Register(PrivProp.FAULT_HISTORY_COMM_STATUS, 40307, RegisterAccess.READ),

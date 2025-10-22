@@ -32,7 +32,6 @@ from pyairios.models.factory import factory
 from pyairios.properties import AiriosBridgeProperty as bp
 from pyairios.properties import AiriosDeviceProperty as dp
 from pyairios.registers import (
-    DateTimeRegister,
     FloatRegister,
     RegisterAccess,
     RegisterBase,
@@ -70,6 +69,13 @@ def pr_instantiate(device_id: int, client: AsyncAiriosModbusClient) -> BRDG02R13
     return BRDG02R13(device_id, client)
 
 
+def datetime_register(value: int) -> datetime.datetime:
+    """Decode register bytes to value."""
+    if value == 0xFFFFFFFF:
+        raise ValueError("Unknown")
+    return datetime.datetime.fromtimestamp(value, tz=datetime.timezone.utc)
+
+
 class BRDG02R13(AiriosDevice):
     """Represents a BRDG-02R13 RF bridge."""
 
@@ -79,8 +85,18 @@ class BRDG02R13(AiriosDevice):
         super().__init__(device_id, client)
         brdg_registers: List[RegisterBase] = [
             U16Register(bp.CUSTOMER_PRODUCT_ID, 40023, RegisterAccess.READ | RegisterAccess.WRITE),
-            DateTimeRegister(bp.UTC_TIME, 41015, RegisterAccess.READ | RegisterAccess.WRITE),
-            DateTimeRegister(bp.LOCAL_TIME, 41017, RegisterAccess.READ),
+            U32Register(
+                bp.UTC_TIME,
+                41015,
+                RegisterAccess.READ | RegisterAccess.WRITE,
+                result_adapter=datetime_register,
+            ),
+            U32Register(
+                bp.LOCAL_TIME,
+                41017,
+                RegisterAccess.READ,
+                result_adapter=datetime_register,
+            ),
             U32Register(bp.UPTIME, 41019, RegisterAccess.READ),
             U16Register(bp.DAYLIGHT_SAVING_TYPE, 41021, RegisterAccess.READ | RegisterAccess.WRITE),
             U16Register(bp.TIMEZONE_OFFSET, 41022, RegisterAccess.READ | RegisterAccess.WRITE),
