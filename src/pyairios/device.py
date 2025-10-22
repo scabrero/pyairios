@@ -149,8 +149,13 @@ class AiriosDevice:
         regdesc = self.regmap[ap]
         return await self.client.set_register(regdesc, value, self.device_id)
 
-    async def fetch(self) -> AiriosDeviceData:
+    async def fetch(self, status=True) -> AiriosDeviceData:
         """Fetch all data."""
+        if not status:
+            it = filter(lambda x: RegisterAccess.READ in x.description.access, self.registers)
+            rl = list(it)
+            return await self.client.get_multiple(rl, self.device_id)
+
         data: Dict[AiriosBaseProperty, Any] = {}
         for reg in self.registers:
             if RegisterAccess.READ not in reg.description.access:
