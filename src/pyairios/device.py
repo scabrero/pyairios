@@ -149,27 +149,37 @@ class AiriosDevice:
         regdesc = self.regmap[ap]
         return await self.client.set_register(regdesc, value, self.device_id)
 
-    async def fetch(self, status=True) -> AiriosDeviceData:
+    async def fetch(self, *, all_props=True, with_status=True) -> AiriosDeviceData:
         """Fetch all data."""
-        if not status:
+        data: Dict[AiriosBaseProperty, Any] = {}
+
+        if not with_status:
             it = filter(lambda x: RegisterAccess.READ in x.description.access, self.registers)
             rl = list(it)
-            return await self.client.get_multiple(rl, self.device_id)
+            data = await self.client.get_multiple(rl, self.device_id)
+        else:
+            for reg in self.registers:
+                if RegisterAccess.READ not in reg.description.access:
+                    continue
 
-        data: Dict[AiriosBaseProperty, Any] = {}
-        for reg in self.registers:
-            if RegisterAccess.READ not in reg.description.access:
-                continue
-            try:
-                data[reg.aproperty] = await self.client.get_register(reg, self.device_id)
-            except AiriosAcknowledgeException as ex:
-                msg = f"Failed to fetch register {reg.aproperty}: {ex}"
-                LOGGER.info(msg)
-                continue
-            except ValueError as ex:
-                msg = f"Failed to fetch register {reg.aproperty}: {ex}"
-                LOGGER.info(msg)
-                continue
+                try:
+                    data[reg.aproperty] = await self.client.get_register(reg, self.device_id)
+                except AiriosAcknowledgeException as ex:
+                    msg = f"Failed to fetch register {reg.aproperty}: {ex}"
+                    LOGGER.info(msg)
+                    continue
+                except ValueError as ex:
+                    msg = f"Failed to fetch register {reg.aproperty}: {ex}"
+                    LOGGER.info(msg)
+                    continue
+
+        if not all_props:
+            return data
+
+        for ap in list(set(self.regmap.keys()) - set(data.keys())):
+            # These are the properties not updated maybe due to Modbus Ack error.
+            data[ap] = Result(None, None)
+
         return data
 
     async def device_rf_address(self) -> Result[int]:

@@ -116,7 +116,7 @@ class AiriosVMN05LM02CLI(aiocmd.PromptToolkitCmd):
 
     async def do_status(self) -> None:
         """Print the device status."""
-        res = await self.vmn.fetch()
+        res = await self.vmn.fetch(with_status=False)
 
         _print_node_data(res)
 
@@ -130,7 +130,7 @@ class AiriosVMN05LM02CLI(aiocmd.PromptToolkitCmd):
     async def do_properties(self, status: bool) -> None:
         """Print all device properties."""
         _status = status in (1, "y", "yes")
-        res = await self.vmn.fetch(_status)
+        res = await self.vmn.fetch(with_status=_status)
         pprint.pprint(res)
 
 
@@ -151,7 +151,7 @@ class AiriosVMD02RPS78CLI(aiocmd.PromptToolkitCmd):
 
     async def do_status(self) -> None:  # pylint: disable=too-many-statements
         """Print the device status."""
-        res = await self.vmd.fetch()
+        res = await self.vmd.fetch(with_status=False)
 
         _print_node_data(res)
 
@@ -341,7 +341,7 @@ class AiriosVMD02RPS78CLI(aiocmd.PromptToolkitCmd):
     async def do_properties(self, status: bool) -> None:
         """Print all device properties."""
         _status = status in (1, "y", "yes")
-        res = await self.vmd.fetch(_status)
+        res = await self.vmd.fetch(with_status=_status)
         pprint.pprint(res)
 
 
@@ -506,7 +506,7 @@ class AiriosVMD07RPS13CLI(aiocmd.PromptToolkitCmd):
         """Print the complete device status."""
         # Not interested in values status here, use multiple register
         # fetching to reduce modbus transactions.
-        res = await self.vmd.fetch(status=False)
+        res = await self.vmd.fetch(with_status=False)
 
         _print_node_data(res)
 
@@ -554,7 +554,7 @@ class AiriosVMD07RPS13CLI(aiocmd.PromptToolkitCmd):
     async def do_properties(self, status: bool) -> None:
         """Print all device properties."""
         _status = status in (1, "y", "yes")
-        res = await self.vmd.fetch(_status)
+        res = await self.vmd.fetch(with_status=_status)
         pprint.pprint(res)
 
 
@@ -701,7 +701,7 @@ class AiriosBridgeCLI(aiocmd.PromptToolkitCmd):
 
     async def do_status(self) -> None:
         """Print the device status."""
-        res = await self.bridge.fetch()
+        res = await self.bridge.fetch(with_status=False)
 
         _print_device_data(res)
 
@@ -717,7 +717,7 @@ class AiriosBridgeCLI(aiocmd.PromptToolkitCmd):
     async def do_properties(self, status: bool) -> None:
         """Print all device properties."""
         _status = status in (1, "y", "yes")
-        res = await self.bridge.fetch(_status)
+        res = await self.bridge.fetch(with_status=_status)
         pprint.pprint(res)
 
 
