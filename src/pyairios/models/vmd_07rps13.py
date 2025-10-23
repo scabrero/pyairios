@@ -66,6 +66,7 @@ def _temperature_adapter(value: float) -> VMDTemperature:
         status = VMDSensorStatus.ERROR
     else:
         status = VMDSensorStatus.OK
+        value = round(value, 2)
     return VMDTemperature(value, status)
 
 
