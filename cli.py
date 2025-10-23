@@ -561,10 +561,12 @@ class AiriosVMD07RPS13CLI(aiocmd.PromptToolkitCmd):
 class AiriosBridgeCLI(aiocmd.PromptToolkitCmd):
     """The bridge CLI interface."""
 
-    def __init__(self, bridge: BRDG02R13) -> None:
+    bridge: BRDG02R13
+
+    def __init__(self, dev: AiriosDevice) -> None:
         super().__init__()
-        self.prompt = f"[BRDG-02R13@{bridge.device_id}]>> "
-        self.bridge = bridge
+        self.prompt = f"[BRDG-02R13@{dev.device_id}]>> "
+        self.bridge = cast(BRDG02R13, dev)
 
     async def do_nodes(self) -> None:
         """Print the list of bound nodes."""
@@ -738,8 +740,8 @@ class AiriosClientCLI(aiocmd.PromptToolkitCmd):  # pylint: disable=too-few-publi
             )
         else:
             _address = int(address)
-        bridge = await factory.get_device_by_product_id(ProductId.BRDG_02R13, _address, self.client)
-        await AiriosBridgeCLI(bridge).run()
+        dev = await factory.get_device_by_product_id(ProductId.BRDG_02R13, _address, self.client)
+        await AiriosBridgeCLI(dev).run()
 
 
 class AiriosRootCLI(aiocmd.PromptToolkitCmd):
