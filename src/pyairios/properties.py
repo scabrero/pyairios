@@ -1,6 +1,6 @@
 """Airios devices properties."""
 
-from enum import auto, Enum
+from enum import Enum, auto
 
 
 class AiriosBaseProperty(Enum):
@@ -148,6 +148,7 @@ class AiriosVMDProperty(AiriosBaseProperty):
     AIR_QUALITY = auto()
     AIR_QUALITY_BASIS = auto()
     CO2_LEVEL = auto()
+    CO2_CONTROL_SETPOINT = auto()
     POSTHEATER = auto()
     CAPABILITIES = auto()
     FILTER_REMAINING_DAYS = auto()
@@ -175,6 +176,20 @@ class AiriosVMDProperty(AiriosBaseProperty):
     PREHEATER_SETPOINT = auto()
     FREE_VENTILATION_HEATING_SETPOINT = auto()
     FREE_VENTILATION_COOLING_OFFSET = auto()
+
+    VENTILATION_MODE = auto()
+    REQUESTED_VENTILATION_MODE = auto()
+    VENTILATION_SUB_MODE = auto()
+    REQUESTED_VENTILATION_SUB_MODE = auto()
+    TEMP_VENTILATION_MODE = auto()
+    REQUESTED_TEMP_VENTILATION_MODE = auto()
+    TEMP_VENTILATION_SUB_MODE = auto()
+    REQUESTED_TEMP_VENTILATION_SUB_MODE = auto()
+    BASIC_VENTILATION_ENABLE = auto()
+    BASIC_VENTILATION_LEVEL = auto()
+    TEMP_OVERRIDE_DURATION = auto()
+    PRODUCT_VARIANT = auto()
+    SYSTEM_VENTILATION_CONFIGURATION = auto()
 
 
 class AiriosVMNProperty(AiriosBaseProperty):

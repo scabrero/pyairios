@@ -428,6 +428,7 @@ class VMDHeater:
 class VMDCapabilities(Flag):
     """Ventilation unit capabilities."""
 
+    NO_CAPABLE = 0x0000
     PRE_HEATER_AVAILABLE = 0x0001
     POST_HEATER_AVAILABLE = 0x0002
     RESERVED = 0x0004
@@ -451,6 +452,44 @@ class VMDFaultStatus(IntEnum):
 
     OK = 0
     FAN_FAILURE = 1
+
+
+class VMDVentilationMode(IntEnum):
+    """Ventilation unit (VMD-07RPS13) mode preset."""
+
+    OFF = 0
+    PAUSE = 1
+    ON = 2
+    OVERRIDE_1 = 3
+    OVERRIDE_2 = 4
+    OVERRIDE_3 = 5
+    OVERRIDE_4 = 6
+    OVERRIDE_5 = 7
+    SERVICE = 8
+    RETYPE = 9
+
+    def __str__(self) -> str:  # pylint: disable=too-many-return-statements
+        if self.value == self.OFF:
+            return "Off"
+        if self.value == self.PAUSE:
+            return "Pause"
+        if self.value == self.ON:
+            return "On/Auto"
+        if self.value == self.OVERRIDE_1:
+            return "I (temporary override)"
+        if self.value == self.OVERRIDE_2:
+            return "II (temporary override)"
+        if self.value == self.OVERRIDE_3:
+            return "III (temporary override)"
+        if self.value == self.OVERRIDE_4:
+            return "IV (temporary override)"
+        if self.value == self.OVERRIDE_5:
+            return "V (temporary override)"
+        if self.value == self.SERVICE:
+            return "Service Mode"
+        if self.value == self.RETYPE:
+            return "Retype (see manual)"
+        raise ValueError(f"Unknown ventilation mode value {self.value}")
 
 
 class VMDVentilationSpeed(IntEnum):
