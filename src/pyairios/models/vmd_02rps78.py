@@ -221,7 +221,12 @@ class VMD02RPS78(AiriosNode):
                 RegisterAccess.READ | RegisterAccess.STATUS,
                 result_adapter=_heater_adapter,
             ),
-            U16Register(vp.CAPABILITIES, 41027, RegisterAccess.READ | RegisterAccess.STATUS),
+            U16Register(
+                vp.CAPABILITIES,
+                41027,
+                RegisterAccess.READ | RegisterAccess.STATUS,
+                result_type=VMDCapabilities,
+            ),
             U16Register(
                 vp.FILTER_REMAINING_DAYS, 41040, RegisterAccess.READ | RegisterAccess.STATUS
             ),
