@@ -802,6 +802,16 @@ class AiriosRootCLI(aiocmd.PromptToolkitCmd):
         else:
             raise AiriosInvalidArgumentException("Invalid log level")
 
+    async def do_supported_models(self) -> None:
+        """Print the supported models."""
+        models = await factory.models()
+        pprint.pprint(models)
+
+    async def do_supported_models_descriptions(self) -> None:
+        """Print the supported models descriptions."""
+        models = await factory.model_descriptions()
+        pprint.pprint(models)
+
 
 async def main() -> None:
     """Run the async CLI."""
