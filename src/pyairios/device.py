@@ -164,12 +164,11 @@ class AiriosDevice:
 
                 try:
                     data[reg.aproperty] = await self.client.get_register(reg, self.device_id)
-                except AiriosAcknowledgeException as ex:
-                    msg = f"Failed to fetch register {reg.aproperty}: {ex}"
-                    LOGGER.info(msg)
-                    continue
-                except ValueError as ex:
-                    msg = f"Failed to fetch register {reg.aproperty}: {ex}"
+                except (AiriosAcknowledgeException, ValueError) as ex:
+                    msg = (
+                        f"Failed to fetch register {reg.aproperty} "
+                        f"from device ID {self.device_id}: {ex}"
+                    )
                     LOGGER.info(msg)
                     continue
 

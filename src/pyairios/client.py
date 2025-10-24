@@ -331,7 +331,7 @@ class AsyncAiriosModbusClient:
                 elif not isinstance(value, r.result_type):
                     value = r.result_type(value)
             except ValueError as ex:
-                msg = f"Failed to fetch register {r.aproperty}: {ex}"
+                msg = f"Failed to fetch register {r.aproperty} from device ID {device_id}: {ex}"
                 LOGGER.info(msg)
                 continue
             retval[r.aproperty] = Result(value, None)
