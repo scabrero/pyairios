@@ -76,11 +76,11 @@ class Airios:
         """Remove a bound node from the bridge by its Modbus device ID."""
         return await self.bridge.unbind(device_id)
 
-    async def fetch(self) -> AiriosData:
+    async def fetch(self, *, all_props=True, with_status=True) -> AiriosData:
         """Get the data from all nodes at once."""
         data: dict[int, AiriosDeviceData] = {}
 
-        brdg_data = await self.bridge.fetch()
+        brdg_data = await self.bridge.fetch(all_props=all_props, with_status=with_status)
 
         for node_info in await self.bridge.nodes():
             node = await factory.get_device_by_product_id(
@@ -88,7 +88,9 @@ class Airios:
                 node_info.device_id,
                 self.bridge.client,
             )
-            data[node_info.device_id] = await node.fetch()
+            data[node_info.device_id] = await node.fetch(
+                all_props=all_props, with_status=with_status
+            )
 
         return AiriosData(bridge=brdg_data, nodes=data)
 
