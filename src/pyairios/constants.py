@@ -428,7 +428,6 @@ class VMDHeater:
 class VMDCapabilities(Flag):
     """Ventilation unit capabilities."""
 
-    NO_CAPABLE = 0x0000
     PRE_HEATER_AVAILABLE = 0x0001
     POST_HEATER_AVAILABLE = 0x0002
     RESERVED = 0x0004

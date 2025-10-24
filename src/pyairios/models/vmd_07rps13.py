@@ -10,7 +10,6 @@ from pyairios.client import AsyncAiriosModbusClient
 from pyairios.constants import (
     ProductId,
     VMDBypassPosition,
-    VMDCapabilities,
     VMDCO2Level,
     VMDErrorCode,
     VMDFlowLevel,
@@ -262,12 +261,6 @@ class VMD07RPS13(AiriosNode):
 
     def __str__(self) -> str:
         return f"VMD-07RPS13@{self.device_id}"
-
-    async def capabilities(self) -> Result[VMDCapabilities]:
-        """Get the ventilation unit capabilities.
-        Capabilities register not supported on VMD-07RPS13, so must simulate"""
-        _caps = VMDCapabilities.NO_CAPABLE
-        return Result(_caps, None)
 
     async def ventilation_speed(self) -> Result[VMDVentilationSpeed]:
         """Get the ventilation unit active speed preset."""
