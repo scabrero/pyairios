@@ -6,7 +6,7 @@ import logging
 from typing import List
 
 from pyairios.client import AsyncAiriosModbusClient
-from pyairios.constants import ProductId, VMDRequestedVentilationSpeed
+from pyairios.constants import AiriosDeviceType, ProductId, VMDRequestedVentilationSpeed
 from pyairios.node import AiriosNode
 from pyairios.properties import AiriosVMNProperty as dp
 from pyairios.registers import (
@@ -28,13 +28,20 @@ def pr_id() -> ProductId:
     return ProductId.VMN_05LM02
 
 
-def pr_description() -> str | tuple[str, ...]:
+def pr_type() -> AiriosDeviceType:
+    """
+    Get the device type.
+    """
+    return AiriosDeviceType.ACCESSORY
+
+
+def pr_description() -> list[str]:
     """
     Get description of product(s) using VMN_05LM02.
     Human-readable text, used in e.g. HomeAssistant Binding UI.
     :return: string or tuple of strings, starting with manufacturer
     """
-    return "Siber 4 button Remote"
+    return ["Siber 4 button Remote"]
 
 
 def pr_instantiate(device_id: int, client: AsyncAiriosModbusClient) -> VMN05LM02:

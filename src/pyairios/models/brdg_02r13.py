@@ -9,6 +9,7 @@ from typing import List
 
 from pyairios.client import AsyncAiriosModbusClient
 from pyairios.constants import (
+    AiriosDeviceType,
     Baudrate,
     BindingMode,
     BindingStatus,
@@ -55,13 +56,19 @@ def pr_id() -> ProductId:
     return ProductId.BRDG_02R13
 
 
-def pr_description() -> str | tuple[str, ...]:
+def pr_type() -> AiriosDeviceType:
+    """
+    Get the device type.
+    """
+    return AiriosDeviceType.RF_BRIDGE
+
+
+def pr_description() -> list[str]:
     """
     Get description of product(s) using BRDG-02R13.
     Human-readable text, used in e.g. HomeAssistant Binding UI.
-    :return: string or tuple of strings, starting with manufacturer
     """
-    return "Airios RS485 RF Gateway"
+    return ["Airios RS485 RF Gateway"]
 
 
 def pr_instantiate(device_id: int, client: AsyncAiriosModbusClient) -> BRDG02R13:

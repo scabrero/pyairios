@@ -2,7 +2,15 @@
 
 import datetime
 from dataclasses import dataclass
-from enum import Flag, IntEnum, auto
+from enum import Enum, Flag, IntEnum, auto
+
+
+class AiriosDeviceType(Enum):
+    """The device type."""
+
+    RF_BRIDGE = auto()
+    CONTROLLER = auto()
+    ACCESSORY = auto()
 
 
 class ProductId(IntEnum):

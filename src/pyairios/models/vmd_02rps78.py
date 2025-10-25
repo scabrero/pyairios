@@ -8,6 +8,7 @@ from typing import List
 
 from pyairios.client import AsyncAiriosModbusClient
 from pyairios.constants import (
+    AiriosDeviceType,
     ProductId,
     VMDBypassMode,
     VMDBypassPosition,
@@ -46,13 +47,20 @@ def pr_id() -> ProductId:
     return ProductId.VMD_02RPS78
 
 
-def pr_description() -> str | tuple[str, ...]:
+def pr_type() -> AiriosDeviceType:
+    """
+    Get the device type.
+    """
+    return AiriosDeviceType.CONTROLLER
+
+
+def pr_description() -> list[str]:
     """
     Get description of product(s) using VMD_02RPS78.
     Human-readable text, used in e.g. HomeAssistant Binding UI.
     :return: string or tuple of strings, starting with manufacturer
     """
-    return ("Siber DF Evo", "Siber DF Optima 2")
+    return ["Siber DF Evo", "Siber DF Optima 2"]
 
 
 def pr_instantiate(device_id: int, client: AsyncAiriosModbusClient) -> VMD02RPS78:

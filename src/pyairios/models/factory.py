@@ -1,6 +1,7 @@
 """Airios device factory."""
 
 import asyncio
+from dataclasses import dataclass
 import glob
 import importlib.util
 import logging
@@ -9,11 +10,20 @@ from types import ModuleType
 from typing import Dict
 
 from pyairios.client import AsyncAiriosModbusClient
-from pyairios.constants import ProductId
+from pyairios.constants import AiriosDeviceType, ProductId
 from pyairios.device import AiriosDevice
 from pyairios.exceptions import AiriosException, AiriosUnknownProductException
 
 LOGGER = logging.getLogger(__name__)
+
+
+@dataclass
+class AiriosDeviceDescription:
+    """Airios device description."""
+
+    product_id: ProductId
+    type: AiriosDeviceType
+    description: list[str]
 
 
 class AiriosDeviceFactory:
@@ -106,18 +116,21 @@ class AiriosDeviceFactory:
             return self.modules
         return self.modules
 
-    async def model_descriptions(self) -> Dict[ProductId, str | tuple[str, ...]] | None:
+    async def model_descriptions(self) -> list[AiriosDeviceDescription]:
         """
-        Util to fetch all supported model labels.
-
-        :return: dict of all controller and accessory module labels by key
+        Util to fetch all supported model descriptions.
         """
         if not self.modules_loaded:
             task = asyncio.create_task(self.load_models())
             await task
-        descriptions: Dict[ProductId, str | tuple[str, ...]] = {}
+        descriptions: list[AiriosDeviceDescription] = []
         for mod in self.modules.values():
-            descriptions[mod.pr_id()] = mod.pr_description()
+            d = AiriosDeviceDescription(
+                product_id=mod.pr_id(),
+                type=mod.pr_type(),
+                description=mod.pr_description(),
+            )
+            descriptions.append(d)
         return descriptions
 
 
