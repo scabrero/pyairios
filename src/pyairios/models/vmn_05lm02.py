@@ -41,7 +41,7 @@ def pr_description() -> list[str]:
     Human-readable text, used in e.g. HomeAssistant Binding UI.
     :return: string or tuple of strings, starting with manufacturer
     """
-    return ["Siber 4 button Remote"]
+    return ["Siber 4 button remote"]
 
 
 def pr_instantiate(device_id: int, client: AsyncAiriosModbusClient) -> VMN05LM02:
