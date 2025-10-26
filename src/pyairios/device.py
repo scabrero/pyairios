@@ -5,13 +5,25 @@ from __future__ import annotations
 import datetime
 import logging
 import struct
+from dataclasses import dataclass
 from enum import auto
 from typing import Any, Dict, List
 
 from pyairios.client import AsyncAiriosModbusClient
-from pyairios.constants import BatteryStatus, FaultStatus, ProductId, RFCommStatus, RFStats
+from pyairios.constants import (
+    AiriosDeviceType,
+    BatteryStatus,
+    FaultStatus,
+    ProductId,
+    RFCommStatus,
+    RFStats,
+)
 from pyairios.data_model import AiriosDeviceData
-from pyairios.exceptions import AiriosAcknowledgeException, AiriosPropertyNotSupported
+from pyairios.exceptions import (
+    AiriosAcknowledgeException,
+    AiriosNotImplemented,
+    AiriosPropertyNotSupported,
+)
 from pyairios.properties import AiriosBaseProperty
 from pyairios.properties import AiriosDeviceProperty as dp
 from pyairios.registers import (
@@ -65,6 +77,23 @@ def date_register(value: int) -> datetime.date:
     buf = value.to_bytes(4, "big")
     (day, month, year) = struct.unpack(">BBH", buf)
     return datetime.date(year, month, day)
+
+
+@dataclass
+class AiriosDeviceDescription:
+    """Airios device description."""
+
+    product_id: ProductId
+    type: AiriosDeviceType
+    description: list[str]
+
+
+@dataclass
+class AiriosBoundDeviceInfo(AiriosDeviceDescription):
+    """Bridge bound node information."""
+
+    rf_address: int
+    modbus_address: int
 
 
 class AiriosDevice:
@@ -135,7 +164,19 @@ class AiriosDevice:
             regdesc.aproperty: regdesc for regdesc in self.registers
         }
 
-    async def get(self, ap: AiriosBaseProperty) -> Any:
+    def pr_id(self) -> ProductId:
+        """Return the product ID."""
+        raise AiriosNotImplemented
+
+    def pr_type(self) -> AiriosDeviceType:
+        """Return the product type."""
+        raise AiriosNotImplemented
+
+    def pr_description(self) -> list[str]:
+        """Return a list of product descriptions."""
+        raise AiriosNotImplemented
+
+    async def get(self, ap: AiriosBaseProperty) -> Result:
         """Get an Airios property."""
         if ap not in self.regmap:
             raise AiriosPropertyNotSupported(ap)

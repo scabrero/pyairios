@@ -1,7 +1,6 @@
 """Airios device factory."""
 
 import asyncio
-from dataclasses import dataclass
 import glob
 import importlib.util
 import logging
@@ -10,20 +9,11 @@ from types import ModuleType
 from typing import Dict
 
 from pyairios.client import AsyncAiriosModbusClient
-from pyairios.constants import AiriosDeviceType, ProductId
-from pyairios.device import AiriosDevice
+from pyairios.constants import ProductId
+from pyairios.device import AiriosDevice, AiriosDeviceDescription
 from pyairios.exceptions import AiriosException, AiriosUnknownProductException
 
 LOGGER = logging.getLogger(__name__)
-
-
-@dataclass
-class AiriosDeviceDescription:
-    """Airios device description."""
-
-    product_id: ProductId
-    type: AiriosDeviceType
-    description: list[str]
 
 
 class AiriosDeviceFactory:

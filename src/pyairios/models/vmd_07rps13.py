@@ -270,6 +270,15 @@ class VMD07RPS13(AiriosNode):
     def __str__(self) -> str:
         return f"VMD-07RPS13@{self.device_id}"
 
+    def pr_id(self) -> ProductId:
+        return pr_id()
+
+    def pr_type(self) -> AiriosDeviceType:
+        return pr_type()
+
+    def pr_description(self) -> list[str]:
+        return pr_description()
+
     async def ventilation_speed(self) -> Result[VMDVentilationSpeed]:
         """Get the ventilation unit active speed preset."""
 

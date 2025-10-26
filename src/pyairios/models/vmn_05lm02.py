@@ -65,6 +65,15 @@ class VMN05LM02(AiriosNode):
     def __str__(self) -> str:
         return f"VMN-05LM02@{self.device_id}"
 
+    def pr_id(self) -> ProductId:
+        return pr_id()
+
+    def pr_type(self) -> AiriosDeviceType:
+        return pr_type()
+
+    def pr_description(self) -> list[str]:
+        return pr_description()
+
     async def requested_ventilation_speed(self) -> Result[VMDRequestedVentilationSpeed]:
         """Get the requested ventilation speed."""
         regdesc = self.regmap[dp.REQUESTED_VENTILATION_SPEED]

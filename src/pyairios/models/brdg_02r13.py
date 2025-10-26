@@ -22,8 +22,7 @@ from pyairios.constants import (
     SerialConfig,
     StopBits,
 )
-from pyairios.data_model import AiriosBoundNodeInfo
-from pyairios.device import AiriosDevice
+from pyairios.device import AiriosDevice, AiriosBoundDeviceInfo
 from pyairios.exceptions import (
     AiriosBindingException,
     AiriosException,
@@ -177,6 +176,15 @@ class BRDG02R13(AiriosDevice):
     def __str__(self) -> str:
         return f"BRDG-02R13@{self.device_id}"
 
+    def pr_id(self) -> ProductId:
+        return pr_id()
+
+    def pr_type(self) -> AiriosDeviceType:
+        return pr_type()
+
+    def pr_description(self) -> list[str]:
+        return pr_description()
+
     async def bind_controller(
         self,
         device_id: int,
@@ -291,7 +299,7 @@ class BRDG02R13(AiriosDevice):
             self.regmap[bp.BINDING_COMMAND], value, self.device_id
         )
 
-    async def nodes(self) -> List[AiriosBoundNodeInfo]:
+    async def nodes(self) -> List[AiriosBoundDeviceInfo]:
         """Get the list of bound nodes."""
 
         reg_descs: List[RegisterBase] = [
@@ -331,7 +339,7 @@ class BRDG02R13(AiriosDevice):
 
         values = await self.client.get_multiple(reg_descs, self.device_id)
 
-        nodes: List[AiriosBoundNodeInfo] = []
+        nodes: List[AiriosBoundDeviceInfo] = []
         for item in values.values():
             device_id = item.value
             if device_id == 0:
@@ -353,8 +361,14 @@ class BRDG02R13(AiriosDevice):
                 continue
             rf_address = result.value
 
-            info = AiriosBoundNodeInfo(
-                device_id=device_id, product_id=product_id, rf_address=rf_address
+            dev = await factory.get_device_by_product_id(product_id, device_id, self.client)
+
+            info = AiriosBoundDeviceInfo(
+                modbus_address=device_id,
+                product_id=product_id,
+                rf_address=rf_address,
+                type=dev.pr_type(),
+                description=dev.pr_description(),
             )
             nodes.append(info)
         return nodes
@@ -366,10 +380,10 @@ class BRDG02R13(AiriosDevice):
             return self
 
         for node in await self.nodes():
-            if node.device_id != device_id:
+            if node.modbus_address != device_id:
                 continue
             return await factory.get_device_by_product_id(
-                node.product_id, node.device_id, self.client
+                node.product_id, node.modbus_address, self.client
             )
 
         raise AiriosException(f"Node {device_id} not found")

@@ -11,13 +11,14 @@ from pyairios.client import (
     AsyncAiriosModbusTcpClient,
 )
 from pyairios.constants import BindingStatus, ProductId
-from pyairios.data_model import AiriosBoundNodeInfo, AiriosData, AiriosDeviceData
-from pyairios.device import AiriosDevice
+from pyairios.data_model import AiriosData, AiriosDeviceData
+from pyairios.device import AiriosDevice, AiriosBoundDeviceInfo
 from pyairios.exceptions import AiriosException
 from pyairios.models.brdg_02r13 import BRDG02R13
 from pyairios.models.brdg_02r13 import DEFAULT_DEVICE_ID as BRDG02R13_DEFAULT_DEVICE_ID
 from pyairios.models.factory import factory
 from pyairios.properties import AiriosBridgeProperty as bp
+from pyairios.registers import Result
 
 LOGGER = logging.getLogger(__name__)
 
@@ -42,7 +43,7 @@ class Airios:
             raise AiriosException(f"Unknown transport {transport}")
         self.bridge = BRDG02R13(device_id, self._client)
 
-    async def nodes(self) -> list[AiriosBoundNodeInfo]:
+    async def nodes(self) -> list[AiriosBoundDeviceInfo]:
         """Get the list of bound nodes."""
         return await self.bridge.nodes()
 
@@ -50,7 +51,7 @@ class Airios:
         """Get a node instance by its Modbus device ID."""
         return await self.bridge.node(device_id)
 
-    async def bind_status(self) -> BindingStatus:
+    async def bind_status(self) -> Result[BindingStatus]:
         """Get the bind status."""
         return await self.bridge.get(bp.ACTUAL_BINDING_STATUS)
 
@@ -82,13 +83,13 @@ class Airios:
 
         brdg_data = await self.bridge.fetch(all_props=all_props, with_status=with_status)
 
-        for node_info in await self.bridge.nodes():
-            node = await factory.get_device_by_product_id(
-                node_info.product_id,
-                node_info.device_id,
+        for bound in await self.bridge.nodes():
+            dev = await factory.get_device_by_product_id(
+                bound.product_id,
+                bound.modbus_address,
                 self.bridge.client,
             )
-            data[node_info.device_id] = await node.fetch(
+            data[bound.modbus_address] = await dev.fetch(
                 all_props=all_props, with_status=with_status
             )
 
