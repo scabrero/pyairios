@@ -13,5 +13,5 @@ type AiriosDeviceData = Dict[AiriosBaseProperty, Result]
 class AiriosData:
     """Data from bridge and all bound nodes."""
 
-    bridge: AiriosDeviceData
+    bridge_key: int
     nodes: Dict[int, AiriosDeviceData]

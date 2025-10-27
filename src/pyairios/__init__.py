@@ -82,6 +82,7 @@ class Airios:
         data: dict[int, AiriosDeviceData] = {}
 
         brdg_data = await self.bridge.fetch(all_props=all_props, with_status=with_status)
+        data[self.bridge.device_id] = brdg_data
 
         for bound in await self.bridge.nodes():
             dev = await factory.get_device_by_product_id(
@@ -93,7 +94,7 @@ class Airios:
                 all_props=all_props, with_status=with_status
             )
 
-        return AiriosData(bridge=brdg_data, nodes=data)
+        return AiriosData(bridge_key=self.bridge.device_id, nodes=data)
 
     async def connect(self) -> bool:
         """Establish underlying Modbus connection."""
