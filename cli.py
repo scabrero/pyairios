@@ -360,14 +360,6 @@ class AiriosVMD07RPS13CLI(aiocmd.PromptToolkitCmd):
         res = await self.vmd.node_received_product_id()
         print(f"0x{res.value:08X}")
 
-    async def do_capabilities(self) -> None:
-        """Print the device RF capabilities."""
-        res = await self.vmd.capabilities()
-        if res is not None:
-            print(f"{res.value} ({res.status})")
-        else:
-            print("N/A")
-
     async def do_error_code(self) -> None:
         """Print the current error code."""
         res = await self.vmd.error_code()
@@ -579,7 +571,7 @@ class AiriosBridgeCLI(aiocmd.PromptToolkitCmd):
         nodes = await self.bridge.nodes()
         node_info = None
         for n in nodes:
-            if int(device_id) == int(n.device_id):
+            if int(device_id) == int(n.modbus_address):
                 node_info = n
                 break
 
@@ -588,7 +580,7 @@ class AiriosBridgeCLI(aiocmd.PromptToolkitCmd):
 
         dev = await factory.get_device_by_product_id(
             node_info.product_id,
-            node_info.device_id,
+            node_info.modbus_address,
             self.bridge.client,
         )
 
