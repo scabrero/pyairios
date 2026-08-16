@@ -11,7 +11,10 @@ from typing import Dict
 from pyairios.client import AsyncAiriosModbusClient
 from pyairios.constants import ProductId
 from pyairios.device import AiriosDevice, AiriosDeviceDescription
-from pyairios.exceptions import AiriosException, AiriosUnknownProductException
+from pyairios.exceptions import (
+    AiriosException,
+    AiriosUnknownProductException,
+)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -25,6 +28,27 @@ class AiriosDeviceFactory:
     def __init__(self) -> None:
         self.modules_loaded = False
         self.modules = {}
+
+    async def get_device(
+        self,
+        address: int,
+        client: AsyncAiriosModbusClient,
+    ) -> AiriosDevice:
+        """Get bridge by its own product ID."""
+
+        if not self.modules_loaded:
+            await self.load_models()
+
+        dev = AiriosDevice(address, client)
+        result = await dev.device_product_id()
+        product_id = result.value
+        try:
+            mod = self.modules[product_id]
+            return mod.pr_instantiate(address, client)
+        except ValueError as ex:
+            raise AiriosUnknownProductException(f"Unknown product ID 0x{product_id:08X}") from ex
+        except KeyError as ex:
+            raise AiriosUnknownProductException(f"Unknown product ID 0x{product_id:08X}") from ex
 
     async def get_device_by_product_id(
         self,
