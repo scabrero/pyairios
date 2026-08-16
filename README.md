@@ -16,6 +16,9 @@ There are two bridge models with different interfaces. The [BRDG-02R13](https://
 
 This library supports both models.
 
+> [!WARNING]
+> Performing a hard reset on the Ethernet bridge will restore factory default settings and erase the configuration required to connect to the manufacturer cloud. Please ensure you back up your settings before proceeding.
+
 ## Working principle
 
 Each device in the RF network is called a node and nodes must be bound together to be able to communicate. There are two classes of nodes:
