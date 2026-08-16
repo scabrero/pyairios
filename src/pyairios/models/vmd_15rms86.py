@@ -134,7 +134,7 @@ class VMD15RMS86(AiriosNode):
     """Airios VMD-15RMS86 controller implementation."""
 
     def __init__(self, device_id: int, client: AsyncAiriosModbusClient) -> None:
-        """Initialize the VMD-02RPS78 controller node instance."""
+        """Initialize the VMD-02RMS78 controller node instance."""
         super().__init__(device_id, client)
         vmd_registers: List[RegisterBase] = [
             U16Register(
@@ -351,7 +351,7 @@ class VMD15RMS86(AiriosNode):
         self._add_registers(vmd_registers)
 
     def __str__(self) -> str:
-        return f"VMD-02RPS78@{self.device_id}"
+        return f"VMD-02RMS78@{self.device_id}"
 
     def pr_id(self) -> ProductId:
         return pr_id()

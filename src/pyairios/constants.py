@@ -27,7 +27,7 @@ class ProductId(IntEnum):
     VMD_07RPS13 = 0x0001C883
     VMD_15RMS86 = 0x0001C8A2
 
-    def __str__(self) -> str:
+    def __str__(self) -> str:  # pylint: disable=too-many-return-statements,too-many-branches
         if self.value == self.BRDG_02EM23:
             return f"0x{self.value:08X} (BRDG-02EM23)"
         if self.value == self.BRDG_02R13:
