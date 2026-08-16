@@ -26,6 +26,7 @@ from pyairios.client import (
     AsyncAiriosModbusTcpClient,
 )
 from pyairios.constants import (
+    AiriosDeviceType,
     Baudrate,
     ModbusEvents,
     Parity,
@@ -930,7 +931,7 @@ class AiriosSerialBridgeCLI(aiocmd.PromptToolkitCmd):
         pprint.pprint(res)
 
 
-class AiriosTcpBridgeCLI(aiocmd.PromptToolkitCmd):
+class AiriosEthernetBridgeCLI(aiocmd.PromptToolkitCmd):
     """The TCP bridge CLI interface."""
 
     bridge: BRDG02EM23
@@ -994,23 +995,6 @@ class AiriosTcpBridgeCLI(aiocmd.PromptToolkitCmd):
         """
         value = ModbusEvents.parse(mode)
         await self.bridge.set_modbus_events(value)
-
-    # no serial config for TCP
-    # async def do_serial_config(self) -> None:
-    #     """Print the serial configuration."""
-    #     res = await self.bridge.serial_config()
-    #     print(f"Serial Config: {res}")
-
-    # async def do_set_serial_config(self, baudrate: int, parity: str, stop_bits: int) -> None:
-    #     """Set the serial configuration.
-    #
-    #     The bridge must be reset to make new settings effective."""
-    #     b = Baudrate.parse(baudrate)
-    #     p = Parity.parse(parity)
-    #     s = StopBits.parse(stop_bits)
-    #     config = SerialConfig(b, p, s)
-    #     if await self.bridge.set_serial_config(config):
-    #         print("Reset the bridge with `reset` command to make new settings effective.")
 
     async def do_uptime(self) -> None:
         """Print the device uptime."""
@@ -1118,14 +1102,16 @@ class AiriosClientCLI(aiocmd.PromptToolkitCmd):  # pylint: disable=too-few-publi
         else:
             _address = int(address)
 
-        if isinstance(self.client, AsyncAiriosModbusRtuClient):
-            dev = await factory.get_device_by_product_id(ProductId.BRDG_02R13, _address, self.client)
+        dev = await factory.get_device(_address, self.client)
+        if dev.pr_type() != AiriosDeviceType.RF_BRIDGE:
+            raise AiriosInvalidArgumentException(f"Device at address {_address} is not a RF bridge")
+        result = await dev.device_product_id()
+        if result.value == ProductId.BRDG_02R13:
             await AiriosSerialBridgeCLI(dev).run()
-        elif isinstance(self.client, AsyncAiriosModbusTcpClient):
-            dev = await factory.get_device_by_product_id(ProductId.BRDG_02EM23, _address, self.client)
-            await AiriosTcpBridgeCLI(dev).run()
+        elif result.value == ProductId.BRDG_02EM23:
+            await AiriosEthernetBridgeCLI(dev).run()
         else:
-            print(f"Unrecognised client type requested")
+            print(f"Unrecognised bridge model {result}")
 
 
 class AiriosRootCLI(aiocmd.PromptToolkitCmd):

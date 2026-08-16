@@ -2,4 +2,4 @@
 init-hook='import sys; sys.path.append("src"); sys.path.append(".")'
 
 [MESSAGES CONTROL]
-disable=duplicate-code,too-many-public-methods
+disable=duplicate-code,too-many-public-methods,too-many-lines
