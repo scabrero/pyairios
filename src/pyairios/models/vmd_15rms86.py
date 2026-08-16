@@ -17,7 +17,6 @@ from pyairios.constants import (
     VMDErrorCode,
     VMDFlowLevel,
     VMDHeater,
-    # VMDHeaterStatus,
     VMDHumidity,
     VMDPresetFansSpeeds,
     VMDRequestedVentilationSpeed,
@@ -125,11 +124,6 @@ def _bypass_position_adapter(value) -> VMDBypassPosition:
     return VMDBypassPosition(value, error)
 
 
-# def _heater_adapter(value) -> VMDHeater:
-#     status = VMDHeaterStatus.UNAVAILABLE if value == 0xEF else VMDHeaterStatus.OK
-#     return VMDHeater(value, status)
-
-
 class VMD15RMS86(AiriosNode):
     """Airios VMD-15RMS86 controller implementation."""
 
@@ -177,12 +171,6 @@ class VMD15RMS86(AiriosNode):
                 RegisterAccess.READ | RegisterAccess.STATUS,
                 result_adapter=_temperature_adapter,
             ),
-            # U16Register(
-            #     vp.PREHEATER,
-            #     41013,
-            #     RegisterAccess.READ | RegisterAccess.STATUS,
-            #     result_adapter=_heater_adapter,
-            # ),
             U16Register(vp.FILTER_DIRTY, 41014, RegisterAccess.READ | RegisterAccess.STATUS),
             U16Register(vp.DEFROST, 41015, RegisterAccess.READ | RegisterAccess.STATUS),
             U16Register(
@@ -203,32 +191,12 @@ class VMD15RMS86(AiriosNode):
                 RegisterAccess.READ | RegisterAccess.STATUS,
                 result_adapter=_humidity_adapter,
             ),
-            # FloatRegister(
-            #     vp.FLOW_INLET,
-            #     41019,
-            #     RegisterAccess.READ | RegisterAccess.STATUS,
-            #     result_adapter=_flow_adapter,
-            # ),
             FloatRegister(
                 vp.FLOW_OUTLET,
                 41021,
                 RegisterAccess.READ | RegisterAccess.STATUS,
                 result_adapter=_flow_adapter,
             ),
-            # U16Register(vp.AIR_QUALITY, 41023, RegisterAccess.READ | RegisterAccess.STATUS),
-            # U16Register(vp.AIR_QUALITY_BASIS, 41024, RegisterAccess.READ | RegisterAccess.STATUS),
-            # U16Register(
-            #     vp.CO2_LEVEL,
-            #     41025,
-            #     RegisterAccess.READ | RegisterAccess.STATUS,
-            #     result_adapter=_co2_adapter,
-            # ),
-            # U16Register(
-            #     vp.POSTHEATER,
-            #     41026,
-            #     RegisterAccess.READ | RegisterAccess.STATUS,
-            #     result_adapter=_heater_adapter,
-            # ),
             U16Register(
                 vp.CAPABILITIES,
                 41027,
@@ -238,37 +206,17 @@ class VMD15RMS86(AiriosNode):
             U16Register(
                 vp.FILTER_REMAINING_DAYS, 41040, RegisterAccess.READ | RegisterAccess.STATUS
             ),
-            # U16Register(vp.FILTER_DURATION, 41041, RegisterAccess.READ | RegisterAccess.STATUS),
             U16Register(
                 vp.FILTER_REMAINING_PERCENT, 41042, RegisterAccess.READ | RegisterAccess.STATUS
             ),
             U16Register(vp.FAN_RPM_EXHAUST, 41043, RegisterAccess.READ | RegisterAccess.STATUS),
             U16Register(vp.FAN_RPM_SUPPLY, 41044, RegisterAccess.READ | RegisterAccess.STATUS),
-            # U16Register(vp.BYPASS_MODE, 41050, RegisterAccess.READ | RegisterAccess.STATUS),
             U16Register(vp.BYPASS_STATUS, 41051, RegisterAccess.READ | RegisterAccess.STATUS),
             U16Register(
                 vp.REQUESTED_VENTILATION_SPEED,
                 41500,
                 RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS,
             ),
-            # U16Register(
-            #     vp.OVERRIDE_TIME_SPEED_LOW,
-            #     41501,
-            #     RegisterAccess.WRITE,
-            #     max_value=18 * 60,
-            # ),
-            # U16Register(
-            #     vp.OVERRIDE_TIME_SPEED_MID,
-            #     41502,
-            #     RegisterAccess.WRITE,
-            #     max_value=18 * 60,
-            # ),
-            # U16Register(
-            #     vp.OVERRIDE_TIME_SPEED_HIGH,
-            #     41503,
-            #     RegisterAccess.WRITE,
-            #     max_value=18 * 60,
-            # ),
             U16Register(
                 vp.REQUESTED_BYPASS_MODE,
                 41550,
@@ -327,26 +275,6 @@ class VMD15RMS86(AiriosNode):
             U16Register(
                 vp.TEMPERATURE_CONTROL_SETPOINT, 49019, RegisterAccess.READ | RegisterAccess.WRITE
             ),
-            # FloatRegister(
-            #     vp.FROST_PROTECTION_PREHEATER_SETPOINT,
-            #     42009,
-            #     RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS,
-            # ),
-            # FloatRegister(
-            #     vp.PREHEATER_SETPOINT,
-            #     42011,
-            #     RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS,
-            # ),
-            # FloatRegister(
-            #     vp.FREE_VENTILATION_HEATING_SETPOINT,
-            #     42013,
-            #     RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS,
-            # ),
-            # FloatRegister(
-            #     vp.FREE_VENTILATION_COOLING_OFFSET,
-            #     42015,
-            #     RegisterAccess.READ | RegisterAccess.WRITE | RegisterAccess.STATUS,
-            # ),
         ]
         self._add_registers(vmd_registers)
 
@@ -734,11 +662,6 @@ class VMD15RMS86(AiriosNode):
         """Get the outlet flow level (in m3/h)"""
         regdesc = self.regmap[vp.FLOW_OUTLET]
         return await self.client.get_register(regdesc, self.device_id)
-
-    # async def co2_level(self) -> Result[VMDCO2Level]:
-    #     """Get the CO2 level (in ppm)."""
-    #     regdesc = self.regmap[vp.CO2_LEVEL]
-    #     return await self.client.get_register(regdesc, self.device_id)
 
     async def co2_setpoint(self) -> Result[int]:
         """Get the CO2 control setpoint (in ppm)."""
