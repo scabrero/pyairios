@@ -31,15 +31,32 @@ The bridge is an accessory with special features. It can bind to multiple contro
 NOTE:
 Binding is only possible when products have the same *OEM code*. The RF bridge has a registry to change it if necessary.
 
+### OEM codes
+
+These are the OEM codes used by the different manufacturers. The value is hexadecimal.
+
+| Manufacturer | OEM code (hex) |
+|--------------|:--------------:|
+| Siber        | 0x6A           |
+
 ## Supported devices
 
-This library has been tested with the following devices:
+This library has been tested with the following devices.
+
+### RF Bridges
+
+* [Siber DFEVORFETH Ethernet bridge](https://www.siberzone.es/en/documentacion-tecnica/pasarela-comunica-rf-ethernet-app-evo-12) ([Airios BRDG-02EM23](https://www.airios.eu/brdg-02em23))
+* [Siber DFEVORFRS485 RS485 bridge](https://www.siberzone.es/en/documentacion-tecnica/pasarela-comunica-rf-rs485-modbusknx-evo-12) ([Airios BRDG-02R13](https://www.airios.eu/brdg-02r13))
+
+### Controllers
 
 * [Siber DF Evo 2 / DF Optima 2](https://www.siberzone.es/descarga/siber-df-optima-2-19170/) ([Airios VMD-02RPS78](https://www.airios.eu/vmd-heat-recovery-unit-controller))
-* [Siber 4 button remote](https://www.siberzone.es/descarga/mando-pulsador-inal%C3%81mbrico-4-posiciones-15462/) ([Airios VMN-02LM11](https://www.airios.eu/vmn-02lm11))
 * [ClimaRad Ventura V1X HRU](https://www.climarad.nl/) ([Airios VMD-07RPS13](https://www.airios.eu/vmd-heat-recovery-unit-controller))
 * [Orcon generic](https://www.orcon.nl/) ([Airios VMD-15RMS86-2](https://www.airios.eu/vmd-heat-recovery-unit-controller))
-* Siber DFEVORFETH Ethernet bridge ([Airios BRDG-02EM23](https://www.airios.eu/brdg-02em23)), Modbus-TCP
+
+### Accessories
+
+* [Siber 4 button remote](https://www.siberzone.es/descarga/mando-pulsador-inal%C3%81mbrico-4-posiciones-15462/) ([Airios VMN-02LM11](https://www.airios.eu/vmn-02lm11))
 
 ## Installation
 
