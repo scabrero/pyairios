@@ -13,7 +13,6 @@ from pyairios.constants import (
     VMDBypassMode,
     VMDBypassPosition,
     VMDCapabilities,
-    VMDCO2Level,
     VMDErrorCode,
     VMDFlowLevel,
     VMDHeater,
@@ -99,15 +98,6 @@ def _humidity_adapter(value: int) -> VMDHumidity:
     elif value == 0xFF:
         status = VMDSensorStatus.ERROR
     return VMDHumidity(value, status)
-
-
-def _co2_adapter(value: int) -> VMDCO2Level:
-    status = VMDSensorStatus.OK
-    if value == 0x7FFF:
-        status = VMDSensorStatus.UNAVAILABLE
-    elif 0x8000 <= value <= 0xFFFF:
-        status = VMDSensorStatus.ERROR
-    return VMDCO2Level(value, status)
 
 
 def _flow_adapter(value: int) -> VMDFlowLevel:
